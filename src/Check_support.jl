@@ -1,8 +1,4 @@
-function has_event_with_delay(path_SBML::String)::Bool
-
-    f = open(path_SBML, "r")
-        file_text = read(f, String)
-    close(f)
+function has_event_with_delay(file_text::String)::Bool
 
     istart = findall("<listOfEvents>", file_text)
     iend = findall("</listOfEvents>", file_text)
@@ -20,11 +16,7 @@ function has_event_with_delay(path_SBML::String)::Bool
 end
 
 
-function has_event_with_priority(path_SBML::String)::Bool
-
-    f = open(path_SBML, "r")
-        file_text = read(f, String)
-    close(f)
+function has_event_with_priority(file_text::String)::Bool
 
     istart = findall("<listOfEvents>", file_text)
     iend = findall("</listOfEvents>", file_text)
@@ -42,11 +34,7 @@ function has_event_with_priority(path_SBML::String)::Bool
 end
 
 
-function is_hierarchical(path_SBML::String)::Bool
-
-    f = open(path_SBML, "r")
-        file_text = read(f, String)
-    close(f)
+function is_hierarchical(file_text::String)::Bool
 
     if occursin("comp:", file_text)
         return true
@@ -56,11 +44,7 @@ function is_hierarchical(path_SBML::String)::Bool
 end
 
 
-function is_fba(path_SBML::String)::Bool
-
-    f = open(path_SBML, "r")
-        file_text = read(f, String)
-    close(f)
+function is_fba(file_text::String)::Bool
 
     if occursin("fbc:", file_text)
         return true
@@ -71,11 +55,7 @@ end
 
 
 
-function has_fast_reaction(path_SBML::String)::Bool
-
-    f = open(path_SBML, "r")
-        file_text = read(f, String)
-    close(f)
+function has_fast_reaction(file_text::String)::Bool
 
     if occursin(r"fast=\"true\"", file_text)
         return true

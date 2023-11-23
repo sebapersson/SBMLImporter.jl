@@ -2,6 +2,10 @@
 
 *Julia Importer for ODE Models in SBML Format*
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/dev/)
+[![Build Status](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml?query=branch%3Amain)
+
 SBMLImporter.jl is a Julia package forimport Ordinary Differential Equation (ODE) models specified in the Systems Biology Markup Language (SBML) at level 2 or higher. It supports many SBML features, such as events, rate-, assignment-, algebraic-rules, dynamic compartment size, and conversion factors. For a detailed list of supported features, see below.
 
 In comparison to [SBMLToolkit](https://github.com/SciML/SBMLToolkit.jl), SBMLImporter.jl focuses exclusively on ODE models. A comprehensive comparison against SBMLToolkit is provided below. For constraint-based modeling, see [COBREXA.jl](https://github.com/LCSB-BioCore/COBREXA.jl).
@@ -21,38 +25,39 @@ Alternatively, you can use:
 julia> using Pkg; Pkg.add("SBMLImporter")
 ```
 
-## Quick start
+## Quick Start
 
-Importing a SBML without events and piecewise functions is straightforward. Given the path to a SBML file (`SBML_to_ODESystem`) do:
+Importing an SBML modelis straightforward. Given the path to a SBML file do:
 
 ```julia
 using SBMLImporter
 sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
 ```
 
-Here `sys` is the `ODESystem`, `specie_map` mapping for the initial value, and `parameter_map` mapping/values for the model parameters. Given these components simulating the model is straighforward via building a an `ODEProblem`:
+Here, `sys` is the `ODESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model, construct an `ODEProblem` and solve it using an ODE solver:
 
 ```julia
 using OrdinaryDiffEq
 tspan = (0, 10.0)
-prob = ODEProblem(ode_system, specie_map, tspan, parameter_map, jac=true)
-# Solve ODE with Rodas5P solver
+prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
 sol = solve(prob, Rodas5P())
 ```
 
-For importing and simulating more advanced models with events and piecewise (ifelse), see the documentation.
+For more advanced models with events and/or piecewise (ifelse) functions, see the documentation.
 
 ## Differences with SBMLToolkit
 
-Here are some key differences between SBMLToolkit and SBMLImporter that can help you choose SBML importer:
+The key differences between SBMLToolkit and SBMLImporter are:
 
 * SBMLToolkit imports models as `ReactionSystems`, allowing simulation with the Gillespie algorithm or transformation into the Langevin SDE. However, it only works with (and transforms) species to be in amount. SBMLImporter transforms models only into `ODESystems`, supporting species in units as amount and concentration.
+
+* SBMLToolkit has a cleaner interface, as it performs all model processing via Symbolics.jl.
 
 * SBMLImporter has broader event support, including events with directionality. It processes events without species in the trigger into `DiscreteCallbacks`, making simulations more efficient.
 
 * SBMLImporter rewrites SBML piecewise expressions to callbacks if possible instead of rewriting to `ifelse`, this improves integration stability and reduces runtime.
 
-* SBMLImporter has more extensive SBML support, passing more tests in the test-suite. It is also the SBML importer for PEtab.jl, which regularly tests against several published SBML models of various sizes.
+* SBMLImporter has more extensive SBML support, passing more tests in the test-suite. It is also the SBML importer for SBMLImporter.jl, which regularly tests against several published SBML models of various sizes.
 
 ## Supported SBML Features
 

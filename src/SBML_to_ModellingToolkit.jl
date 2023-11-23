@@ -3,13 +3,16 @@
                       ifelse_to_callback::Bool=true,
                       write_to_file::Bool=false, 
                       verbose::Bool=true, 
-                      return_all::Bool=false)
+                      return_all::Bool=false, 
+                      model_as_string::Bool=false)
 
 Parse an SBML model into a ModelingToolkit `ODESystem` and potentially convert events/piecewise to callbacks.
 
 By default, `structurally_simplified` is called on the `ODESystem` before it is returned.
 
 For information on simulating the `ODESystem`, refer to the documentation.
+
+For testing path_SBML can be the model as a string if model_as_string=true
 
 !!! note
     The number of returned arguments depends on whether the SBML model has events and/or piecewise expressions (see below).
@@ -33,11 +36,12 @@ function SBML_to_ODESystem(path_SBML::T;
                            ifelse_to_callback::Bool=true,
                            write_to_file::Bool=false, 
                            verbose::Bool=true, 
-                           ret_all::Bool=false) where T <: AbstractString
+                           ret_all::Bool=false, 
+                           model_as_string::Bool=false) where T <: AbstractString
 
     # Intermediate model representation of a SBML model which can be processed into 
     # an ODESystem                           
-    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback)
+    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string)
 
     # If model is written to file save it in the same directory as the SBML-file
     dir_save = joinpath(splitdir(path_SBML)[1], "SBML")
@@ -99,37 +103,43 @@ Given the path to a SBML file build an intermediate SBML model struct.
 The SBML model struct stores the information needed to create a ODESystem or ReactionSystem
 
 Rewriting ifelse to Boolean callbacks is strongly recomended if possible.
-"""
-function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true)::ModelSBML
 
-    if has_event_with_delay(path_SBML) == true
+For testing path_SBML can be the model as a string if model_as_string=true
+"""
+function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true)::ModelSBML
+
+    if model_as_string == false
+        f = open(path_SBML, "r")
+        model_str = read(f, String)
+        close(f)
+    else
+        model_str = path_SBML
+    end
+
+    if has_event_with_delay(model_str) == true
         throw(SBMLSupport("Events with delay are not supported"))
     end
-    if has_event_with_priority(path_SBML) == true
+    if has_event_with_priority(model_str) == true
         throw(SBMLSupport("Events with priority are not supported"))
     end
-    if has_fast_reaction(path_SBML) == true
+    if has_fast_reaction(model_str) == true
         throw(SBMLSupport("Fast reactions are not supported"))
     end
-    if is_hierarchical(path_SBML) == true
+    if is_hierarchical(model_str) == true
         throw(SBMLSupport("Hierarchical models are not supported"))
     end
-    if is_fba(path_SBML) == true
+    if is_fba(model_str) == true
         throw(SBMLSupport("FBA models are not supported. Checkout COBREXA.jl"))
     end
 
-    f = open(path_SBML, "r")
-    text = read(f, String)
-    close(f)
-    # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
-    # to properly handle the latter
-    if occursin("stoichiometryMath", text) == false
-        libsbml_model = readSBML(path_SBML)
+
+    if occursin("stoichiometryMath", model_str) == false
+        libsbml_model = readSBMLFromString(model_str)
     else
-        libsbml_model = readSBML(path_SBML, doc -> begin
-                            set_level_and_version(3, 2)(doc)
-                            convert_promotelocals_expandfuns(doc)
-                            end)
+        libsbml_model = readSBMLFromString(model_str, doc -> begin
+                                 set_level_and_version(3, 2)(doc)
+                                 convert_promotelocals_expandfuns(doc)
+                                 end)
     end
 
     return _build_SBML_model(libsbml_model, ifelse_to_callback)
