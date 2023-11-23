@@ -5,11 +5,32 @@ using OrdinaryDiffEq
 using ModelingToolkit
 using SBML
 using Test
+using Downloads
 
 
-function read_settings(path_settings::String)
+function get_sbml_urls(base_url::String)
+    levels = ["2", "3"]
+    sublevels = ["1", "2", "3", "4", "5"]
+    sbml_urls = Vector{String}(undef, 0)
 
-    settings_lines = readlines(path_settings)
+    for level in levels
+        for sublevel in sublevels
+            sbml_url = base_url * "-sbml-l" * level * "v" * sublevel * ".xml"
+            try
+                sbml = String(take!(Downloads.download(sbml_url, IOBuffer())))
+                push!(sbml_urls, sbml_url)
+            catch
+            end
+        end
+    end
+    return sbml_urls
+end
+
+
+function read_settings(settings_url::String)
+
+    settings = String(take!(Downloads.download(settings_url, IOBuffer())))
+    settings_lines = split(settings, '\n')
     species_test = Symbol.(replace.(split(split(settings_lines[4], ":")[2], ','), " " => "", ))
     species_test_amount = Symbol.(replace.(split(split(settings_lines[7], ":")[2], ','), " " => "", ))
     species_test_conc = Symbol.(replace.(split(split(settings_lines[8], ":")[2], ','), " " => "", ))
@@ -23,58 +44,56 @@ end
 function check_test_case(test_case, solver)
     
     @info "Test case $test_case"
-    dir_cases = joinpath(@__DIR__, "semantic")
-    path_SBML_files = joinpath.(dir_cases, test_case, filter(x -> x[end-3:end] == ".xml", readdir(joinpath(dir_cases, test_case))))
 
-    _results_path = filter(x -> occursin("results", x), readdir(joinpath(dir_cases, test_case)))[1]
-    expected = CSV.read(joinpath(dir_cases, test_case, _results_path), stringtype=String, DataFrame)
+    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/semantic/$test_case/$test_case"
+    sbml_urls = get_sbml_urls(base_url)
+
+    _results_url = base_url * "-results.csv"
+    _results = String(take!(Downloads.download(_results_url, IOBuffer())))
+    results = CSV.read(IOBuffer(_results), DataFrame)
     
     # As it stands I cannot "hack" a parameter value at time zero, but the model simulation values
     # are correct. Border case we pass 
     if test_case == "00995" || test_case == "00996" || test_case == "00997" || test_case == "01284" || test_case == "01510" || test_case == "01527" || test_case == "01596" || test_case == "01663" || test_case == "01686" || test_case == "01693" || test_case ∈ ["01684", "01685", "01694", "01695", "01696", "01697", "01698", "01699", "01700", "01719", "00928", "00929"]
-        expected = expected[2:end, :]
+        results = results[2:end, :]
     end
-    col_names =  Symbol.(replace.(string.(names(expected)), " " => ""))
-    rename!(expected, col_names)
+    col_names =  Symbol.(replace.(string.(names(results)), " " => ""))
+    rename!(results, col_names)
 
     # Case for FBA models an exceptions should be thrown 
-    if !("Time" ∈ names(expected) || "time" ∈ names(expected))
-        SBMLImport.build_SBML_model(path_SBML_files[1])
+    if !("Time" ∈ names(results) || "time" ∈ names(results))
+        sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
+        SBMLImport.build_SBML_model(sbml_string; model_as_string=true)
     end
 
-    t_save = "Time" in names(expected) ? Float64.(expected[!, :Time]) : Float64.(expected[!, :time])
+    t_save = "Time" in names(results) ? Float64.(results[!, :Time]) : Float64.(results[!, :time])
     t_save = Vector{Float64}(t_save)
     tmax = maximum(t_save)
     what_check = filter(x -> x ∉ [:time, :Time], col_names)
-    path_SBML = path_SBML_files[end]
+    sbml_url = sbml_urls[end]
 
     # Read settings file
-    path_settings = joinpath(dir_cases, test_case, test_case * "-settings.txt")
-    species_test, species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(path_settings)
+    settings_url = base_url * "-settings.txt"
+    species_test, species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(settings_url)
 
-    for path_SBML in path_SBML_files
-        # We do not aim to support l1
-        if occursin("-l1", path_SBML)
-            continue
-        end
+    for sbml_url in sbml_urls
+
+        sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
         # c = n / V => n = c * V
 
-        model_SBML = SBMLImporter.build_SBML_model(path_SBML)
-        f = open(path_SBML, "r")
-        text = read(f, String)
-        close(f)
+        model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string=true)
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
-        if occursin("stoichiometryMath", text) == false
-            libsbml_model = readSBML(path_SBML)
+        if occursin("stoichiometryMath", sbml_string) == false
+            libsbml_model = readSBMLFromString(sbml_string)
         else
-            libsbml_model = readSBML(path_SBML, doc -> begin
+            libsbml_model = readSBMLFromString(sbml_string, doc -> begin
                                 set_level_and_version(3, 2)(doc)
                                 convert_promotelocals_expandfuns(doc)
                                 end)
         end
 
-        ode_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBML_to_ODESystem(path_SBML, ret_all=true)
+        ode_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true)
         ode_problem = ODEProblem(ode_system, specie_map, (0.0, tmax), parameter_map, jac=true)
         for _f! in ifelse_t0
             _f!(ode_problem.u0, ode_problem.p)
@@ -89,14 +108,14 @@ function check_test_case(test_case, solver)
             if to_check_no_whitespace ∈ Symbol.(model_parameters)
                 iParam = findfirst(x -> x == to_check_no_whitespace, Symbol.(model_parameters))
 
-                if all(isinf.(expected[!, to_check])) && all(expected[!, to_check] .> 0)
+                if all(isinf.(results[!, to_check])) && all(results[!, to_check] .> 0)
                     @test isinf(sol.prob.p[iParam]) && sol.prob.p[iParam] > 0
-                elseif all(isinf.(expected[!, to_check])) && all(expected[!, to_check] .< 0)
+                elseif all(isinf.(results[!, to_check])) && all(results[!, to_check] .< 0)
                     @test isinf(sol.prob.p[iParam]) && sol.prob.p[iParam] < 0
-                elseif all(isnan.(expected[!, to_check]))
+                elseif all(isnan.(results[!, to_check]))
                     @test isnan(sol.prob.p[iParam])
                 else
-                    @test all(abs.(sol.prob.p[iParam] .- expected[!, to_check]) .< abstol_test .+ reltol_test .* abs.(expected[!, to_check]))
+                    @test all(abs.(sol.prob.p[iParam] .- results[!, to_check]) .< abstol_test .+ reltol_test .* abs.(results[!, to_check]))
                 end
                 continue
             end
@@ -125,7 +144,7 @@ function check_test_case(test_case, solver)
                 c = 1.0
             end
 
-            @test all(abs.(sol[to_check] ./ c .- expected[!, to_check]) .< abstol_test .+ reltol_test .* abs.(expected[!, to_check]))
+            @test all(abs.(sol[to_check] ./ c .- results[!, to_check]) .< abstol_test .+ reltol_test .* abs.(results[!, to_check]))
         end
     end
 end

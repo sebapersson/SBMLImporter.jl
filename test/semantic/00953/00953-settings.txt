@@ -1,8 +1,0 @@
-start: 0
-duration: 100
-steps: 1001
-variables: S
-absolute: 0.01
-relative: 0.01
-amount:
-concentration:
