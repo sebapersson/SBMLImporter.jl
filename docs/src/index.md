@@ -1,6 +1,6 @@
 # SBMLImporter.jl Documentation
 
-This is the documentation for SBMLImporter.jl, a Julia package for importing ODE models specified in the Systems Biology Markup Language (SBML). This package offers robust SBML support, covering SBML features such as events, rate, assignment, algebraic rules, dynamic compartment size, and conversion factors. For a list of supported features, see [here](@ref support). For a list ofdifferences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), see the [README].
+This is the documentation for SBMLImporter.jl, a Julia package for importing ODE models specified in the Systems Biology Markup Language (SBML). This package offers covers many SBML features such as events, rate, assignment, algebraic rules, dynamic compartment size, and conversion factors. For a list of supported features, see [here](@ref support). For a list of differences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), see the [README](https://github.com/sebapersson/SBMLImporter.jl).
 
 To perform parameter estimation for an SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl) which for importing SBML models, employs SBMLImporter.
 
@@ -11,7 +11,7 @@ SBMLImporter is a tool for importing SBML models into a [ModelingToolkit.jl](htt
 !!! info
     The number of arguments returned by `SBML_to_ODESystem` varies depending on whether the model has events. When importing an SBML model, `SBML_to_ODESystem` will inform about the number of returned arguments.
 
-### Importing a Model Without Events and Piecewise
+### Importing a Model Without Events and Piecewise expressions
 
 Importing an SBML model without is straightforward. Given the path to a SBML file do:
 
@@ -52,7 +52,7 @@ tstops = get_tstops(prob.p, prob.u0)
 sol = solve(prob, Rodas5P(), tstops=tstops, callback=callbacks)
 ```
 
-### Importing a Model with Time-Dependent Piecewise
+### Importing a Model with Time-Dependent Piecewise expressions
 
 Piecewise functions in SBML correspond to the Julia `ifelse` function:
 
