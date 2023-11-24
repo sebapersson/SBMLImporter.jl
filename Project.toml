@@ -19,6 +19,7 @@ PrecompileTools = "1"
 RuntimeGeneratedFunctions = "0.5"
 SBML = "1"
 SpecialFunctions = "2"
+julia = "1"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
