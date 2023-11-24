@@ -11,6 +11,9 @@ RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 SBML = "e5567a89-2604-4b09-9718-f5f78e97c3bb"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
+[compat]
+SBML = "1"
+
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
