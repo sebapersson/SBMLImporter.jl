@@ -23,7 +23,7 @@ Currently SBMLImporter does not support the following:
 * Hierarchical models
 * Fast reactions
 * Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`)
-* Certain uncommon math expressions, such as lt with three arguments, implies etc...
+* Certain uncommon math expressions, such as `lt` with three arguments, `implies` etc...
 
 Import might also fail for complicated nested piecewise expressions inside SBML functions.
 

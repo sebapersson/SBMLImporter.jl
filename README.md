@@ -7,8 +7,9 @@
 
 SBMLImporter.jl is a Julia importer for ODE models specified in the Systems Biology Markup Language (SBML). It supports many SBML features, such as events, rate-, assignment-, algebraic-rules, dynamic compartment size, and conversion factors. For a detailed list of supported features, see below.
 
-Compared to [SBMLToolkit](https://github.com/SciML/SBMLToolkit.jl), SBMLImporter.jl focuses exclusively on ODE models. A list of differences compared to SBMLToolkit is provided below. For constraint-based modeling, see [COBREXA.jl](https://github.com/LCSB-BioCore/COBREXA.jl).
+To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
+Compared to [SBMLToolkit](https://github.com/SciML/SBMLToolkit.jl), SBMLImporter.jl focuses exclusively on ODE models. A list of differences compared to SBMLToolkit is provided below. For constraint-based modeling, see [COBREXA.jl](https://github.com/LCSB-BioCore/COBREXA.jl).
 
 ## Installation
 
@@ -26,7 +27,7 @@ julia> using Pkg; Pkg.add("SBMLImporter")
 
 ## Quick Start
 
-Importing an SBML modelis straightforward. Given the path to a SBML file do:
+Importing an SBML model is straightforward. Given the path to a SBML file do:
 
 ```julia
 using SBMLImporter
@@ -42,13 +43,13 @@ prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
 sol = solve(prob, Rodas5P())
 ```
 
-To import more advanced models with events and/or piecewise (ifelse) functions, see the documentation.
+To import more advanced models with events and/or piecewise (ifelse) expressions, see the documentation.
 
-## Differences with SBMLToolkit
+## Differences compared to SBMLToolkit
 
 The key differences between SBMLToolkit and SBMLImporter are:
 
-* SBMLToolkit imports a models as a `ReactionSystem`, allowing simulation with the Gillespie algorithm or transformation into the Langevin SDE. However, it only works with (and transforms) species to be in amount. SBMLImporter only imports a model as an `ODESystems`, but supports species in units in amount and/or concentration.
+* SBMLToolkit imports a models as a `ReactionSystem`, allowing simulation with the Gillespie algorithm or transformation into the Langevin SDE. However, it only works with (and transforms) species to be in amount. SBMLImporter only imports a model as an `ODESystems`, and supports species in amount and/or concentration.
 
 * SBMLToolkit has a cleaner interface, as it performs all model processing via Symbolics.jl.
 
@@ -56,19 +57,19 @@ The key differences between SBMLToolkit and SBMLImporter are:
 
 * SBMLImporter rewrites SBML piecewise expressions to callbacks if possible instead of using `ifelse`, this improves integration stability and reduces runtime.
 
-* SBMLImporter has more extensive SBML support, passing more tests in the test-suite. It is also the SBML importer for SBMLImporter.jl, which regularly tests against several published models of various sizes.
+* SBMLImporter has more extensive SBML support, passing more tests in the test-suite. It is further the SBML importer for PEtab.jl, which regularly tests against several published models of various sizes.
 
 ## Supported SBML Features
 
-SBMLImporter supports many SBML features for level 2 or higher. Currently, excluding FBA models it successfully passes 1267 out of 1785 test cases. The failed test cases cover features currently not supported, and if SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. The features not currently supported are:
+SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1267 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. The features not supported are:
 
 * Delay (creating a delay-differential-equations)
 * Events with delay
 * Events with priority
 * Hierarchical models
 * Fast reactions
-* Parameter or species names corresponding to Julia constants (pi, NaN, true, false)
-* Certain uncommon math expressions, such as lt with three arguments, implies etc...
+* Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`)
+* Certain uncommon math expressions, such as `lt` with three arguments, `implies` etc...
 
 Import might also fail for complicated nested piecewise expressions inside SBML functions.
 
