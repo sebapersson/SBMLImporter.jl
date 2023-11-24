@@ -5,7 +5,7 @@
 
 function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
 
-    for (specie_id, state) in libsbml_model.species
+    for (specie_id, specie) in libsbml_model.species
 
         if specie_id ∈ ["true", "false", "time", "pi", "Inf", "NaN"]
             throw(SBMLSupport("Parameter name cannot be true, false, time, pi, Inf, NaN"))
@@ -13,25 +13,25 @@ function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::
 
         # If both initial amount and conc are empty use concentration as unit per
         # SBML standard
-        if isnothing(state.initial_amount) && isnothing(state.initial_concentration)
+        if isnothing(specie.initial_amount) && isnothing(specie.initial_concentration)
             initial_value = ""
-            unit = state.substance_units == "substance" ? :Amount : :Concentration
-        elseif !isnothing(state.initial_concentration)
-            initial_value = string(state.initial_concentration)
+            unit = specie.substance_units == "substance" ? :Amount : :Concentration
+        elseif !isnothing(specie.initial_concentration)
+            initial_value = string(specie.initial_concentration)
             unit = :Concentration
         else
-            initial_value = string(state.initial_amount)
+            initial_value = string(specie.initial_amount)
             unit = :Amount
         end
 
         # Specie data
-        only_substance_units = isnothing(state.only_substance_units) ? false : state.only_substance_units
-        boundary_condition = state.boundary_condition
-        compartment = state.compartment
-        conversion_factor = isnothing(state.conversion_factor) ? "" : state.conversion_factor
-        constant = isnothing(state.constant) ? false : state.constant
+        only_substance_units = isnothing(specie.only_substance_units) ? false : specie.only_substance_units
+        boundary_condition = specie.boundary_condition
+        compartment = specie.compartment
+        conversion_factor = isnothing(specie.conversion_factor) ? "" : specie.conversion_factor
+        constant = isnothing(specie.constant) ? false : specie.constant
 
-        # In case being a boundary condition the state can only be changed events, or rate-rules so set
+        # In case being a boundary condition the specie can only be changed events, or rate-rules so set
         # derivative to zero, likewise for constant the formula should be zero (no rate of change)
         if boundary_condition == true || constant == true
             formula = "0.0"
@@ -39,7 +39,7 @@ function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::
             formula = ""
         end
 
-        # In case the initial value is given in conc, but the state should be given in amounts, adjust
+        # In case the initial value is given in conc, but the specie should be given in amounts, adjust
         if unit == :Concentration && only_substance_units == true
             unit = :Amount
             initial_value *= " * " * compartment

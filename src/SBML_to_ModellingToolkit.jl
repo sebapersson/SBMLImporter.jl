@@ -12,7 +12,7 @@ By default, `structurally_simplified` is called on the `ODESystem` before it is 
 
 For information on simulating the `ODESystem`, refer to the documentation.
 
-For testing path_SBML can be the model as a string if model_as_string=true
+For testing path_SBML can be the model as a string if `model_as_string=true`
 
 !!! note
     The number of returned arguments depends on whether the SBML model has events and/or piecewise expressions (see below).
@@ -23,14 +23,15 @@ For testing path_SBML can be the model as a string if model_as_string=true
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the SBML file.
 - `verbose=true`: Whether or not to display information on the number of return arguments.
 - `return_all=true`: Whether or not to return all possible arguments (see below), regardless of whether the model has events.
+- `model_as_string=false` : Whether or not the model (`path_SBML`) is provided as str, mainly for testing.
 
 ## Returns
 - `ode_system`: A ModelingToolkit `ODESystem` that can be converted into an `ODEProblem` and solved.
 - `specie_map`: A species map setting initial values; together with the `ODESystem`, it can be converted into an `ODEProblem`.
 - `parameter_map` A parameter map setting parameter values; together with the `ODESystem`, it can be converted into an `ODEProblem`.
 - `cbset` - **only for models with events/piecewise expressions**: Callbackset (events) for the model.
-- `compute_tstops!`- **Only for models with events/piecewise expressions**: Function computing time stops for discrete callbacks in the `cbset`.
-- `ifelse_t0` - **Only for models with time-dependent piecewise expressions**: Functions checking and adjusting for callback-rewritten piecewise expressions that are active at `t=t0`.
+- `get_tstops`- **Only for models with events/piecewise expressions**: Function computing time stops for discrete callbacks in the `cbset`.
+- `ifelse_t0` - **Only for models with time-dependent ifelse (piecewise) expressions**: Functions checking and adjusting for callback-rewritten piecewise expressions that are active at `t=t0`.
 """                 
 function SBML_to_ODESystem(path_SBML::T;
                            ifelse_to_callback::Bool=true,
