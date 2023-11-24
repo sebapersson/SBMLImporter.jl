@@ -1,13 +1,13 @@
 # [Supported SBML Features](@id support)
 
-SBMLImporter provides extensive support for Systems Biology Markup Language (SBML) features. It successfully passes ADD test cases (excluding hierarchical models and FBA models). Key features supported include:
+SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1267 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
 
 - Events
-- Rate
-- Assignment
+- Rate rules
+- Assignment rules
 - Algebraic rules
 - Dynamic compartment size
-- Species conversion factors
+- Species and model conversion factors
 
 Species can be specified in either concentration or amount. The unit determination is:
 
@@ -17,14 +17,16 @@ Species can be specified in either concentration or amount. The unit determinati
 
 Currently SBMLImporter does not support the following:
 
-- Events with priority
-- Events with delay
-- Delay (creating a delay-differential-equation)
-- Fast reactions
-- Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`)
+* Delay (creating a delay-differential-equations)
+* Events with delay
+* Events with priority
+* Hierarchical models
+* Fast reactions
+* Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`)
+* Certain uncommon math expressions, such as lt with three arguments, implies etc...
 
-Import might also fail for complicated nested piecewise expressions inside functions.
+Import might also fail for complicated nested piecewise expressions inside SBML functions.
 
 ## Support for additional features
 
-If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub.
+If SBMLImporter lacks support for a feature you would like to have, please file an issue on GitHub.

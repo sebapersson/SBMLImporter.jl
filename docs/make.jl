@@ -17,6 +17,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Supported SBML featuers" => "Support.md",
         "API" => "API_choosen.md"
     ],
 )
