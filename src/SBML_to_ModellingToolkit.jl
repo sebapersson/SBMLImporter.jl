@@ -12,7 +12,7 @@ By default, `structurally_simplified` is called on the `ODESystem` before it is 
 
 For information on simulating the `ODESystem`, refer to the documentation.
 
-For testing path_SBML can be the model as a string if `model_as_string=true`
+For testing `path_SBML` can be the model as a string if `model_as_string=true`
 
 !!! note
     The number of returned arguments depends on whether the SBML model has events and/or piecewise expressions (see below).
@@ -32,6 +32,31 @@ For testing path_SBML can be the model as a string if `model_as_string=true`
 - `cbset` - **only for models with events/piecewise expressions**: Callbackset (events) for the model.
 - `get_tstops`- **Only for models with events/piecewise expressions**: Function computing time stops for discrete callbacks in the `cbset`.
 - `ifelse_t0` - **Only for models with time-dependent ifelse (piecewise) expressions**: Functions checking and adjusting for callback-rewritten piecewise expressions that are active at `t=t0`.
+
+## Examples
+```julia
+# Import and simulate model without events
+using SBMLImporter
+sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+
+using OrdinaryDiffEq
+tspan = (0, 10.0)
+prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
+# Solve ODE with Rodas5P solver
+sol = solve(prob, Rodas5P())
+```
+```julia
+# Import a model with events
+using SBMLImporter
+sys, specie_map, parameter_map, cb, get_tstops = SBML_to_ODESystem(path_SBML)
+
+using OrdinaryDiffEq
+tspan = (0, 10.0)
+prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
+# Compute event times
+tstops = get_tstops(prob.u0, prob.p)
+sol = solve(prob, Rodas5P(), tstops=tstops, callback=callbacks)
+```
 """                 
 function SBML_to_ODESystem(path_SBML::T;
                            ifelse_to_callback::Bool=true,
@@ -45,7 +70,11 @@ function SBML_to_ODESystem(path_SBML::T;
     model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string)
 
     # If model is written to file save it in the same directory as the SBML-file
-    dir_save = joinpath(splitdir(path_SBML)[1], "SBML")
+    if model_as_string == false
+        dir_save = joinpath(splitdir(path_SBML)[1], "SBML")
+    else
+        dir_save = joinpath(@__DIR__, "SBML")
+    end
     if write_to_file == true && !isdir(dir_save)
         mkdir(dir_save)
     end

@@ -69,7 +69,7 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
         return nothing
     end
 
-    # At this point the assignment rule create a new state or it is a speciesreference, 
+    # At this point the assignment rule create a new specie or it is a speciesreference, 
     # to be used in stochiometry. If it has the name generatedId... it is related to 
     # StoichometryMath.
     if length(rule_variable) ≥ 11 && rule_variable[1:11] == "generatedId"
@@ -102,12 +102,12 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
     rule_formula = replace_reactionid_formula(rule_formula, libsbml_model)
     rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model; check_scaling=false, rate_rule=true)
     # Adjust formula to be in conc. (if any specie is given in amount must divide with compartment)
-    for (state_id, state) in model_SBML.species
-        if state.unit == :Concentration && state.only_substance_units == false
+    for (specie_id, specie) in model_SBML.species
+        if specie.unit == :Concentration && specie.only_substance_units == false
             continue
         end
-        compartment = state.compartment
-        rule_formula = replace_variable(rule_formula, state_id, "(" * state_id * "/" * compartment * ")")
+        compartment = specie.compartment
+        rule_formula = replace_variable(rule_formula, specie_id, "(" * specie_id * "/" * compartment * ")")
     end
 
     if rule_variable ∈ keys(model_SBML.species)
@@ -136,7 +136,7 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
         return nothing
     end
 
-    # At this state we introduce a new specie for said rule, this for example happens when we a 
+    # At this specie we introduce a new specie for said rule, this for example happens when we a 
     # special stoichometry        
     model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false, "1.0", 
                                                       rule_formula, 

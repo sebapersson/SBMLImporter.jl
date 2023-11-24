@@ -82,19 +82,24 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         # In this case must add additional variable for the specie concentration, to properly get the amount equation
         specie_conc_id = "__" * specie_id * "__conc__"
         initial_value_conc = model_SBML.species[specie_id].initial_value * "/" * compartment.name
-        formual_conc = model_SBML.species[specie_id].formula
+        formula_conc = model_SBML.species[specie_id].formula * "/" * compartment.name
 
         # Formula for amount specie
-        model_SBML.species[specie_id].formula = formual_conc * "*" *  compartment.name * " + " * specie_id * "*" * compartment.formula * " / " * compartment.name
+        model_SBML.species[specie_id].formula = formula_conc * "*" *  compartment.name * " + " * specie_id * "*" * compartment.formula * " / " * compartment.name
 
         # Add new conc. specie to model
         model_SBML.species[specie_conc_id] = SpecieSBML(specie_conc_id, false, false, initial_value_conc,
-                                                           formual_conc, compartment, specie.conversion_factor,  
-                                                           :Concentration, false, false, true, false)
+                                                        formula_conc, compartment.name, specie.conversion_factor,  
+                                                        :Concentration, false, false, true, false)
     end
 
     # When a specie is given in concentration, but the compartment concentration changes
     for (specie_id, specie) in model_SBML.species
+
+        # To avoid that concentration species given as above are processed again
+        if specie_id[1:2] == "__"
+            continue
+        end
 
         compartment = model_SBML.compartments[model_SBML.species[specie_id].compartment]
         compartment_name = compartment.name

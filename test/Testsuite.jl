@@ -101,7 +101,7 @@ function check_test_case(test_case, solver)
         tstops = get_tstops(ode_problem.u0, ode_problem.p)
         tstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)
 
-        sol = solve(ode_problem, solver, abstol=1e-8, reltol=1e-8, saveat=t_save, tstops=tstops, callback=cb)
+        sol = solve(ode_problem, solver, abstol=1e-12, reltol=1e-12, saveat=t_save, tstops=tstops, callback=cb)
         model_parameters = parameters(sol.prob.f.sys)
         for to_check in what_check
             to_check_no_whitespace = Symbol(replace(string(to_check), " " => ""))
@@ -326,9 +326,6 @@ solver = Rodas4P()
             continue
         end
 
-        # Do not name parameters Inf, true, false, pi, time, or NaN (I mean come on...)
-        
-
         # We do not aim to support Flux-Balance-Analysis (FBA) models
         not_test1 = ["01" * string(i) for i in 186:197]
         not_test2 = ["01" * string(i) for i in 606:625]
@@ -350,8 +347,8 @@ solver = Rodas4P()
             continue
         end
 
-        # We error but we should not
-        if test_case ∈ ["00959", "01208"]
+        # Uncommon mathML with boundary effects, not sure I agree with test-suite
+        if test_case ∈ ["00959"]
             continue
         end
 

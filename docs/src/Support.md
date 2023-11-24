@@ -1,6 +1,6 @@
 # [Supported SBML Features](@id support)
 
-SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1267 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
+SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1268 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
 
 - Events
 - Rate rules
