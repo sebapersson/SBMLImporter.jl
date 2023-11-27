@@ -97,7 +97,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
     for (specie_id, specie) in model_SBML.species
 
         # To avoid that concentration species given as above are processed again
-        if specie_id[1:2] == "__"
+        if length(specie_id) ≥ 2 && specie_id[1:2] == "__"
             continue
         end
 
