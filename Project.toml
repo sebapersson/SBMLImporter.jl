@@ -1,6 +1,6 @@
 name = "SBMLImporter"
 uuid = "210efffb-c3c8-456d-a807-6f55560b12fe"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
