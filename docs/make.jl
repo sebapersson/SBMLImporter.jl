@@ -23,6 +23,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/sebapersson/PEtab.jl.git",
+    repo="github.com/sebapersson/SBMLImporter.jl.git",
     devbranch="main",
 )
