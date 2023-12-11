@@ -238,3 +238,117 @@ function is_number(x::SubString{String})::Bool
     re2 = r"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"
     return (occursin(re1, x) || occursin(re2, x))
 end
+
+
+# For when exporting to ODESystem or ReactionSystem 
+function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tuple{String, String, String}
+
+    if reaction_system == false
+        _species_write = "\tModelingToolkit.@variables t "
+    else
+        _species_write = "\tCatalyst.@species t "
+    end
+    _species_write_array = "\tspecies = ["
+    _specie_map_write = "\tspecie_map = [\n"
+    
+    # Identify which variables/parameters are dynamic 
+    for specie_id in keys(model_SBML.species)
+        _species_write *= specie_id * "(t) "
+        _species_write_array *= specie_id * ", "
+    end
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == true
+            continue
+        end
+        _species_write *= parameter_id * "(t) "
+        _species_write_array *= parameter_id * ", "
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == true
+            continue
+        end
+        _species_write *= compartment_id * "(t) "
+        _species_write_array *= compartment_id * ", "
+    end
+    _species_write_array = _species_write_array[1:end-2] * "]" # Ensure correct valid syntax
+
+    # Map for initial values on time-dependent parameters 
+    for (specie_id, specie) in model_SBML.species
+        u0eq = specie.initial_value
+        _specie_map_write *= "\t" * specie_id * " =>" * u0eq * ",\n"
+    end
+    # Parameters
+    for (parameter_id, parameter) in model_SBML.parameters
+        if !(parameter.rate_rule == true || parameter.assignment_rule == true)
+            continue
+        end
+        u0eq = parameter.initial_value
+        _specie_map_write *= "\t" * parameter_id * " => " * u0eq * ",\n"
+    end
+    # Compartments
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.rate_rule != true
+            continue
+        end
+        u0eq = compartment.initial_value
+        _specie_map_write *= "\t" * compartment_id * " => " * u0eq * ",\n"
+    end
+    _specie_map_write *= "\t]"
+
+
+    return _species_write, _species_write_array, _specie_map_write
+end
+
+
+# For when exporting to ODESystem or ReactionSystem 
+function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tuple{String, String, String}
+
+    if reaction_system == false
+        _parameters_write = "\tModelingToolkit.@parameters "
+    else
+        _parameters_write = "\tCatalyst.@parameters "
+    end
+    _parameters_write_array = "\tparameters = ["
+    _parameter_map_write = "\tparameter_map = [\n"
+    
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == false
+            continue
+        end
+        _parameters_write *= parameter_id * " "
+        _parameters_write_array *= parameter_id * ", "
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == false
+            continue
+        end
+        _parameters_write *= compartment_id * " "
+        _parameters_write_array *= compartment_id * ", "
+    end
+    # Special case where we do not have any parameters
+    if length(_parameters_write) == 29
+        _parameters_write = ""
+        _parameters_write_array *= "]"
+    else
+        _parameters_write_array = _parameters_write_array[1:end-2] * "]"
+    end
+
+    # Map setting initial values for parameters 
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == false
+            continue
+        end
+        peq = parameter.formula
+        _parameter_map_write *= "\t" * parameter_id * " =>" * peq * ",\n"
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == false
+            continue
+        end
+        ceq = compartment.formula
+        _parameter_map_write *= "\t" * compartment_id * " =>" * ceq * ",\n"
+    end
+    _parameter_map_write *= "\t]"
+
+    return _parameters_write, _parameters_write_array, _parameter_map_write
+end

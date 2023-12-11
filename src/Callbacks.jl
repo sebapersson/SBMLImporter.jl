@@ -1,6 +1,6 @@
 # Function generating callbacksets for time-depedent SBML piecewise expressions, as callbacks are more efficient than
 # using ifelse (for example better integration stability, faster runtimes etc...)
-function create_callbacks_SBML(system::ODESystem,
+function create_callbacks_SBML(system,
                                model_SBML::ModelSBML,
                                model_name::String)::Tuple{String, String}
 
