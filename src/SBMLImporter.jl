@@ -7,6 +7,7 @@ using PrecompileTools
 using RuntimeGeneratedFunctions
 using SBML
 using SpecialFunctions
+using Catalyst
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
@@ -16,6 +17,7 @@ include("Build_model.jl")
 include("Callbacks.jl")
 include("Check_support.jl")
 include("SBML_to_ODESystem.jl")
+include("SBML_to_ReactionSystem.jl")
 include("Parameters.jl")
 include("Species.jl")
 include("Functions.jl")
