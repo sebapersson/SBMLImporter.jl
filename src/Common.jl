@@ -246,7 +246,7 @@ function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tup
     if reaction_system == false
         _species_write = "\tModelingToolkit.@variables t "
     else
-        _species_write = "\tCatalyst.@species t "
+        _species_write = "\tModelingToolkit.@variables t\n\tsps = Catalyst.@species "
     end
     _species_write_array = "\tspecies = ["
     _specie_map_write = "\tspecie_map = [\n"
@@ -306,7 +306,7 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
     if reaction_system == false
         _parameters_write = "\tModelingToolkit.@parameters "
     else
-        _parameters_write = "\tCatalyst.@parameters "
+        _parameters_write = "\tps = Catalyst.@parameters "
     end
     _parameters_write_array = "\tparameters = ["
     _parameter_map_write = "\tparameter_map = [\n"

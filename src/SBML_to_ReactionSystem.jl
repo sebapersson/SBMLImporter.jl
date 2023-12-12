@@ -74,22 +74,27 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     _species_write, _species_write_array, _specie_map_write = SBMLImporter.get_specie_map(model_SBML, reaction_system=true)
     _parameters_write, _parameters_write_array, _parameter_map_write = SBMLImporter.get_parameter_map(model_SBML, reaction_system=true)
 
-    # Reactions
-    _reactions_write = "\trn = @reaction_network begin\n"
     # Reaction stoichiometry and propensities
+    _reactions_write = "\treactions = [\n"
     for (id, r) in model_SBML.reactions
-        reactants_side = get_reaction_side(r, :Reactants)
-        products_side = get_reaction_side(r, :Products)
+        reactants_stoichiometries, reactants = get_reaction_side(r, :Reactants)
+        products_stoichiometries, products = get_reaction_side(r, :Products)
         propensity = r.kinetic_math
-        _reactions_write *= "\t\t" * propensity * ", " * reactants_side * " => " * products_side * "\n"
+        _reactions_write *= ("\t\tCatalyst.Reaction(" * propensity * ", " * 
+                             reactants * ", " * products * ", " *
+                             reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=true),\n")
     end
-    _reactions_write *= "\tend\n"
+    _reactions_write *= "\t]\n"
+    
+    # ReactionSystem
+    _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, sps, ps; name=:" * model_SBML.name * ")"
 
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
-    _function_write = "function get_reaction_system(foo)\n"
+    _function_write = "function get_reaction_system(foo)\n\n"
     _function_write *= _species_write * "\n"
-    _function_write *= _parameters_write * "\n"
-    _function_write *= _reactions_write * "\n"
+    _function_write *= _parameters_write * "\n\n"
+    _function_write *= _reactions_write * "\n\n"
+    _function_write *= _rn_write * "\n\n"
     _function_write *= _specie_map_write * "\n"
     _function_write *= _parameter_map_write * "\n"
     _function_write *= "\treturn rn, specie_map, parameter_map\nend"
@@ -99,7 +104,7 @@ end
 
 
 
-function get_reaction_side(r::ReactionSBML, which_side::Symbol)::String
+function get_reaction_side(r::ReactionSBML, which_side::Symbol)::Tuple{String, String}
 
     if which_side === :Reactants
         species, stoichiometries = r.reactants, r.reactants_stoichiometry
@@ -107,20 +112,18 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol)::String
         species, stoichiometries = r.products, r.products_stoichiometry
     end
 
-    ret = ""
+    _stoichiometries_str = "["
     for i in eachindex(species)
         stoichiometry = parse_stoichiometry_reaction_system(stoichiometries[i])
-        ret *= stoichiometry * species[i]
-        if i == length(species)
-            continue
-        end
-        ret *= " + "
+        _stoichiometries_str *= stoichiometry * ", "
     end
+    _stoichiometries_str = _stoichiometries_str[1:end-2] * "]"
+    _species_str = "[" * prod([s * ", " for s in species])[1:end-2] * "]"
 
-    if !isempty(ret)
-        return ret
+    if isempty(_stoichiometries_str)
+        return "nothing", "nothing"
     else
-        return "0"
+        return _stoichiometries_str, _species_str
     end
 end
 
