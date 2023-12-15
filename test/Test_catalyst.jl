@@ -42,7 +42,7 @@ function read_settings(settings_url::String)
 end
 
 
-function check_test_case(test_case, solver)
+#function check_test_case(test_case, solver)
     
     @info "Test case $test_case"
 
@@ -77,7 +77,7 @@ function check_test_case(test_case, solver)
     settings_url = base_url * "-settings.txt"
     species_test, species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(settings_url)
 
-    for sbml_url in sbml_urls
+    #for sbml_url in sbml_urls
 
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
         # c = n / V => n = c * V
@@ -167,11 +167,15 @@ end
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
 @testset "Catalyst" begin
-    for i in 1:5
-        test_case = "0000$i"
+    for i in 1:31
+        test_case = repeat("0", 5 - length(string(i))) *  string(i)
         check_test_case(test_case, solver)
     end
 end
 
-model_str, model_SBML = get_model_str("00005")
+
+test_case = "00031"
+check_test_case(test_case, solver)
+
+model_str, model_SBML = get_model_str(test_case)
 println(model_str)

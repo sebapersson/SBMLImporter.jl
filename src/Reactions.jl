@@ -24,9 +24,10 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
         for (i, reactant) in pairs(reaction.reactants)
             push!(model_SBML.species_in_reactions, reactant.species)
             if model_SBML.species[reactant.species].boundary_condition == true
-                continue
+                stoichiometry = "0"
+            else
+                stoichiometry = parse_stoichiometry(reactant, model_SBML)
             end
-            stoichiometry = parse_stoichiometry(reactant, model_SBML)
             compartment_scaling = get_compartment_scaling(reactant.species, formula, model_SBML)
             model_SBML.species[reactant.species].formula *= " - " * stoichiometry * compartment_scaling * "(" * formula * ")"
 
@@ -37,9 +38,10 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
         for (i, product) in pairs(reaction.products)
             push!(model_SBML.species_in_reactions, product.species)
             if model_SBML.species[product.species].boundary_condition == true
-                continue
+                stoichiometry = "0"
+            else
+                stoichiometry = parse_stoichiometry(product, model_SBML)
             end
-            stoichiometry = parse_stoichiometry(product, model_SBML)
             compartment_scaling = get_compartment_scaling(product.species, formula, model_SBML)
             model_SBML.species[product.species].formula *= " + " * stoichiometry * compartment_scaling * "(" * formula * ")"
 
