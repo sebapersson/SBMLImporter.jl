@@ -67,6 +67,8 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
                            Dict{String, String}(), # Ifelse to bool expression
                            Dict{String, Vector{String}}(), # Ifelse parameters
                            Vector{String}(undef, 0), # Rate rule variables
+                           Vector{String}(undef, 0), # Assignment rule variables
+                           Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0)) # Variables with piecewise
 

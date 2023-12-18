@@ -153,6 +153,9 @@ function remove_stoichiometry_math_from_species!(model_SBML::ModelSBML, libsbml_
             if specie_reference.id ∈ keys(model_SBML.species) 
                 delete!(model_SBML.species, specie_reference.id)
             end
+            if specie_reference.id ∈ model_SBML.assignment_rule_variables 
+                filter!(x -> x != specie_reference.id, model_SBML.assignment_rule_variables)
+            end
         end
     end
     return nothing

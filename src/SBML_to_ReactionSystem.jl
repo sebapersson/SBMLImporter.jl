@@ -19,13 +19,6 @@ function SBML_to_ReactionSystem(path_SBML::T;
         mkdir(dir_save)
     end
 
-    # Things I am pretty certain we do not support yet
-    if !isempty(model_SBML.algebraic_rules)
-        throw(SBMLSupport("For ReactionSystem we do not support algebraic rules"))
-    end
-    # Assignment rules might be handled correctly, however, I am not willing
-    # to die on the hill, but will be fixed downstream
-
     # Build the ReactionSystem
     _model = reactionsystem_from_SBML(model_SBML)
     _get_reaction_system = @RuntimeGeneratedFunction(Meta.parse(_model))
@@ -71,16 +64,19 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     _species_write, _species_write_array, _specie_map_write = SBMLImporter.get_specie_map(model_SBML, reaction_system=true)
     _parameters_write, _parameters_write_array, _parameter_map_write = SBMLImporter.get_parameter_map(model_SBML, reaction_system=true)
 
-    # In case a specie (or parameter) appear as a rate-rule they need to be treated as MTK variable for the 
-    # the downstream processing. This might turn the species block empty, then if must be removed 
+    # In case a specie (or parameter) appear as a rate-rule, algebraic or assignment rule they need to be treated as
+    # MTK variable for the the downstream processing. This might turn the species block empty, then it must be removed
     _variables_write = "\tvs = ModelingToolkit.@variables"
-    for variable in model_SBML.rate_rule_variables
+    rule_variables = vcat(model_SBML.assignment_rule_variables, model_SBML.rate_rule_variables,
+                          model_SBML.algebraic_rule_variables)
+    filter!(x -> x ∉ keys(model_SBML.generated_ids), rule_variables)
+    for variable in rule_variables
         _species_write = replace(_species_write, variable * "(t) " => "")
         _variables_write *= " " * variable * "(t)"
     end
-    if !isempty(model_SBML.rate_rule_variables)
+    if !isempty(rule_variables)
         _species_write *= "\n" * _variables_write * "\n"
-        no_species = all(occursin.(model_SBML.rate_rule_variables, keys(model_SBML.species)))
+        no_species = all([any(occursin.(x, rule_variables)) for x in keys(model_SBML.species)])
     else
         no_species = false
     end
@@ -98,28 +94,40 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
 
         # If it has already been assigned false we know that all stoichiometries are not
         # integer numbers, and if either of integer_stoichiometries are false integer_stoichiometries
-        # should become false 
+        # should become false
         if integer_stoichiometries == true
             integer_stoichiometries = !any([integer_stoichiometries1, integer_stoichiometries2] .== false)
         end
     end
-    # Rate rules are encoded directly as equations
-    for variable in model_SBML.rate_rule_variables
+
+    # Rules are directly encoded into the Catalyst.Reaction vector
+    for variable in vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables)
         if variable ∈ keys(model_SBML.species)
-            formula = model_SBML.species[variable].formula
+            @unpack formula, assignment_rule = model_SBML.species[variable]
+        elseif variable ∈ keys(model_SBML.parameters)
+            @unpack formula, assignment_rule = model_SBML.parameters[variable]
+        elseif variable ∈ keys(model_SBML.compartments)
+            @unpack formula, assignment_rule = model_SBML.compartments[variable]
         else
-            formula = model_SBML.parameters[variable].formula
+            continue
         end
-        _reactions_write *= "\t\tD(" * variable * ") ~ " * formula * ",\n"
+        if assignment_rule == true
+            _reactions_write *= "\t\t" * variable * " ~ " * formula * ",\n"
+        else
+            _reactions_write *= "\t\tD(" * variable * ") ~ " * formula * ",\n"
+        end
+    end
+    for formula in values(model_SBML.algebraic_rules)
+        _reactions_write *= "\t\t" * formula * ",\n"
     end
     _reactions_write *= "\t]\n"
 
     # ReactionSystem
     combinatoric_ratelaws_arg = integer_stoichiometries ? "true" : "false"
-    if isempty(model_SBML.rate_rule_variables)
+    if isempty(rule_variables)
         sps_arg = "sps"
     elseif no_species == false
-        sps_arg = "[sps, vs]"
+        sps_arg = "[sps; vs]"
     else
         sps_arg = "vs"
         _species_write = replace(_species_write, "sps = Catalyst.@species" => "")
@@ -152,6 +160,11 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol)::Tuple{String, S
         species, stoichiometries = r.products, r.products_stoichiometry
     end
 
+    # Case where we go from ϕ -> prod (or reverse)
+    if isempty(species)
+        return "nothing", "nothing", true
+    end
+
     integer_stoichiometry::Bool = true
     _stoichiometries_str = "["
     for i in eachindex(species)
@@ -164,20 +177,20 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol)::Tuple{String, S
     _stoichiometries_str = _stoichiometries_str[1:end-2] * "]"
     _species_str = "[" * prod([s * ", " for s in species])[1:end-2] * "]"
 
-    if isempty(_stoichiometries_str)
-        return "nothing", "nothing", true
-    else
-        return _stoichiometries_str, _species_str, integer_stoichiometry
-    end
+    return _stoichiometries_str, _species_str, integer_stoichiometry
 end
 
 
 # If possible parse stoichiometry to an integer
 function parse_stoichiometry_reaction_system(stoichiometry::String)::Tuple{String, Bool}
-    _stoichiometry = tryparse(Float64, stoichiometry)
-    try
-        return string(Int64(_stoichiometry)), true
-    catch
-        return string(_stoichiometry), false
+    if !isnothing(tryparse(Float64, stoichiometry))
+        _stoichiometry = parse(Float64, stoichiometry)
+        try
+            return string(Int64(_stoichiometry)), true
+        catch
+            return string(_stoichiometry), false
+        end
+    else
+        return stoichiometry, false
     end
 end
