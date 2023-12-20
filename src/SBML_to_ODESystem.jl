@@ -92,17 +92,13 @@ function SBML_to_ODESystem(path_SBML::T;
     end
 
     # Build callback functions 
-    _callbacks, _tstops = create_callbacks_SBML(ode_system, model_SBML, model_SBML.name)
-    get_callbacks = @RuntimeGeneratedFunction(Meta.parse(_callbacks))
-    cbset, ifelse_t0 = get_callbacks("https://xkcd.com/2694/") # Argument needed by @RuntimeGeneratedFunction
-    compute_tstops = @RuntimeGeneratedFunction(Meta.parse(_tstops))
+    cbset, compute_tstops, ifelse_t0, callback_str = create_callbacks_SBML(ode_system, model_SBML, model_SBML.name)
 
     # if model is written to file write the callback
     if write_to_file == true
         path_save = joinpath(dir_save, model_SBML.name * "_callbacks.jl")
         io = open(path_save, "w")
-        write(io, _callbacks * "\n\n")
-        write(io, _tstops)
+        write(io, callback_str)
         close(io)
     end
 
