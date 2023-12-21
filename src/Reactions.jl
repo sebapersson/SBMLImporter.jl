@@ -32,7 +32,9 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
             model_SBML.species[reactant.species].formula *= " - " * stoichiometry * compartment_scaling * "(" * formula * ")"
 
             reactants[i] = reactant.species
-            reactants_stoichiometry[i] = stoichiometry
+            # In case a specie is given in unit concentration we must scale the stoichiometry, this is bad for simulations 
+            # with Gillespie, however, concentrations and Gillespie do not match anyhow
+            reactants_stoichiometry[i] = stoichiometry * get_compartment_scaling(reactant.species, formula, model_SBML; stoichiometry=true)
         end
 
         for (i, product) in pairs(reaction.products)
@@ -46,7 +48,8 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
             model_SBML.species[product.species].formula *= " + " * stoichiometry * compartment_scaling * "(" * formula * ")"
 
             products[i] = product.species
-            products_stoichiometry[i] = stoichiometry
+            # See comment above regarding scaling for species given in concentration
+            products_stoichiometry[i] = stoichiometry * get_compartment_scaling(product.species, formula, model_SBML; stoichiometry=true)
         end
 
         model_SBML.reactions[id] = ReactionSBML(id, formula, products, products_stoichiometry, reactants, reactants_stoichiometry)
@@ -59,23 +62,24 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
 end
 
 
-function get_compartment_scaling(specie::String, formula::String, model_SBML::ModelSBML)::String
+function get_compartment_scaling(specie::String, formula::String, model_SBML::ModelSBML; 
+                                 stoichiometry::Bool=false)::String
 
     # The case of the specie likelly being given via an algebraic rule
     if isempty(formula)
-        return "*"
+        return stoichiometry == false ? "*" : ""
     end
 
     if model_SBML.species[specie].only_substance_units == true
-        return "*"
+        return stoichiometry == false ? "*" : ""
     end
 
     if model_SBML.species[specie].unit == :Amount
-        return "*"
+        return stoichiometry == false ? "*" : ""
     end
 
     if model_SBML.species[specie].unit == :Concentration
-        return "/" * model_SBML.species[specie].compartment * "*"
+        return stoichiometry == false ? "/" * model_SBML.species[specie].compartment * "*" : "/" * model_SBML.species[specie].compartment 
     end
 end
 

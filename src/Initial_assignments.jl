@@ -24,15 +24,24 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
             if assign_id ∈ keys(libsbml_model.initial_assignments) && assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.parameters[assign_id].initial_value = formula
             else
+                # Here the parameter should be treated as given by an assignment rule, as it likelly is non-constant 
+                # and will enter the final model similar as assignment rules
                 model_SBML.parameters[assign_id].formula = formula
+                model_SBML.parameters[assign_id].initial_value = formula
+                push!(model_SBML.assignment_rule_variables, assign_id)
+                model_SBML.parameters[assign_id].assignment_rule = true
             end
 
         elseif assign_id ∈ keys(model_SBML.compartments)
             if assign_id ∈ keys(libsbml_model.initial_assignments) && assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.compartments[assign_id].initial_value = formula
             else
+                # Here the compartment should be treated as given by an assignment rule, as it likelly is non-constant 
+                # and will enter the final model similar as assignment rules
                 model_SBML.compartments[assign_id].formula = formula
                 model_SBML.compartments[assign_id].initial_value = formula
+                push!(model_SBML.assignment_rule_variables, assign_id)
+                model_SBML.compartments[assign_id].assignment_rule = true
             end            
 
         # At this point the assignment should be accepted as a state in the model, as it is neither a

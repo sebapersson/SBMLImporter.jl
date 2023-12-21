@@ -24,18 +24,14 @@ function SBML_to_ReactionSystem(path_SBML::T;
     _get_reaction_system = @RuntimeGeneratedFunction(Meta.parse(_model))
     reaction_system, specie_map, parameter_map = _get_reaction_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
 
-    # Build callback functions
-    _callbacks, _tstops = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
-    get_callbacks = @RuntimeGeneratedFunction(Meta.parse(_callbacks))
-    cbset, ifelse_t0 = get_callbacks("https://xkcd.com/2694/") # Argument needed by @RuntimeGeneratedFunction
-    compute_tstops = @RuntimeGeneratedFunction(Meta.parse(_tstops))
+    # Build callback functions 
+    cbset, compute_tstops, ifelse_t0, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
 
     # if model is written to file write the callback
     if write_to_file == true
         path_save = joinpath(dir_save, model_SBML.name * "_callbacks.jl")
         io = open(path_save, "w")
-        write(io, _callbacks * "\n\n")
-        write(io, _tstops)
+        write(io, callback_str)
         close(io)
     end
 
@@ -67,8 +63,8 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     # In case a specie (or parameter) appear as a rate-rule, algebraic or assignment rule they need to be treated as
     # MTK variable for the the downstream processing. This might turn the species block empty, then it must be removed
     _variables_write = "\tvs = ModelingToolkit.@variables"
-    rule_variables = vcat(model_SBML.assignment_rule_variables, model_SBML.rate_rule_variables,
-                          model_SBML.algebraic_rule_variables)
+    rule_variables = unique(vcat(model_SBML.assignment_rule_variables, model_SBML.rate_rule_variables,
+                                 model_SBML.algebraic_rule_variables))
     filter!(x -> x ∉ keys(model_SBML.generated_ids), rule_variables)
     for variable in rule_variables
         _species_write = replace(_species_write, variable * "(t) " => "")
@@ -101,20 +97,20 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     end
 
     # Rules are directly encoded into the Catalyst.Reaction vector
-    for variable in vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables)
+    for variable in unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables))
         if variable ∈ keys(model_SBML.species)
-            @unpack formula, assignment_rule = model_SBML.species[variable]
+            @unpack formula, assignment_rule, rate_rule = model_SBML.species[variable]
         elseif variable ∈ keys(model_SBML.parameters)
-            @unpack formula, assignment_rule = model_SBML.parameters[variable]
+            @unpack formula, assignment_rule, rate_rule = model_SBML.parameters[variable]
         elseif variable ∈ keys(model_SBML.compartments)
-            @unpack formula, assignment_rule = model_SBML.compartments[variable]
+            @unpack formula, assignment_rule, rate_rule = model_SBML.compartments[variable]
         else
             continue
         end
-        if assignment_rule == true
-            _reactions_write *= "\t\t" * variable * " ~ " * formula * ",\n"
-        else
+        if rate_rule == true
             _reactions_write *= "\t\tD(" * variable * ") ~ " * formula * ",\n"
+        elseif assignment_rule == true
+            _reactions_write *= "\t\t" * variable * " ~ " * formula * ",\n"
         end
     end
     for formula in values(model_SBML.algebraic_rules)
@@ -132,15 +128,20 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
         sps_arg = "vs"
         _species_write = replace(_species_write, "sps = Catalyst.@species" => "")
     end
-    _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=:" * model_SBML.name * ", combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+    # Parameters might be an empty set
+    if _parameters_write != "\tps = Catalyst.@parameters "
+        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=:" * model_SBML.name * ", combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+    else
+        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, Any[]; name=:" * model_SBML.name * ", combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+    end
 
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
     _function_write = "function get_reaction_system(foo)\n\n"
     _function_write *= _species_write * "\n"
-    _function_write *= _parameters_write * "\n\n"
-    if !isempty(model_SBML.rate_rule_variables)
-        _function_write *= "\tD = Differential(t)\n\n"
+    if _parameters_write != "\tps = Catalyst.@parameters "
+        _function_write *= _parameters_write * "\n\n"
     end
+    _function_write *= "\tD = Differential(t)\n\n"
     _function_write *= _reactions_write * "\n\n"
     _function_write *= _rn_write * "\n\n"
     _function_write *= _specie_map_write * "\n"

@@ -33,7 +33,7 @@ function include_event_parameters_in_model!(model_SBML::ModelSBML)::Nothing
 
     # Sometimes parameter can be non-constant, but still have a constant rhs and they change value
     # because of event assignments. This must be captured by setting the parameter to have a zero 
-    # derivative so it is not simplified away later.
+    # derivative so it is not simplified away later with structurally_simplify
     for (parameter_id, parameter) in model_SBML.parameters
 
         if parameter.algebraic_rule == true || parameter.rate_rule == true || parameter.constant == true
@@ -50,6 +50,7 @@ function include_event_parameters_in_model!(model_SBML::ModelSBML)::Nothing
         parameter.rate_rule = true
         parameter.initial_value = parameter.formula
         parameter.formula = "0.0"
+        push!(model_SBML.rate_rule_variables, parameter_id)
     end
     # Similar holds for compartments 
     for (compartment_id, compartment) in model_SBML.compartments
@@ -64,6 +65,7 @@ function include_event_parameters_in_model!(model_SBML::ModelSBML)::Nothing
         compartment.rate_rule = true
         compartment.initial_value = compartment.formula
         compartment.formula = "0.0"
+        push!(model_SBML.rate_rule_variables, compartment_id)
     end
 
     return nothing

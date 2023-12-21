@@ -315,6 +315,10 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
         if parameter.constant == false
             continue
         end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && parameter.assignment_rule == true
+            continue
+        end
         _parameters_write *= parameter_id * " "
         _parameters_write_array *= parameter_id * ", "
     end
@@ -322,11 +326,15 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
         if compartment.constant == false
             continue
         end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && compartment.assignment_rule == true
+            continue
+        end
         _parameters_write *= compartment_id * " "
         _parameters_write_array *= compartment_id * ", "
     end
     # Special case where we do not have any parameters
-    if length(_parameters_write) == 29
+    if length(_parameters_write) == 29 && _parameters_write[1:14] != "\tps = Catalyst"
         _parameters_write = ""
         _parameters_write_array *= "]"
     else

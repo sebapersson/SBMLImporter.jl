@@ -171,7 +171,7 @@ end
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
 @testset "Catalyst" begin
-    for i in 60:100
+    for i in 1:900
 
         test_case = repeat("0", 5 - length(string(i))) *  string(i)
 
@@ -384,7 +384,7 @@ solver = Rodas4P()
 end
 
 
-test_case = "00068"
+test_case = "00480"
 check_test_case(test_case, solver)
 
 model_str, model_SBML = get_model_str(test_case)
