@@ -54,6 +54,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
 
     # An intermedidate struct storing relevant model informaiton needed for
     # formulating an ODESystem and callback functions
+    conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
     model_SBML = ModelSBML(isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
@@ -70,7 +71,8 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
                            Vector{String}(undef, 0), # Assignment rule variables
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
-                           Vector{String}(undef, 0)) # Variables with piecewise
+                           Vector{String}(undef, 0), 
+                           conversion_factor) # Variables with piecewise
 
     parse_SBML_species!(model_SBML, libsbml_model)
 

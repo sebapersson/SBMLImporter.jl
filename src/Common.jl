@@ -128,6 +128,9 @@ function replace_rateOf!(model_SBML::ModelSBML)::Nothing
     for (rule_id, rule) in model_SBML.algebraic_rules
         model_SBML.algebraic_rules[rule_id] = replace_rateOf(rule, model_SBML)
     end
+    for (reaction_id, reaction) in model_SBML.reactions
+        reaction.kinetic_math = replace_rateOf(reaction.kinetic_math, model_SBML)
+    end
 
     return nothing
 end
@@ -213,6 +216,14 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
     for (specie_id, specie) in model_SBML.species
         for (reaction_id, reaction) in model_SBML.reactions
             specie.formula = replace_variable(specie.formula, reaction_id, reaction.kinetic_math)
+        end
+    end
+    for (reaction_id, reaction) in model_SBML.reactions
+        for (_reaction_id, _reaction) in model_SBML.reactions
+            if reaction_id == _reaction_id
+                continue
+            end
+            reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id, _reaction.kinetic_math)
         end
     end
 

@@ -56,6 +56,16 @@ end
 
 function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
 
+    # Check if model is empty of derivatives if the case add dummy state to be able to
+    # simulate the model
+    if ((isempty(model_SBML.species) || sum([!s.assignment_rule for s in values(model_SBML.species)]) == 0) &&
+        (isempty(model_SBML.parameters) || sum([p.rate_rule for p in values(model_SBML.parameters)]) == 0) &&
+        (isempty(model_SBML.compartments) || sum([c.rate_rule for c in values(model_SBML.compartments)]) == 0))
+
+        model_SBML.species["foo"] = SpecieSBML("foo", false, false, "1.0", "0.0", "1.0", "", :Amount,
+                                                  false, false, false, false)
+    end
+
     # Setup Catalyst ReactionNetwork
     _species_write, _species_write_array, _specie_map_write = SBMLImporter.get_specie_map(model_SBML, reaction_system=true)
     _parameters_write, _parameters_write_array, _parameter_map_write = SBMLImporter.get_parameter_map(model_SBML, reaction_system=true)
@@ -63,16 +73,16 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     # In case a specie (or parameter) appear as a rate-rule, algebraic or assignment rule they need to be treated as
     # MTK variable for the the downstream processing. This might turn the species block empty, then it must be removed
     _variables_write = "\tvs = ModelingToolkit.@variables"
-    rule_variables = unique(vcat(model_SBML.assignment_rule_variables, model_SBML.rate_rule_variables,
+    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
                                  model_SBML.algebraic_rule_variables))
     filter!(x -> x ∉ keys(model_SBML.generated_ids), rule_variables)
     for variable in rule_variables
-        _species_write = replace(_species_write, variable * "(t) " => "")
+        _species_write = replace(_species_write, " " * variable * "(t)" => "")
         _variables_write *= " " * variable * "(t)"
     end
     if !isempty(rule_variables)
         _species_write *= "\n" * _variables_write * "\n"
-        no_species = all([any(occursin.(x, rule_variables)) for x in keys(model_SBML.species)])
+        no_species = all([x ∈ rule_variables for x in keys(model_SBML.species)])
     else
         no_species = false
     end
@@ -81,8 +91,8 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML)::String
     integer_stoichiometries::Bool = true
     _reactions_write = "\treactions = [\n"
     for (id, r) in model_SBML.reactions
-        reactants_stoichiometries, reactants, integer_stoichiometries1 = get_reaction_side(r, :Reactants)
-        products_stoichiometries, products, integer_stoichiometries2 = get_reaction_side(r, :Products)
+        reactants_stoichiometries, reactants, integer_stoichiometries1 = get_reaction_side(r, :Reactants, model_SBML)
+        products_stoichiometries, products, integer_stoichiometries2 = get_reaction_side(r, :Products, model_SBML)
         propensity = r.kinetic_math
         _reactions_write *= ("\t\tCatalyst.Reaction(" * propensity * ", " *
                              reactants * ", " * products * ", " *
@@ -153,7 +163,8 @@ end
 
 
 
-function get_reaction_side(r::ReactionSBML, which_side::Symbol)::Tuple{String, String, Bool}
+function get_reaction_side(r::ReactionSBML, which_side::Symbol, 
+                           model_SBML::ModelSBML)::Tuple{String, String, Bool}
 
     if which_side === :Reactants
         species, stoichiometries = r.reactants, r.reactants_stoichiometry
@@ -170,9 +181,18 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol)::Tuple{String, S
     _stoichiometries_str = "["
     for i in eachindex(species)
         stoichiometry, _integer_stoichiometry = parse_stoichiometry_reaction_system(stoichiometries[i])
-        _stoichiometries_str *= stoichiometry * ", "
-        if integer_stoichiometry == true
-            integer_stoichiometry = _integer_stoichiometry
+        
+        # SBML models can have conversion factors that scale stoichiometry
+        if isempty(model_SBML.species[species[i]].conversion_factor) && isempty(model_SBML.conversion_factor)
+            _stoichiometries_str *= stoichiometry * ", "
+            if integer_stoichiometry == true
+                integer_stoichiometry = _integer_stoichiometry
+            end
+        else
+            cv_specie = model_SBML.species[species[i]].conversion_factor
+            cv = isempty(cv_specie) ? model_SBML.conversion_factor : cv_specie
+            _stoichiometries_str *= stoichiometry * "*" * cv * ", "
+            integer_stoichiometry = false
         end
     end
     _stoichiometries_str = _stoichiometries_str[1:end-2] * "]"
