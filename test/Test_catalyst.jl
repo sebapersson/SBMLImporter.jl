@@ -94,6 +94,8 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
+        #SBMLImporter.SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true, write_to_file=true)
+
         reaction_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
         if isempty(model_SBML.algebraic_rules)
             ode_system = structural_simplify(convert(ODESystem, reaction_system))
@@ -171,7 +173,7 @@ end
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
 @testset "Catalyst" begin
-    for i in 1:900
+    for i in 1:1821
 
         test_case = repeat("0", 5 - length(string(i))) *  string(i)
 
@@ -379,13 +381,16 @@ solver = Rodas4P()
             continue
         end
 
+        # Inf or NaN in initial assignments
+        if test_case ∈ ["00950", "00951"]
+            continue
+        end
+
+        # Reaction cannot be empty 
+        if test_case ∈ ["01245", "01246", "01300", "01301", "01302", "01303", "01304", "01305", "01306"]
+            continue
+        end
+
         check_test_case(test_case, solver)
     end
 end
-
-
-test_case = "00480"
-check_test_case(test_case, solver)
-
-model_str, model_SBML = get_model_str(test_case)
-println(model_str)

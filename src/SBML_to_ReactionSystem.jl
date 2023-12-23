@@ -176,27 +176,53 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol,
     if isempty(species)
         return "nothing", "nothing", true
     end
+    # Edge case for boundary condition and rate rule
+    if length(species) == 1
+        specie = species[1]
+        @unpack rate_rule, boundary_condition = model_SBML.species[specie]
+        if rate_rule == true && boundary_condition == true
+            return "nothing", "nothing", true
+        end
+    end
 
+    # Process the _toichiometry for the reaction, species vector is not 
+    # required to be unique hence potential double counting must be 
+    # considered 
+    k = 1
+    _stoichiometries = Vector{String}(undef, length(unique(species)))
+    _species_parsed = fill("", length(unique(species)))
     integer_stoichiometry::Bool = true
-    _stoichiometries_str = "["
     for i in eachindex(species)
         stoichiometry, _integer_stoichiometry = parse_stoichiometry_reaction_system(stoichiometries[i])
         
         # SBML models can have conversion factors that scale stoichiometry
         if isempty(model_SBML.species[species[i]].conversion_factor) && isempty(model_SBML.conversion_factor)
-            _stoichiometries_str *= stoichiometry * ", "
+            _stoichiometry = stoichiometry 
             if integer_stoichiometry == true
                 integer_stoichiometry = _integer_stoichiometry
             end
         else
             cv_specie = model_SBML.species[species[i]].conversion_factor
             cv = isempty(cv_specie) ? model_SBML.conversion_factor : cv_specie
-            _stoichiometries_str *= stoichiometry * "*" * cv * ", "
+            _stoichiometry = stoichiometry * "*" * cv 
             integer_stoichiometry = false
         end
+
+        # Species are allowed to be repeated in SBML reactions, this is not 
+        # allowed in Catalyst, therefore stoichiometry for these repititions 
+        # are added up 
+        if species[i] ∈ _species_parsed
+            _i = findfirst(x -> x == species[i], _species_parsed)
+            _stoichiometries[_i] *= "+" * _stoichiometry
+        else
+            _species_parsed[k] = species[i]
+            _stoichiometries[k] = _stoichiometry
+            k += 1
+        end
+
     end
-    _stoichiometries_str = _stoichiometries_str[1:end-2] * "]"
-    _species_str = "[" * prod([s * ", " for s in species])[1:end-2] * "]"
+    _stoichiometries_str = "[" * prod([s * ", " for s in _stoichiometries])[1:end-2] * "]"
+    _species_str = "[" * prod([s * ", " for s in _species_parsed])[1:end-2] * "]"
 
     return _stoichiometries_str, _species_str, integer_stoichiometry
 end
