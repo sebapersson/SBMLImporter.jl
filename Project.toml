@@ -14,6 +14,7 @@ SBML = "e5567a89-2604-4b09-9718-f5f78e97c3bb"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
+Catalyst = "13"
 DiffEqCallbacks = "2"
 ModelingToolkit = "8"
 OrdinaryDiffEq = "6"

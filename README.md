@@ -1,15 +1,15 @@
 # SBMLImporter.jl
-*Julia Importer for ODE Models in the SBML Format*
+*Julia Importer for Dynamic Models in the SBML Format*
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/dev/)
 [![Build Status](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
-SBMLImporter.jl is a Julia importer for ODE models specified in the Systems Biology Markup Language (SBML). It supports many SBML features, such as events, rate-, assignment-, algebraic-rules, dynamic compartment size, and conversion factors. For a detailed list of supported features, see below.
+SBMLImporter.jl is a Julia importer for dynamic models specified in the Systems Biology Markup Language (SBML) into a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem` - which allows for model simulations with stochastic (Gillespie, SDE) or deterministic (ODE) simulators. It supports many SBML features, such as events, rate-, assignment-, algebraic-rules, dynamic compartment size, and conversion factors. For a detailed list of supported features, see below.
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
-Compared to [SBMLToolkit](https://github.com/SciML/SBMLToolkit.jl), SBMLImporter.jl focuses exclusively on ODE models. A list of differences compared to SBMLToolkit is provided below. For constraint-based modeling, see [COBREXA.jl](https://github.com/LCSB-BioCore/COBREXA.jl).
+A list of differences compared to [SBMLToolkit](https://github.com/SciML/SBMLToolkit.jl) is provided below. For constraint-based modeling, see [COBREXA.jl](https://github.com/LCSB-BioCore/COBREXA.jl).
 
 ## Installation
 
@@ -27,29 +27,36 @@ julia> using Pkg; Pkg.add("SBMLImporter")
 
 ## Quick Start
 
-Importing an SBML model is straightforward. Given the path to a SBML file do:
+Importing an SBML model is straightforward. Given the path to a SBML file to import into a `ReactionSystem` do:
 
 ```julia
 using SBMLImporter
-sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+rn, specie_map, parameter_map = SBML_to_ReactionSystem(path_SBML)
 ```
 
-Here, `sys` is the `ODESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model, construct an `ODEProblem` and solve it using any ODE solver from [OrdinaryDiffeq](https://github.com/SciML/OrdinaryDiffEq.jl):
+Here, `rn` is the `ReactionSystem` that for example can be converted into an `ODESystem` or a `SDESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model with an ODE-solver, construct an `ODEProblem` and solve it using any ODE solver from [OrdinaryDiffeq](https://github.com/SciML/OrdinaryDiffEq.jl):
 
 ```julia
 using OrdinaryDiffEq
+sys = convert(ODESystem, rn)
 tspan = (0, 10.0)
 prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
 sol = solve(prob, Rodas5P())
 ```
 
-To import more advanced models with events and/or piecewise (ifelse) expressions, see the documentation.
+Alternatively, the model can be imported directly into an `ODESystem` with:
+
+```julia
+sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+```
+
+To import more advanced models with events and/or piecewise (ifelse) expressions, see the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
 
 ## Differences compared to SBMLToolkit
 
 The key differences between SBMLToolkit and SBMLImporter are:
 
-* SBMLToolkit imports a models as a `ReactionSystem`, allowing simulation with the Gillespie algorithm or transformation into the Langevin SDE. However, it only works with (and transforms) species to be in amount. SBMLImporter only imports a model as an `ODESystems`, and supports species in amount and/or concentration.
+* SBMLToolkit works with (and transforms) species to be in amount. SBMLImporter only imports a model as an `ODESystems`, and supports species in amount and/or concentration.
 
 * SBMLToolkit has a cleaner interface, as it performs all model processing via Symbolics.jl.
 
