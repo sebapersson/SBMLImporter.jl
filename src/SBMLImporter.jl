@@ -42,6 +42,6 @@ include("Reactions.jl")
     sol = solve(ode_problem, Rodas5P(), abstol=1e-8, reltol=1e-8, tstops=tstops, callback=cb)
 end
 
-export SBML_to_ODESystem
+export SBML_to_ODESystem, SBML_to_ReactionSystem
 
 end

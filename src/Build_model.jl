@@ -55,7 +55,9 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
     # An intermedidate struct storing relevant model informaiton needed for
     # formulating an ODESystem and callback functions
     conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
-    model_SBML = ModelSBML(isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name,
+    model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
+    model_name = replace(model_name, " " => "_")
+    model_SBML = ModelSBML(model_name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
                            Dict{String, CompartmentSBML}(),

@@ -80,19 +80,18 @@ function SBML_to_ODESystem(path_SBML::T;
     end
     path_save_model = joinpath(dir_save, model_SBML.name * ".jl")
 
-    # Build the ODESystem
-    _model = odesystem_from_SBML(model_SBML, path_save_model, model_SBML.name, write_to_file)
-    _get_ode_system = @RuntimeGeneratedFunction(Meta.parse(_model))
-    _ode_system, specie_map, parameter_map = _get_ode_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
-    # For a DAE we need special processing to rewrite it into an ODE 
-    if isempty(model_SBML.algebraic_rules)
-        ode_system = structural_simplify(_ode_system)
-    else
-        ode_system = structural_simplify(dae_index_lowering(_ode_system))
-    end
-
+    # Build the ReactionSystem
+    _model = reactionsystem_from_SBML(model_SBML, path_save_model, write_to_file)
+    _get_reaction_system = @RuntimeGeneratedFunction(Meta.parse(_model))
+    reaction_system, specie_map, parameter_map = _get_reaction_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
     # Build callback functions 
-    cbset, compute_tstops, ifelse_t0, callback_str = create_callbacks_SBML(ode_system, model_SBML, model_SBML.name)
+    cbset, compute_tstops, ifelse_t0, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
+    # Convert into an ODESystem
+    if isempty(model_SBML.algebraic_rules)
+        ode_system = structural_simplify(convert(ODESystem, reaction_system))
+    else
+        ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, reaction_system)))
+    end
 
     # if model is written to file write the callback
     if write_to_file == true
@@ -118,117 +117,4 @@ function SBML_to_ODESystem(path_SBML::T;
         verbose && @info "SBML model with piecewise rewritten to event - output returned as odesys, specie_map, parameter_map, cbset, compute_tstops, cb_t0\nFor how to simulate model see documentation"
         return ode_system, specie_map, parameter_map, cbset, compute_tstops, ifelse_t0
     end
-end
-
-
-function odesystem_from_SBML(model_SBML::ModelSBML,
-                             path_save_model::String,
-                             model_name::String,
-                             write_to_file::Bool)::String
-
-    _eqs_write = "\teqs = [\n"
-    _ODESystem_write = "\t@named sys = ODESystem(eqs, t, species, parameters)"
-
-    # Check if model is empty of derivatives if the case add dummy state to be able to
-    # simulate the model
-    if ((isempty(model_SBML.species) || sum([!s.assignment_rule for s in values(model_SBML.species)]) == 0) &&
-        (isempty(model_SBML.parameters) || sum([p.rate_rule for p in values(model_SBML.parameters)]) == 0) &&
-        (isempty(model_SBML.compartments) || sum([c.rate_rule for c in values(model_SBML.compartments)]) == 0))
-
-        model_SBML.species["foo"] = SpecieSBML("foo", false, false, "1.0", "0.0", "1.0", "", :Amount,
-                                                  false, false, false, false)
-    end
-
-    _species_write, _species_write_array, _specie_map_write = get_specie_map(model_SBML)
-    _parameters_write, _parameters_write_array, _parameter_map_write = get_parameter_map(model_SBML)
-
-    #=
-        Build the model equations
-    =#
-    # Species
-    for (specie_id, specie) in model_SBML.species
-
-        if specie.algebraic_rule == true
-            continue
-        end
-
-        formula = isempty(specie.formula) ? "0.0" : specie.formula
-        if specie.assignment_rule == true
-            eq = specie_id * " ~ " * formula
-        else
-            eq = "D(" * specie_id * ") ~ " * formula
-        end
-        _eqs_write *= "\t" * eq * ",\n"
-    end
-    # Parameters
-    for (parameter_id, parameter) in model_SBML.parameters
-
-        if parameter.constant == true || parameter.algebraic_rule == true
-            continue
-        end
-
-        if parameter.rate_rule == false
-            eq = parameter_id * " ~ " * parameter.formula
-        else
-            eq = "D(" * parameter_id * ") ~ " * parameter.formula
-        end
-        _eqs_write *= "\t" * eq * ",\n"
-    end
-    # Compartments
-    for (compartment_id, compartment) in model_SBML.compartments
-
-        if compartment.constant == true || compartment.algebraic_rule == true
-            continue
-        end
-
-        if compartment.rate_rule == false
-            eq = compartment_id * " ~ " * compartment.formula
-        else
-            eq = "D(" * compartment_id * ") ~ " * compartment.formula
-        end
-        _eqs_write *= "\t" * eq * ",\n"
-    end
-    # Algebraic rules
-    for rule_formula in values(model_SBML.algebraic_rules)
-        _eqs_write *= "\t" * rule_formula * ",\n"
-    end
-    _eqs_write *= "\t]"
-
-    ### Writing to file
-    model_name = replace(model_name, "-" => "_")
-    io = IOBuffer()
-    println(io, "function get_ODESystem_" * model_name * "(foo)")
-    println(io, "\t# Model name: " * model_name)
-    println(io, "")
-
-    println(io, _species_write)
-    println(io, _species_write_array)
-    println(io, "")
-    println(io, _parameters_write)
-    println(io, _parameters_write_array)
-    println(io, "")
-    println(io, "    D = Differential(t)")
-    println(io, "")
-    println(io, _eqs_write)
-    println(io, "")
-    println(io, _ODESystem_write)
-    println(io, "")
-    println(io, _specie_map_write)
-    println(io, "")
-    println(io, "\t# SBML file parameter values")
-    println(io, _parameter_map_write)
-    println(io, "")
-    println(io, "    return sys, specie_map, parameter_map")
-    println(io, "")
-    println(io, "end")
-    model_str = String(take!(io))
-    close(io)
-
-    # In case user request file to be written
-    if write_to_file == true
-        open(path_save_model, "w") do f
-            write(f, model_str)
-        end
-    end
-    return model_str
 end
