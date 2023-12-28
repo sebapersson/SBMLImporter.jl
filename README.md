@@ -56,7 +56,7 @@ To import more advanced models with events and/or piecewise (ifelse) expressions
 
 The key differences between SBMLToolkit and SBMLImporter are:
 
-* SBMLToolkit works with (and transforms) species to be in amount. SBMLImporter only imports a model as an `ODESystems`, and supports species in amount and/or concentration.
+* SBMLToolkit works with (and transforms) species to be in amount. SBMLImporter supports species in amount and/or concentration.
 
 * SBMLToolkit has a cleaner interface, as it performs all model processing via Symbolics.jl.
 
@@ -68,7 +68,7 @@ The key differences between SBMLToolkit and SBMLImporter are:
 
 ## Supported SBML Features
 
-SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1268 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. The features not supported are:
+SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1257 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. The features not supported are:
 
 * Delay (creating a delay-differential-equations)
 * Events with delay
