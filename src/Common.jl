@@ -128,6 +128,9 @@ function replace_rateOf!(model_SBML::ModelSBML)::Nothing
     for (rule_id, rule) in model_SBML.algebraic_rules
         model_SBML.algebraic_rules[rule_id] = replace_rateOf(rule, model_SBML)
     end
+    for (reaction_id, reaction) in model_SBML.reactions
+        reaction.kinetic_math = replace_rateOf(reaction.kinetic_math, model_SBML)
+    end
 
     return nothing
 end
@@ -215,6 +218,14 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
             specie.formula = replace_variable(specie.formula, reaction_id, reaction.kinetic_math)
         end
     end
+    for (reaction_id, reaction) in model_SBML.reactions
+        for (_reaction_id, _reaction) in model_SBML.reactions
+            if reaction_id == _reaction_id
+                continue
+            end
+            reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id, _reaction.kinetic_math)
+        end
+    end
 
     return nothing
 end
@@ -246,7 +257,7 @@ function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tup
     if reaction_system == false
         _species_write = "\tModelingToolkit.@variables t "
     else
-        _species_write = "\tCatalyst.@species t "
+        _species_write = "\tModelingToolkit.@variables t\n\tsps = Catalyst.@species "
     end
     _species_write_array = "\tspecies = ["
     _specie_map_write = "\tspecie_map = [\n"
@@ -306,13 +317,17 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
     if reaction_system == false
         _parameters_write = "\tModelingToolkit.@parameters "
     else
-        _parameters_write = "\tCatalyst.@parameters "
+        _parameters_write = "\tps = Catalyst.@parameters "
     end
     _parameters_write_array = "\tparameters = ["
     _parameter_map_write = "\tparameter_map = [\n"
     
     for (parameter_id, parameter) in model_SBML.parameters
         if parameter.constant == false
+            continue
+        end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && parameter.assignment_rule == true
             continue
         end
         _parameters_write *= parameter_id * " "
@@ -322,11 +337,15 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
         if compartment.constant == false
             continue
         end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && compartment.assignment_rule == true
+            continue
+        end
         _parameters_write *= compartment_id * " "
         _parameters_write_array *= compartment_id * ", "
     end
     # Special case where we do not have any parameters
-    if length(_parameters_write) == 29
+    if length(_parameters_write) == 29 && _parameters_write[1:14] != "\tps = Catalyst"
         _parameters_write = ""
         _parameters_write_array *= "]"
     else

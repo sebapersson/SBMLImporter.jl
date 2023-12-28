@@ -1,5 +1,5 @@
 using SafeTestsets
 
 @safetestset "SBML test-suite" begin
-    include("Testsuite.jl")
+    include("Testsuite_catalyst.jl")
 end

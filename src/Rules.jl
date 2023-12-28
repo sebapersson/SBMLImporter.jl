@@ -3,6 +3,7 @@ function parse_SBML_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::No
     for rule in libsbml_model.rules
 
         if rule isa SBML.AssignmentRule
+            push!(model_SBML.assignment_rule_variables, rule.variable)
             parse_assignment_rule!(model_SBML, rule, libsbml_model)
         end
 
@@ -191,13 +192,13 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
 
         push!(candidates, specie_id)
     end
-    # To be set as algebraic rule variable a soecue must not appear in reactions, 
+    # To be set as algebraic rule variable a specie must not appear in reactions, 
     # or be a boundary condition. Sometimes several species can fulfill this for 
     # a single rule, in this case we choose the first valid 
     if !isempty(candidates)
         model_SBML.species[candidates[1]].algebraic_rule = true
+        push!(model_SBML.algebraic_rule_variables, candidates[1])
     end
-
 
     for (parameter_id, parameter) in model_SBML.parameters
         if parameter.rate_rule == true || parameter.assignment_rule == true || parameter.constant == true
@@ -214,6 +215,7 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
         should_continue == true && continue
 
         parameter.algebraic_rule = true
+        push!(model_SBML.algebraic_rule_variables, parameter.name)
     end
 
     for (compartment_id, compartment) in model_SBML.compartments
@@ -231,6 +233,7 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
         should_continue == true && continue
 
         compartment.algebraic_rule = true
+        push!(model_SBML.algebraic_rule_variables, compartment.name)
     end
 
     return nothing

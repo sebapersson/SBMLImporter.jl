@@ -1,32 +1,32 @@
 # SBMLImporter.jl
 
-This is the documentation for SBMLImporter.jl, a Julia importer for ODE models specified in the Systems Biology Markup Language (SBML). This importer supports many SBML features such as events, dynamic compartments size, rate-, assignment-, and algebraic-rules. For a list of supported features, see [here](@ref support). For a list of differences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), see the [README](https://github.com/sebapersson/SBMLImporter.jl).
+This is the documentation for SBMLImporter.jl, a Julia importer for dynamic models specified in the Systems Biology Markup Language (SBML). This importer supports many SBML features such as events, dynamic compartments size, rate-, assignment-, and algebraic-rules. For a list of supported features, see [here](@ref support). For a list of differences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), see the [README](https://github.com/sebapersson/SBMLImporter.jl).
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
 ## Tutorial
 
-SBMLImporter is a tool for importing SBML models into a [ModelingToolkit.jl](https://github.com/SciML/ModelingToolkit.jl) `ODESystem`. This offers several benefits, such as symbolic model pre-processing for efficient simulations. An `ODESystem` can easily be converted into an `ODEProblem` and solved using any ODE solver in [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl). If the model includes events, [callbacks](https://docs.sciml.ai/DiffEqDocs/stable/features/callback_functions/) are generated during the import.
+SBMLImporter is a tool for importing SBML models into a [ModelingToolkit.jl](https://github.com/SciML/ModelingToolkit.jl) `ODESystem` or a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This offers several benefits, such as symbolic model pre-processing for efficient simulations. An `ODESystem` can easily be converted into an `ODEProblem` and solved using any ODE solver in [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl), while a `ReactionSystem` can for example easily be converted into an `ODESystem` or `SDESystem`. If the model includes events, [callbacks](https://docs.sciml.ai/DiffEqDocs/stable/features/callback_functions/) are generated during the import.
 
 !!! note
-    The number of arguments returned by `SBML_to_ODESystem` varies depending on whether the model has events. When importing an SBML model, `SBML_to_ODESystem` will inform about the number of returned arguments.
+    The number of arguments returned by `SBML_to_ReactionSystem` and `SBML_to_ODESystem` varies depending on whether the model has events. When importing an SBML model, the import function will inform about the number of returned arguments.
 
 ### Importing a Model Without Events and Without Piecewise Expressions
 
-Importing an SBML model is straightforward. Given the path to a SBML file do:
+Importing an SBML model is straightforward. Given the path to a SBML file to import into a `ReactionSystem` do:
 
 ```julia
 using SBMLImporter
-sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+rn, specie_map, parameter_map = SBML_to_ReactionSystem(path_SBML)
 ```
 
-Here, `sys` is the `ODESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model, create an `ODEProblem`:
+Here, `rn` is the `ReactionSystem` that for example can be converted into an `ODESystem` or a `SDESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model with an ODE-solver, construct an `ODEProblem` and solve it using any ODE solver from [OrdinaryDiffeq](https://github.com/SciML/OrdinaryDiffEq.jl):
 
 ```julia
 using OrdinaryDiffEq
+sys = convert(ODESystem, rn)
 tspan = (0, 10.0)
 prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
-# Solve ODE with Rodas5P solver
 sol = solve(prob, Rodas5P())
 ```
 
@@ -37,6 +37,14 @@ using ModelingToolkit
 states(sys) # species
 parameters(sys)
 ```
+
+Alternatively, the model can be imported directly into an `ODESystem` with:
+
+```julia
+sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+```
+
+From this point the documentation focuses on ODE-models, but any model that can be imported as an `ODESystem` can also be imported as a `ReactionSystem`.
 
 ### Importing a Model with Events
 

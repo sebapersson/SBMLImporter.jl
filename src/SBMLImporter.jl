@@ -7,6 +7,7 @@ using PrecompileTools
 using RuntimeGeneratedFunctions
 using SBML
 using SpecialFunctions
+using Catalyst
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
@@ -16,6 +17,7 @@ include("Build_model.jl")
 include("Callbacks.jl")
 include("Check_support.jl")
 include("SBML_to_ODESystem.jl")
+include("SBML_to_ReactionSystem.jl")
 include("Parameters.jl")
 include("Species.jl")
 include("Functions.jl")
@@ -40,6 +42,6 @@ include("Reactions.jl")
     sol = solve(ode_problem, Rodas5P(), abstol=1e-8, reltol=1e-8, tstops=tstops, callback=cb)
 end
 
-export SBML_to_ODESystem
+export SBML_to_ODESystem, SBML_to_ReactionSystem
 
 end

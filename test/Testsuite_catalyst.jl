@@ -6,6 +6,7 @@ using ModelingToolkit
 using SBML
 using Test
 using Downloads
+using Catalyst
 
 
 function get_sbml_urls(base_url::String)
@@ -93,7 +94,14 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
-        ode_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true)
+        #SBMLImporter.SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true, write_to_file=true)
+
+        reaction_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
+        if isempty(model_SBML.algebraic_rules)
+            ode_system = structural_simplify(convert(ODESystem, reaction_system))
+        else
+            ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, reaction_system)))
+        end
         ode_problem = ODEProblem(ode_system, specie_map, (0.0, tmax), parameter_map, jac=true)
         for _f! in ifelse_t0
             _f!(ode_problem.u0, ode_problem.p)
@@ -150,19 +158,24 @@ function check_test_case(test_case, solver)
 end
 
 
-if length(ARGS) > 1
-    istart = parse(Int64, ARGS[1])
-    iend = parse(Int64, ARGS[2])
-else
-    istart = 1
-    iend = 1821
+# Function to get model-str
+function get_model_str(test_case)    
+    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/semantic/$test_case/$test_case"
+    sbml_urls = get_sbml_urls(base_url)
+    sbml_url = sbml_urls[end]
+    sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
+    model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string=true)
+    reaction_system = SBMLImporter.reactionsystem_from_SBML(model_SBML)
+    return reaction_system, model_SBML
 end
 
 
+# To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
-@testset "SBML test suite" begin
-    for j in istart:iend
-        test_case = repeat("0", 5 - length(string(j))) *  string(j)
+@testset "Catalyst" begin
+    for i in 1:1821
+
+        test_case = repeat("0", 5 - length(string(i))) *  string(i)
 
         delay_cases = ["00937", "00938", "00939", "00940", "00941", "00942", "00943", "00981",
                        "00982", "00983", "00984", "00985", "01400",
@@ -365,6 +378,16 @@ solver = Rodas4P()
 
         # Even trigger cannot depend on algebraic rule
         if test_case == "01578"
+            continue
+        end
+
+        # Inf or NaN in initial assignments
+        if test_case ∈ ["00950", "00951"]
+            continue
+        end
+
+        # Reaction cannot be empty 
+        if test_case ∈ ["01245", "01246", "01300", "01301", "01302", "01303", "01304", "01305", "01306"]
             continue
         end
 

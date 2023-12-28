@@ -84,13 +84,15 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         initial_value_conc = model_SBML.species[specie_id].initial_value * "/" * compartment.name
         formula_conc = model_SBML.species[specie_id].formula * "/" * compartment.name
 
-        # Formula for amount specie
+        # Formula for amount specie. Treated as rate-rule as this is a feature we do not support 
+        # for mass-action models 
         model_SBML.species[specie_id].formula = formula_conc * "*" *  compartment.name * " + " * specie_id * "*" * compartment.formula * " / " * compartment.name
 
-        # Add new conc. specie to model
+        # Add new conc. specie to model. See comment on rate-rule above 
         model_SBML.species[specie_conc_id] = SpecieSBML(specie_conc_id, false, false, initial_value_conc,
                                                         formula_conc, compartment.name, specie.conversion_factor,  
                                                         :Concentration, false, false, true, false)
+        push!(model_SBML.rate_rule_variables, specie_conc_id)                                                        
     end
 
     # When a specie is given in concentration, but the compartment concentration changes
@@ -134,11 +136,27 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
 
         # New formula for conc. specie
         specie.formula = formula_amount * "/(" * compartment_name * ") - " * specie_amount_id * "/(" * compartment_name * ")^2*" * compartment.formula
+        specie.rate_rule = true
+        push!(model_SBML.rate_rule_variables, specie.name)
 
         # Add new conc. specie to model
         model_SBML.species[specie_amount_id] = SpecieSBML(specie_amount_id, false, false, initial_value_amount,
-                                                             formula_amount, compartment_name, specie.conversion_factor, 
-                                                             :Amount, false, false, false, false)
+                                                          formula_amount, compartment_name, specie.conversion_factor, 
+                                                          :Amount, false, false, false, false)
+        for (r_id, r) in model_SBML.reactions
+            for i in eachindex(r.products)
+                if r.products[i] == specie.name
+                    r.products[i] = specie_amount_id
+                    r.products_stoichiometry[i] *= "*" * compartment_name
+                end
+            end
+            for i in eachindex(r.reactants)
+                if r.reactants[i] == specie.name
+                    r.reactants[i] = specie_amount_id
+                    r.reactants_stoichiometry[i] *= "*" * compartment_name
+                end
+            end
+        end
     end
     return nothing
 end
