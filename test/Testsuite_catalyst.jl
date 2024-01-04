@@ -163,8 +163,6 @@ function get_model_str(test_case)
 end
 
 
-rn_str, model_SBML = get_model_str("01645")
-#check_test_case("01645", Rodas4P())
 
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
