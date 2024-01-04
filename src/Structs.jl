@@ -51,6 +51,7 @@ mutable struct ReactionSBML
     const products_stoichiometry::Vector{String}
     const reactants::Vector{String}
     const reactants_stoichiometry::Vector{String}
+    const stoichiometry_mass_action::Bool
 end
 
 

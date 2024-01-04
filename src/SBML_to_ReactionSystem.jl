@@ -156,13 +156,26 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     integer_stoichiometries::Bool = true
     _reactions_write = "\treactions = [\n"
     for (id, r) in model_SBML.reactions
+
+        # Can happen for models with species that are boundary conditions, such species 
+        # do not take part in reactions 
+        if all(r.products .== "nothing") && all(r.reactants .== "nothing")
+            continue
+        end
+
         reactants_stoichiometries, reactants, integer_stoichiometries1 = get_reaction_side(r, :Reactants, model_SBML)
         products_stoichiometries, products, integer_stoichiometries2 = get_reaction_side(r, :Products, model_SBML)
         propensity = r.kinetic_math
-        _reactions_write *= ("\t\tCatalyst.Reaction(" * propensity * ", " *
-                             reactants * ", " * products * ", " *
-                             reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=true),\n")
-
+        if reaction_is_mass_action(r, model_SBML) == true && integer_stoichiometries1 && integer_stoichiometries2
+            _reactions_write *= ("\t\tSBMLImporter.update_rate_reaction(Catalyst.Reaction(" * propensity * ", " *
+                                reactants * ", " * products * ", " *
+                                reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=false)),\n")
+        else
+            _reactions_write *= ("\t\tCatalyst.Reaction(" * propensity * ", " *
+                                reactants * ", " * products * ", " *
+                                reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=true),\n")
+        end
+                        
         # If it has already been assigned false we know that all stoichiometries are not
         # integer numbers, and if either of integer_stoichiometries are false integer_stoichiometries
         # should become false
@@ -205,9 +218,9 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     end
     # Parameters might be an empty set
     if _parameters_write != "\tps = Catalyst.@parameters "
-        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=:" * model_SBML.name * ", combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
     else
-        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, Any[]; name=:" * model_SBML.name * ", combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, Any[]; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
     end
 
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
@@ -249,24 +262,33 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol,
         return "nothing", "nothing", true
     end
     # Edge case for boundary condition and rate rule
-    if length(species) == 1
-        specie = species[1]
-        @unpack rate_rule, boundary_condition = model_SBML.species[specie]
-        if rate_rule == true && boundary_condition == true
-            return "nothing", "nothing", true
-        end
+    if length(species) == 1 && species[1] == "nothing"
+        return "nothing", "nothing", true
     end
 
     # Process the _toichiometry for the reaction, species vector is not 
     # required to be unique hence potential double counting must be 
     # considered 
     k = 1
-    _stoichiometries = Vector{String}(undef, length(unique(species)))
-    _species_parsed = fill("", length(unique(species)))
+    _stoichiometries = Vector{String}(undef, length(filter(x -> x != "nothing", unique(species))))
+    _species_parsed = fill("", length(filter(x -> x != "nothing", unique(species))))
+
+    # Happens when all reactants or products are boundary condition
+    if isempty(_species_parsed)
+        return "nothing", "nothing", true
+    end
+
     integer_stoichiometry::Bool = true
     for i in eachindex(species)
+
+        # Happens when a specie is a boundary condition, it should not be involved in the reaction and 
+        # should affect reaction dynamics
+        if species[i] == "nothing"
+            continue
+        end
+
         stoichiometry, _integer_stoichiometry = parse_stoichiometry_reaction_system(stoichiometries[i])
-        
+
         # SBML models can have conversion factors that scale stoichiometry
         if isempty(model_SBML.species[species[i]].conversion_factor) && isempty(model_SBML.conversion_factor)
             _stoichiometry = stoichiometry 
@@ -312,4 +334,58 @@ function parse_stoichiometry_reaction_system(stoichiometry::String)::Tuple{Strin
     else
         return stoichiometry, false
     end
+end
+
+
+"""
+    function reaction_is_mass_action(r::ReactionSBML, model_SBML::ModelSBML)::Bool
+
+Check if a Catalyst recation should be converted to a mass-action reaction, occurs if:
+
+* Involved species has only_substance_unit=true
+* Propensity does not include time t, or depend on rate-rule or assignment rule variables
+* Stoichiometry is mass-action. In case reactants or products have a specie-id then the reaction 
+  does not have to be mass-action following SBML standard
+"""
+function reaction_is_mass_action(r::ReactionSBML, model_SBML::ModelSBML)::Bool
+
+    if r.stoichiometry_mass_action == false
+        return false
+    end
+
+    for reactant in r.reactants
+        if reactant == "nothing"
+            continue
+        end
+            
+        if model_SBML.species[reactant].only_substance_units == false
+            return false
+        end
+    end
+    for product in r.products
+        if product == "nothing"
+            continue
+        end
+
+        if model_SBML.species[product].only_substance_units == false
+            return false
+        end
+    end
+
+    # Check that no rule variables appear in formula
+    formula = r.kinetic_math
+    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
+                                 model_SBML.algebraic_rule_variables))
+    for rule_variable in rule_variables
+        if SBMLImporter.replace_variable(formula, rule_variable, "") != formula
+            return false
+        end
+    end
+
+    return true
+end
+
+
+function update_rate_reaction(rx; combinatoric_ratelaw::Bool=true)
+    @set rx.rate = (rx.rate^2) / Catalyst.oderatelaw(rx; combinatoric_ratelaw=combinatoric_ratelaw)
 end
