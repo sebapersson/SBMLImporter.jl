@@ -92,19 +92,15 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer=20000)
         end
 
         #SBMLImporter.SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true, write_to_file=true)
-        reaction_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
+        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
         tspan = (0.0, tmax)
         dprob = DiscreteProblem(reaction_system, specie_map, tspan, parameter_map)
         jprob = JumpProblem(reaction_system, dprob, Direct(); save_positions=(false, false))
-        for _f! in ifelse_t0
-            _f!(jprob.u0, jprob.p)
-        end
-        tstops = get_tstops(dprob.u0, dprob.p)
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
-            sol = solve(eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, tstops=tstops, callback=cb)
+            sol = solve(eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, callback=cb)
         else
-            sol = solve(eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, tstops=tstops, callback=cb)
+            sol = solve(eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, callback=cb)
         end
         model_parameters = parameters(reaction_system)
 

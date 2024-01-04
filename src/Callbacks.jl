@@ -8,71 +8,67 @@ function create_callbacks_SBML(system,
     model_specie_names::Vector{String} = replace.(string.(states(system)), "(t)" => "")
 
     n_callbacks = length(keys(model_SBML.ifelse_parameters)) + length(keys(model_SBML.events))
-    n_ifelse_events = length(keys(model_SBML.ifelse_parameters)) 
 
-    # Set function names 
+    # Set function names
     model_name = replace(model_name, "-" => "_")
     callbacks = Vector{Any}(undef, n_callbacks)
-    active_t0_functions = Vector{Function}(undef, n_ifelse_events)
     callback_str = ""
-    write_tstops = "\nfunction compute_tstops(u::AbstractVector, p::AbstractVector)\n"
 
-    # In case we do not have any SBML related events
-    if isempty(model_SBML.ifelse_parameters) && isempty(model_SBML.events)
-        write_tstops *= "\t return Float64[]\nend\n"
-    else
-        
-        k = 1
-        # For ifelse parameter
-        for parameter in keys(model_SBML.ifelse_parameters)
-            _affect, _cond, _callback, _active_t0 =  create_callback_ifelse(parameter, model_SBML, p_ode_problem_names, model_specie_names)
-            callback_str *= _affect * _cond * _callback * _active_t0
-            _affect_f = @RuntimeGeneratedFunction(Meta.parse(_affect))
-            _cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
-            _get_cb = @RuntimeGeneratedFunction(Meta.parse(_callback))
-            callbacks[k] = _get_cb(_cond_f, _affect_f)
-            active_t0_functions[k] = @RuntimeGeneratedFunction(Meta.parse(_active_t0))
-            k += 1
-        end
-        
-        # For classical SBML events 
-        for key in keys(model_SBML.events)
-            _affect, _cond, _callback, _initial_function = create_callback_SBML_event(key, model_SBML, p_ode_problem_names, model_specie_names)
-            callback_str *= _affect * _cond * _callback *  _initial_function
+    # tstops function is added in the initialisation part of the first model callback (whether or not it is
+    # a discrete or cont. callback)
+    write_tstops, _tstops = create_tstops_function(model_SBML, model_specie_names, p_ode_problem_names::Vector{String})
+    callback_str *= write_tstops
 
-            _affect_f = @RuntimeGeneratedFunction(Meta.parse(_affect))
-            
-            # Condition can only be activated when going from false to true, 
-            # a variable checking this happens must be in the DiscreteCallback 
-            # condition 
-            if occursin("from_neg", _cond)
-                __cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
-                _cond_f = let from_neg = [!model_SBML.events[key].trigger_initial_value]
-                    (u, t, integrator) -> __cond_f(u, t, integrator, from_neg)
-                end
-            else
-                _cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
-            end
-
-            # Some events can firse at time zero, if there is an _initial_function
-            # ensure this
-            _get_cb = @RuntimeGeneratedFunction(Meta.parse(_callback))
-            if isempty(_initial_function)
-                callbacks[k] = _get_cb(_cond_f, _affect_f)
-            else
-                _init_f = @RuntimeGeneratedFunction(Meta.parse(_initial_function))
-                callbacks[k] = _get_cb(_cond_f, _affect_f, _init_f)
-            end
-            k += 1
-        end
-
-        _write_tstops = create_tstops_function(model_SBML, model_specie_names, p_ode_problem_names)
-        write_tstops *= "\treturn" * _write_tstops  * "\n" * "end"
+    k = 1
+    # For ifelse parameter
+    for parameter in keys(model_SBML.ifelse_parameters)
+        first_callback = k == 1
+        _affect, _cond, _callback, _active_t0 =  create_callback_ifelse(parameter, model_SBML,
+                                                                        p_ode_problem_names, model_specie_names,
+                                                                        first_callback, _tstops)
+        callback_str *= _affect * _cond * _callback * _active_t0
+        _affect_f = @RuntimeGeneratedFunction(Meta.parse(_affect))
+        _cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
+        _active_t0_f = @RuntimeGeneratedFunction(Meta.parse(_active_t0))
+        _get_cb = @RuntimeGeneratedFunction(Meta.parse(_callback))
+        callbacks[k] = _get_cb(_cond_f, _affect_f, _active_t0_f)
+        k += 1
     end
 
-    # Create callback-set and tstops functions 
-    callback_str *= write_tstops
-    compute_tstops = @RuntimeGeneratedFunction(Meta.parse(write_tstops))
+    # For classical SBML events
+    for key in keys(model_SBML.events)
+        first_callback = k == 1
+        _affect, _cond, _callback, _initial_function = create_callback_SBML_event(key, model_SBML, p_ode_problem_names,
+                                                                                  model_specie_names, first_callback, 
+                                                                                  _tstops)
+        callback_str *= _affect * _cond * _callback *  _initial_function
+
+        _affect_f = @RuntimeGeneratedFunction(Meta.parse(_affect))
+
+        # Condition can only be activated when going from false to true,
+        # a variable checking this happens must be in the DiscreteCallback
+        # condition
+        if occursin("from_neg", _cond)
+            __cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
+            _cond_f = let from_neg = [!model_SBML.events[key].trigger_initial_value]
+                (u, t, integrator) -> __cond_f(u, t, integrator, from_neg)
+            end
+        else
+            _cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
+        end
+
+        # Some events can firse at time zero, if there is an _initial_function
+        # ensure this
+        _get_cb = @RuntimeGeneratedFunction(Meta.parse(_callback))
+        if isempty(_initial_function)
+            callbacks[k] = _get_cb(_cond_f, _affect_f)
+        else
+            _init_f = @RuntimeGeneratedFunction(Meta.parse(_initial_function))
+            callbacks[k] = _get_cb(_cond_f, _affect_f, _init_f)
+        end
+        k += 1
+    end
+
     if n_callbacks > 0
         _get_cbset = "function get_cbset(cbs)\n\treturn CallbackSet(" * prod("cbs[$i], " for i in 1:n_callbacks)[1:end-2] * ")\nend"
         get_cbset = @RuntimeGeneratedFunction(Meta.parse(_get_cbset))
@@ -82,17 +78,19 @@ function create_callbacks_SBML(system,
     end
 
     # Write callback to file if required, otherwise just return the string for the callback and tstops functions
-    return cbset, compute_tstops, active_t0_functions, callback_str
+    return cbset, callback_str
 end
 
 
 function create_callback_ifelse(parameter_name::String,
                                 model_SBML::ModelSBML,
                                 p_ode_problem_names::Vector{String},
-                                model_specie_names::Vector{String})::Tuple{String, String, String, String}
+                                model_specie_names::Vector{String},
+                                first_callback::Bool, 
+                                tstops::String)::Tuple{String, String, String, String}
 
     # Check if the event trigger depend on parameters which are to be i) estimated, or ii) if it depend on models state.
-    # For i) we need to convert tspan. For ii) we cannot compute tstops (the event times) prior to starting to solve 
+    # For i) we need to convert tspan. For ii) we cannot compute tstops (the event times) prior to starting to solve
     # the ODE so it most be cont. callback
     _condition, side_activated_with_time = model_SBML.ifelse_parameters[parameter_name]
     discrete_event = !(check_condition_has_states(_condition, model_specie_names))
@@ -122,22 +120,28 @@ function create_callback_ifelse(parameter_name::String,
     affect_function *= "\tintegrator.p[" * string(i_ifelse_parameter) * "] = 1.0\nend\n"
 
     # Build the callback formula
-    callback_formula = "function get_callback_" * parameter_name * "(cond, affect!)"
+    callback_formula = "function get_callback_" * parameter_name * "(cond, affect!, init)"
     if discrete_event == false
-        callback_formula *= "\tcb = ContinuousCallback(cond, affect!, " 
+        callback_formula *= "\tcb = ContinuousCallback(cond, affect!, "
     else
         callback_formula *= "\tcb = DiscreteCallback(cond, affect!, "
     end
-    callback_formula *= "save_positions=(false, false))\n" # So we do not get problems with saveat in the ODE solver
+    callback_formula *= "save_positions=(false, false), initialize=init)\n" # So we do not get problems with saveat in the ODE solver
     callback_formula *= "\treturn cb\nend"
 
     # Building a function which check if a callback is activated at time zero (as this is not something Julia will
-    # check for us so must be done here)
+    # check for us so must be done here). This is then passed
     side_inequality = side_activated_with_time == "right" ? "!" : "" # Check if true or false evaluates expression to true
-    active_t0_function = "function is_active_t0_" * parameter_name * "!(u, p)\n"
+    active_t0_function = "function is_active_t0_" * parameter_name * "!(c, u, t, integrator)\n"
     active_t0_function *= "\tt = 0.0 # Used to check conditions activated at t0=0\n" * "\tp[" * string(i_ifelse_parameter) * "] = 0.0 # Default to being off\n"
-    condition_active_t0 = replace(_condition_for_t0, "integrator." => "")
-    active_t0_function *= "\tif " * side_inequality *"(" * condition_active_t0 * ")\n" * "\t\tp[" * string(i_ifelse_parameter) * "] = 1.0\n\tend\n\tend\n"
+    active_t0_function *= "\tif " * side_inequality *"(" * condition_active_t0 * ")\n" * "\t\tintegrator.p[" * string(i_ifelse_parameter) * "] = 1.0\n\tend\n"
+    if first_callback == false
+        active_t0_function *= "end\n"
+    else
+        active_t0_function *= "\ttstops = " * tstops * "\n"
+        active_t0_function *= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
+        active_t0_function *= "\tadd_tstop!.((integrator,), tstops)\nend\n"
+    end
 
     return affect_function, condition_function, callback_formula, active_t0_function
 end
@@ -146,7 +150,9 @@ end
 function create_callback_SBML_event(event_name::String,
                                     model_SBML::ModelSBML,
                                     p_ode_problem_names::Vector{String},
-                                    model_specie_names::Vector{String})::Tuple{String, String, String, String}
+                                    model_specie_names::Vector{String},
+                                    first_callback::Bool, 
+                                    tstops::String)::Tuple{String, String, String, String}
 
     event = model_SBML.events[event_name]
     _condition = event.trigger
@@ -162,8 +168,8 @@ function create_callback_SBML_event(event_name::String,
         # holds for ≥
         affect_neg = occursin("≤", _condition)
     else
-        # Build the SBML activation, which has a check to see that the condition crosses from false to 
-        # true, per SBML standard 
+        # Build the SBML activation, which has a check to see that the condition crosses from false to
+        # true, per SBML standard
         _condition = "\tcond = " * _condition * " && from_neg[1] == true\n\t\tfrom_neg[1] = !(" * _condition * ")\n\t\treturn cond"
     end
 
@@ -178,12 +184,12 @@ function create_callback_SBML_event(event_name::String,
         _condition = replace_variable(_condition, p_name, "integrator.p["*string(i)*"]")
         _condition_at_t0 = replace_variable(_condition_at_t0, p_name, "integrator.p["*string(i)*"]")
     end
-    # Build the condition function used in Julia file, for discrete checking that event indeed is coming from negative 
+    # Build the condition function used in Julia file, for discrete checking that event indeed is coming from negative
     # direction
     if discrete_event == false
         _condition = replace(_condition, r"≤|≥" => "-")
         condition_function = "\nfunction condition_" * event_name * "(u, t, integrator)\n\t" * _condition * "\nend\n"
-    
+
     elseif discrete_event == true
         condition_function = "\nfunction _condition_" * event_name * "(u, t, integrator, from_neg)\n"
         condition_function *= _condition * "\nend\n"
@@ -218,19 +224,28 @@ function create_callback_SBML_event(event_name::String,
         initial_value_str *= "\tif cond == true\n"
         #initial_value_str *= "\t" * affect_function_body * "\n\tend\n"
         initial_value_str *= "\t" * "" * "\n\tend\n"
-        initial_value_str *= "end"
     elseif discrete_event == false && initial_value_cond == false
         initial_value_str = "function init_" * event_name * "(c,u,t,integrator)\n"
         initial_value_str *= "\tcond = " * _condition_at_t0 * "\n" # We need a Bool not minus (-) condition
         initial_value_str *= "\tif cond == true\n"
         initial_value_str *= "\t" * affect_function_body * "\n\tend\n"
-        initial_value_str *= "end"
     else
         initial_value_str = ""
     end
 
+    if first_callback == true
+        if isempty(initial_value_str)
+            initial_value_str = "function init_" * event_name * "(c,u,t,integrator)\n"
+        end
+        initial_value_str *= "\ttstops = " * tstops * "\n"
+        initial_value_str*= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
+        initial_value_str *= "\tadd_tstop!.((integrator,), tstops)\nend\n"
+    elseif !isempty(initial_value_str)
+        initial_value_str *= "end"
+    end
+
     # Build the callback, consider initialisation if needed and direction for ContinuousCallback
-    if initial_value_str == ""
+    if isempty(initial_value_str)
         callback_formula = "function get_callback_" * event_name * "(cond, affect!)\n"
     else
         callback_formula = "function get_callback_" * event_name * "(cond, affect!, init)\n"
@@ -241,14 +256,14 @@ function create_callback_SBML_event(event_name::String,
         else
             callback_formula *= "\tcb = ContinuousCallback(cond, affect!, nothing, "
         end
-        if initial_value_cond == false
+        if !isempty(initial_value_str) 
             callback_formula *= "initialize=init, "
         end
     elseif discrete_event == true
-        if initial_value_cond == false
-            callback_formula *= "\tcb = DiscreteCallback(cond, affect!, initialize=init, "
-        else
+        if isempty(initial_value_str)
             callback_formula *= "\tcb = DiscreteCallback(cond, affect!, "
+        else
+            callback_formula *= "\tcb = DiscreteCallback(cond, affect!, initialize=init, "
         end
     end
     callback_formula *= "save_positions=(false, false))\n" # So we do not get problems with saveat in the ODE solver
@@ -262,10 +277,15 @@ end
 # to symboically solve for where the condition is zero.
 function create_tstops_function(model_SBML::ModelSBML,
                                 model_specie_names::Vector{String},
-                                p_ode_problem_names::Vector{String})::String
+                                p_ode_problem_names::Vector{String})::Tuple{String, String}
+
+    write_tstops = "\nfunction __compute_tstops(integrator)\n"
+    if isempty(model_SBML.ifelse_parameters) && isempty(model_SBML.events)
+        write_tstops *= "\t return Float64[]\nend\n"
+        return write_tstops, "Float64[]"
+    end
 
     conditions = string.(vcat([model_SBML.ifelse_parameters[key][1] for key in keys(model_SBML.ifelse_parameters)], [e.trigger for e in values(model_SBML.events)]))
-
     tstops = Vector{String}(undef, length(conditions))
     tstops_to_float = Vector{String}(undef, length(conditions))
     for (i, condition) in pairs(conditions)
@@ -298,10 +318,10 @@ function create_tstops_function(model_SBML::ModelSBML,
         end
 
         for (i, specie_name) in pairs(model_specie_names)
-            expression_time = replace_variable(expression_time, specie_name, "u["*string(i)*"]")
+            expression_time = replace_variable(expression_time, specie_name, "integrator.u["*string(i)*"]")
         end
         for (i, p_name) in pairs(p_ode_problem_names)
-            expression_time = replace_variable(expression_time, p_name, "p["*string(i)*"]")
+            expression_time = replace_variable(expression_time, p_name, "integrator.p["*string(i)*"]")
         end
 
         # dual_to_float is needed as tstops for the integrator cannot be of type Dual
@@ -309,9 +329,10 @@ function create_tstops_function(model_SBML::ModelSBML,
         i += 1
     end
 
-    _tstops = " Float64[" * prod([isempty(_t) ? "" : _t * ", " for _t  in tstops])[1:end-2] * "]"
+    _tstops = "Float64[" * prod([isempty(_t) ? "" : _t * ", " for _t  in tstops])[1:end-2] * "]"
+    write_tstops *= "\treturn " * _tstops * "\nend\n\n"
 
-    return _tstops
+    return write_tstops, _tstops
 end
 
 

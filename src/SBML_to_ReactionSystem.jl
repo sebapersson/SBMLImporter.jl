@@ -31,7 +31,6 @@ For testing `path_SBML` can be the model as a string if `model_as_string=true`.
 - `parameter_map` A parameter map setting parameter values; together with the `ReactionSystem`, it can be converted into an `ODEProblem`.
 - `cbset` - **only for models with events/piecewise expressions**: Callbackset (events) for the model.
 - `get_tstops`- **Only for models with events/piecewise expressions**: Function computing time stops for discrete callbacks in the `cbset`.
-- `ifelse_t0` - **Only for models with time-dependent ifelse (piecewise) expressions**: Functions checking and adjusting for callback-rewritten piecewise expressions that are active at `t=t0`.
 
 ## Examples
 ```julia
@@ -88,7 +87,7 @@ function SBML_to_ReactionSystem(path_SBML::T;
     reaction_system, specie_map, parameter_map = _get_reaction_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
 
     # Build callback functions 
-    cbset, compute_tstops, ifelse_t0, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
+    cbset, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
 
     # if model is written to file write the callback
     if write_to_file == true
@@ -99,21 +98,16 @@ function SBML_to_ReactionSystem(path_SBML::T;
     end
 
     if ret_all == true
-        return reaction_system, specie_map, parameter_map, cbset, compute_tstops, ifelse_t0
+        return reaction_system, specie_map, parameter_map, cbset
     end
 
     # Depending on model return what is needed to perform forward simulations
     if isempty(model_SBML.events) && isempty(model_SBML.ifelse_bool_expressions)
         return reaction_system, specie_map, parameter_map
     end
-    if isempty(model_SBML.ifelse_bool_expressions) && !isempty(model_SBML.events)
-        verbose && @info "SBML model with events - output returned as odesys, specie_map, parameter_map, cbset, compute_tstops\nFor how to simulate model see documentation"
-        return reaction_system, specie_map, parameter_map, cbset, compute_tstops
-    end
-    if isempty(model_SBML.ifelse_parameters) && !isempty(cbset)
-        verbose && @info "SBML model with piecewise rewritten to event - output returned as odesys, specie_map, parameter_map, cbset, compute_tstops, cb_t0\nFor how to simulate model see documentation"
-        return reaction_system, specie_map, parameter_map, cbset, compute_tstops, ifelse_t0
-    end
+    
+    verbose && @info "SBML model with events - output returned as odesys, specie_map, parameter_map, cbset\nFor how to simulate model see documentation"
+    return reaction_system, specie_map, parameter_map, cbset
 end
 
 
