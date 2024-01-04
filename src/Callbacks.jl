@@ -138,7 +138,9 @@ function create_callback_ifelse(parameter_name::String,
     if first_callback == false
         active_t0_function *= "end\n"
     else
-        active_t0_function *= "\ttstops = " * tstops * "\n"
+        active_t0_function *= "\t_tstops = " * tstops * "\n"
+        # Ensure tstops are within the integrator time-intervall
+        active_t0_function *= "tstops=_tstops[@.((integrator.tdir * _tstops > integrator.tdir * integrator.sol.prob.tspan[1])*(integrator.tdir *_tstops < integrator.tdir * integrator.sol.prob.tspan[2]))]\n"
         active_t0_function *= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
         active_t0_function *= "\tadd_tstop!.((integrator,), tstops)\nend\n"
     end
@@ -237,7 +239,8 @@ function create_callback_SBML_event(event_name::String,
         if isempty(initial_value_str)
             initial_value_str = "function init_" * event_name * "(c,u,t,integrator)\n"
         end
-        initial_value_str *= "\ttstops = " * tstops * "\n"
+        initial_value_str *= "\t_tstops = " * tstops * "\n"
+        initial_value_str *= "tstops=_tstops[@.((integrator.tdir * _tstops > integrator.tdir * integrator.sol.prob.tspan[1])*(integrator.tdir *_tstops < integrator.tdir * integrator.sol.prob.tspan[2]))]\n"
         initial_value_str*= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
         initial_value_str *= "\tadd_tstop!.((integrator,), tstops)\nend\n"
     elseif !isempty(initial_value_str)
