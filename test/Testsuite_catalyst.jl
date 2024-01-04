@@ -94,20 +94,15 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
-        reaction_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
+        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
         if isempty(model_SBML.algebraic_rules)
             ode_system = structural_simplify(convert(ODESystem, reaction_system))
         else
             ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, reaction_system)))
         end
         ode_problem = ODEProblem(ode_system, specie_map, (0.0, tmax), parameter_map, jac=true)
-        for _f! in ifelse_t0
-            _f!(ode_problem.u0, ode_problem.p)
-        end
-        tstops = get_tstops(ode_problem.u0, ode_problem.p)
-        tstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)
 
-        sol = solve(ode_problem, solver, abstol=1e-12, reltol=1e-12, saveat=t_save, tstops=tstops, callback=cb)
+        sol = solve(ode_problem, solver, abstol=1e-12, reltol=1e-12, saveat=t_save, callback=cb)
         model_parameters = parameters(sol.prob.f.sys)
         for to_check in what_check
             to_check_no_whitespace = Symbol(replace(string(to_check), " " => ""))
@@ -168,8 +163,6 @@ function get_model_str(test_case)
 end
 
 
-rn_str, model_SBML = get_model_str("01645")
-#check_test_case("01645", Rodas4P())
 
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()
