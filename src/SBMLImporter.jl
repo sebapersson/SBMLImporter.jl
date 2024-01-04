@@ -8,6 +8,8 @@ using RuntimeGeneratedFunctions
 using SBML
 using SpecialFunctions
 using Catalyst
+using Setfield
+using JumpProcesses
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 

@@ -94,8 +94,6 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
-        #SBMLImporter.SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true, write_to_file=true)
-
         reaction_system, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
         if isempty(model_SBML.algebraic_rules)
             ode_system = structural_simplify(convert(ODESystem, reaction_system))
@@ -165,10 +163,13 @@ function get_model_str(test_case)
     sbml_url = sbml_urls[end]
     sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
     model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string=true)
-    reaction_system = SBMLImporter.reactionsystem_from_SBML(model_SBML)
+    reaction_system = SBMLImporter.reactionsystem_from_SBML(model_SBML, "", false)
     return reaction_system, model_SBML
 end
 
+
+rn_str, model_SBML = get_model_str("01645")
+#check_test_case("01645", Rodas4P())
 
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
 solver = Rodas4P()

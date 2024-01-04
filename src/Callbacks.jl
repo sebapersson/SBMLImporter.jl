@@ -202,6 +202,9 @@ function create_callback_SBML_event(event_name::String,
         affect_function *= "\t" * affect_function1 * " = " * affect_function2 * '\n'
         affect_function_body *= "\t" * affect_function1 * " = " * affect_function2 * '\n' # For t0 events
     end
+    # For Jump simulations to get correct SSA simulations
+    affect_function *= "\tif integrator.sol.prob isa DiscreteProblem\n"
+    affect_function *= "\t\treset_aggregated_jumps!(integrator)\n\tend\n"
     affect_function *= "end"
     for i in eachindex(p_ode_problem_names)
         affect_function = replace_variable(affect_function, p_ode_problem_names[i], "integrator.p["*string(i)*"]")
