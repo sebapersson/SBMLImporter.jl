@@ -22,6 +22,7 @@ OrdinaryDiffEq = "6"
 PrecompileTools = "1"
 RuntimeGeneratedFunctions = "0.5"
 SBML = "1"
+Setfield = "1"
 SpecialFunctions = "2"
 julia = "1"
 
