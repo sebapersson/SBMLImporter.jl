@@ -74,6 +74,7 @@ struct ModelSBML
     species_in_reactions::Vector{String}
     variables_with_piecewise::Vector{String}
     conversion_factor::String
+    specie_reference_ids::Vector{String}
 end
 function ModelSBML()::ModelSBML
     model_SBML = ModelSBML("",

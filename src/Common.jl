@@ -6,6 +6,10 @@ and replace_with=1 while formula = time * 2 nothing is replaced.
 """
 function replace_variable(formula::T, to_replace::String, replace_with::String)::T where T<:AbstractString
 
+    if !occursin(to_replace, formula)
+        return formula
+    end
+
     _to_replace = Regex("(\\b" * to_replace * "\\b)")
     return replace(formula, _to_replace => replace_with)
 end
@@ -29,6 +33,9 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
     # SBML equations are given in concentration, in case an amount specie appears in the equation scale with the 
     # compartment in the formula every time the species appear
     for (specie_id, specie) in model_SBML.species
+        if !occursin(specie_id, _formula)
+            continue
+        end
         if check_scaling == false
             continue
         end
@@ -47,7 +54,7 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
         if isempty(libsbml_model.reactions)
             continue
         end
-        if id ∉ reduce(vcat, vcat([[_r.id for _r in r.products] for r in values(libsbml_model.reactions)], [[_r.id for _r in r.reactants] for r in values(libsbml_model.reactions)]))
+        if id ∉ model_SBML.specie_reference_ids
             continue
         end
         if id ∉ keys(model_SBML.species) && rate_rule == false
@@ -68,25 +75,28 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
         end
     end
 
-    # Sometimes we have a stoichemetric expression appearing in for example rule expressions, etc... but it does not 
-    # have any initial assignment, or rule assignment. In this case the reference should be replaced with its corresponding 
-    # stoichemetry
-    for (_, reaction) in libsbml_model.reactions
-        specie_references = vcat([reactant for reactant in reaction.reactants], [product for product in reaction.products])
-        for specie_reference in specie_references
-            if isnothing(specie_reference.id)
-                continue
+    # Sometimes we have a stoichemetric expression appearing in for example rule expressions, etc..., but it does not 
+    # have any initial assignment, or rule assignment. In this case the reference should be replaced with its 
+    # corresponding stoichemetry
+    if any(occursin.(model_SBML.specie_reference_ids, _formula))
+        for (_, reaction) in libsbml_model.reactions
+            specie_references = Iterators.flatten(([reactant for reactant in reaction.reactants], [product for product in reaction.products]))
+            for specie_reference in specie_references
+                if isnothing(specie_reference.id)
+                    continue
+                end
+                if specie_reference.id ∈ keys(libsbml_model.species)
+                    continue
+                end
+                if specie_reference.id ∈ keys(libsbml_model.initial_assignments)
+                    continue
+                end
+                if specie_reference.id ∈ [rule isa SBML.AlgebraicRule ? "" : rule.variable for rule in libsbml_model.rules]
+                    continue
+                end
+                println("Ends up here")
+                _formula = replace_variable(_formula, specie_reference.id, string(specie_reference.stoichiometry))
             end
-            if specie_reference.id ∈ keys(libsbml_model.initial_assignments)
-                continue
-            end
-            if specie_reference.id ∈ [rule isa SBML.AlgebraicRule ? "" : rule.variable for rule in libsbml_model.rules]
-                continue
-            end
-            if specie_reference.id ∈ keys(libsbml_model.species)
-                continue
-            end
-            _formula = replace_variable(_formula, specie_reference.id, string(specie_reference.stoichiometry))
         end
     end
 
@@ -101,6 +111,11 @@ end
 
 
 function replace_reactionid_formula(formula::T, libsbml_model::SBML.Model)::T where T<:AbstractString
+
+    if !any(occursin.(keys(libsbml_model.reactions), formula))
+        return formula
+    end
+
     for (reaction_id, reaction) in libsbml_model.reactions
         reaction_math = parse_SBML_math(reaction.kinetic_math)
         formula = replace_variable(formula, reaction_id, reaction_math)
@@ -213,12 +228,28 @@ end
 
 function replace_reactionid!(model_SBML::ModelSBML)::Nothing
 
+    reaction_ids::Vector{String} = collect(keys(model_SBML.reactions))
+    k = 1
     for (specie_id, specie) in model_SBML.species
-        for (reaction_id, reaction) in model_SBML.reactions
+        k += 1
+        if specie.rate_rule == false && specie.assignment_rule == false
+            continue
+        end
+
+        if !any(occursin.(reaction_ids, specie.formula))
+            continue
+        end
+        for reaction_id in reaction_ids[iids]
+            reaction = model_SBML.reactions[reaction_id]
             specie.formula = replace_variable(specie.formula, reaction_id, reaction.kinetic_math)
         end
     end
+
     for (reaction_id, reaction) in model_SBML.reactions
+        if !any(occursin.(keys(model_SBML.reactions), reaction.kinetic_math))
+            continue
+        end
+
         for (_reaction_id, _reaction) in model_SBML.reactions
             if reaction_id == _reaction_id
                 continue
@@ -370,4 +401,25 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
     _parameter_map_write *= "\t]"
 
     return _parameters_write, _parameters_write_array, _parameter_map_write
+end
+
+
+function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
+
+    specie_reference_ids = String[]
+    for r in values(libsbml_model.reactions)
+        for reactant in r.reactants
+            if isnothing(reactant.id)
+                continue
+            end
+            push!(specie_reference_ids, reactant.id)
+        end
+        for product in r.products
+            if isnothing(product.id)
+                continue
+            end
+            push!(specie_reference_ids, product.id)
+        end
+    end
+    return specie_reference_ids
 end

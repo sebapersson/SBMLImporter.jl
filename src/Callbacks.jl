@@ -2,7 +2,8 @@
 # using ifelse (for example better integration stability, faster runtimes etc...)
 function create_callbacks_SBML(system,
                                model_SBML::ModelSBML,
-                               model_name::String)
+                               model_name::String;
+                               convert_stpan::Bool=false)
 
     p_ode_problem_names::Vector{String} = string.(parameters(system))
     model_specie_names::Vector{String} = replace.(string.(states(system)), "(t)" => "")

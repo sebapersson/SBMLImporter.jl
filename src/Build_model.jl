@@ -52,11 +52,19 @@ end
 
 function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool)::ModelSBML
 
-    # An intermedidate struct storing relevant model informaiton needed for
-    # formulating an ODESystem and callback functions
     conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
+    
+    # Convert model name to a valid Julia string
     model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
     model_name = replace(model_name, " " => "_")
+
+    # Specie reference ids can sometimes appear in math expressions, then they should be replaced 
+    # by the stoichometry for corresponding reference id, searching for specie reference ids 
+    # can be computationally demanding for larger models therefore the list of such ids is pre-built.
+    specie_reference_ids = get_specie_reference_ids(libsbml_model)
+
+    # An intermedidate struct storing relevant model informaiton needed for
+    # formulating an ODESystem and callback functions
     model_SBML = ModelSBML(model_name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
@@ -74,8 +82,9 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0), 
-                           conversion_factor) # Variables with piecewise
-
+                           conversion_factor, 
+                           specie_reference_ids)
+                        
     parse_SBML_species!(model_SBML, libsbml_model)
 
     parse_SBML_parameters!(model_SBML, libsbml_model)
