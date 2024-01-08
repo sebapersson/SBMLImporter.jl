@@ -7,7 +7,7 @@ function parse_SBML_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
         end
         
         args = get_SBML_function_args(SBML_function)
-        function_formula = parse_SBML_math(SBML_function.body.body, true)
+        function_formula, _ = parse_SBML_math(SBML_function.body.body, true)
         model_SBML.functions[function_name] = [args, function_formula]
     end
     return nothing

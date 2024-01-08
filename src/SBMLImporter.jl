@@ -31,7 +31,6 @@ include("Math.jl")
 include("Initial_assignments.jl")
 include("Reactions.jl")
 
-
 # Model with piecewise for PrecompileTools to make model reading faster
 @setup_workload begin
     path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Boehm_JProteomeRes2014.xml")

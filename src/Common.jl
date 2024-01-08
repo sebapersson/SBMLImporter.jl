@@ -70,7 +70,7 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
         if rate_rule == false
             _formula = replace_variable(_formula, id, "(" * model_SBML.species[id].initial_value * ")")
         else
-            replace_with = parse_SBML_math(libsbml_model.initial_assignments[id])
+            replace_with, _ = parse_SBML_math(libsbml_model.initial_assignments[id])
             _formula = replace_variable(_formula, id, "(" * replace_with * ")")
         end
     end
@@ -117,7 +117,7 @@ function replace_reactionid_formula(formula::T, libsbml_model::SBML.Model)::T wh
     end
 
     for (reaction_id, reaction) in libsbml_model.reactions
-        reaction_math = parse_SBML_math(reaction.kinetic_math)
+        reaction_math, _ = parse_SBML_math(reaction.kinetic_math)
         formula = replace_variable(formula, reaction_id, reaction_math)
     end
     return formula
@@ -229,9 +229,7 @@ end
 function replace_reactionid!(model_SBML::ModelSBML)::Nothing
 
     reaction_ids::Vector{String} = collect(keys(model_SBML.reactions))
-    k = 1
     for (specie_id, specie) in model_SBML.species
-        k += 1
         if specie.rate_rule == false && specie.assignment_rule == false
             continue
         end
@@ -246,7 +244,7 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
     end
 
     for (reaction_id, reaction) in model_SBML.reactions
-        if !any(occursin.(keys(model_SBML.reactions), reaction.kinetic_math))
+        if reaction.has_reaction_id == false
             continue
         end
 
@@ -257,6 +255,46 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
             reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id, _reaction.kinetic_math)
         end
     end
+
+    return nothing
+end
+
+
+function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
+
+    for (reaction_id, reaction) in model_SBML.reactions
+        if reaction.has_assignment_rule_variable == false
+            continue
+        end
+
+        # Assignment rule can be nested so must go via recursion here, and 
+        # break when after one iteration kinetic-math formula has not changed 
+        while true
+            _kinetic_math = reaction.kinetic_math
+
+            for variable in model_SBML.assignment_rule_variables
+                if !occursin(variable, reaction.kinetic_math)
+                    continue
+                end
+
+                if haskey(model_SBML.species, variable)
+                    formula = model_SBML.species[variable].formula
+                elseif haskey(model_SBML.parameters, variable)
+                    formula = model_SBML.parameters[variable].formula
+                elseif haskey(model_SBML.compartments, variable)
+                    formula = model_SBML.compartments[variable].formula
+                end
+                reaction.kinetic_math = replace_variable(reaction.kinetic_math, variable, formula)
+            end    
+
+            if reaction.kinetic_math == _kinetic_math
+                break
+            end
+        end
+    end
+
+    # As assignment rule variables have been inlined they can be removed from the model 
+    filter!(isempty, model_SBML.assignment_rule_variables)
 
     return nothing
 end
@@ -302,6 +340,13 @@ function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tup
         if parameter.constant == true
             continue
         end
+        # Happens when the assignment rule has been inlined, and thus should not be included 
+        # as a model variable with an initial value
+        if (parameter.assignment_rule == true && 
+            parameter_id ∉ model_SBML.algebraic_rule_variables && 
+            parameter.rate_rule == false)
+            continue
+        end
         _species_write *= parameter_id * "(t) "
         _species_write_array *= parameter_id * ", "
     end
@@ -322,6 +367,12 @@ function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tup
     # Parameters
     for (parameter_id, parameter) in model_SBML.parameters
         if !(parameter.rate_rule == true || parameter.assignment_rule == true)
+            continue
+        end
+        # See comment above
+        if (parameter.assignment_rule == true && 
+            parameter_id ∉ model_SBML.algebraic_rule_variables && 
+            parameter.rate_rule == false)
             continue
         end
         u0eq = parameter.initial_value
@@ -361,6 +412,11 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
         if reaction_system == true && parameter.assignment_rule == true
             continue
         end
+        # In case assignment rule variables have been inlined they should not be 
+        # a part of the parameter-map 
+        if parameter.assignment_rule == true && parameter_id ∉ model_SBML.assignment_rule_variables
+            continue
+        end
         _parameters_write *= parameter_id * " "
         _parameters_write_array *= parameter_id * ", "
     end
@@ -386,6 +442,11 @@ function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::
     # Map setting initial values for parameters 
     for (parameter_id, parameter) in model_SBML.parameters
         if parameter.constant == false
+            continue
+        end
+        # In case assignment rule variables have been inlined they should not be 
+        # a part of the parameter-map 
+        if parameter.assignment_rule == true && parameter_id ∉ model_SBML.assignment_rule_variables
             continue
         end
         peq = parameter.formula

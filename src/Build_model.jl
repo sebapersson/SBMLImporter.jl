@@ -9,7 +9,8 @@ Rewriting ifelse to Boolean callbacks is strongly recomended if possible.
 
 For testing path_SBML can be the model as a string if model_as_string=true
 """
-function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true)::ModelSBML
+function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true, 
+                         inline_assignment_rules::Bool=true)::ModelSBML
 
     if model_as_string == false
         f = open(path_SBML, "r")
@@ -45,12 +46,13 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, mode
                                  end)
     end
 
-    return _build_SBML_model(libsbml_model, ifelse_to_callback)
+    return _build_SBML_model(libsbml_model, ifelse_to_callback, inline_assignment_rules)
 end
 
 
 
-function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool)::ModelSBML
+function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool, 
+                           inline_assignment_rules::Bool)::ModelSBML
 
     conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
     
@@ -130,6 +132,12 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
     # Up to this point for models parameter the SBML rem or div function might appear in the model dynamics,
     # these are non differentialble, discrete and not allowed
     has_rem_or_div(model_SBML)
+
+    # Inlining assignment rule variables makes the model in a sense less readable, however, if not done for 
+    # larger models Catalyst might crash due to a stack-overflow error, and model load times become longer 
+    if inline_assignment_rules == true
+       inline_assignment_rules!(model_SBML) 
+    end
 
     return model_SBML
 end

@@ -52,6 +52,8 @@ mutable struct ReactionSBML
     const reactants::Vector{String}
     const reactants_stoichiometry::Vector{String}
     const stoichiometry_mass_action::Bool
+    const has_assignment_rule_variable::Bool
+    const has_reaction_id::Bool
 end
 
 

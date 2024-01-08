@@ -23,7 +23,7 @@ end
 function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
 
     rule_variable = rule.variable
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     rule_formula = replace_variable(rule_formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
@@ -90,7 +90,7 @@ end
 function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
 
     rule_variable = rule.variable
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     rule_formula = replace_variable(rule_formula, "time", "t")    
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
@@ -148,7 +148,7 @@ end
 
 
 function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule)::Nothing
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     if occursin("piecewise(", rule_formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end

@@ -61,6 +61,7 @@ sol = solve(prob, Rodas5P(), tstops=tstops, callback=callbacks)
 """                 
 function SBML_to_ReactionSystem(path_SBML::T;
                                 ifelse_to_callback::Bool=true,
+                                inline_assignment_rules::Bool=true,
                                 write_to_file::Bool=false, 
                                 verbose::Bool=true, 
                                 ret_all::Bool=false, 
@@ -68,7 +69,10 @@ function SBML_to_ReactionSystem(path_SBML::T;
 
     # Intermediate model representation of a SBML model which can be processed into
     # an ODESystem
-    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string)
+    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string, 
+                                  inline_assignment_rules=inline_assignment_rules)
+    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
+                                 model_SBML.algebraic_rule_variables))
 
     # If model is written to file save it in the same directory as the SBML-file
     if model_as_string == false
@@ -81,10 +85,36 @@ function SBML_to_ReactionSystem(path_SBML::T;
     end
     path_save_model = joinpath(dir_save, model_SBML.name * ".jl")
 
-    # Build the ReactionSystem
-    _model = reactionsystem_from_SBML(model_SBML, path_save_model, write_to_file)
-    _get_reaction_system = @RuntimeGeneratedFunction(Meta.parse(_model))
-    reaction_system, specie_map, parameter_map = _get_reaction_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
+    # Build the ReactionSystem. Must be done via Meta-parse, because if a function is used 
+    # via @RuntimeGeneratedFunction runtime is very slow for large models
+    (_species_write, _specie_map_write, _variables_write, 
+     _parameters_write, _parameter_map_write, _reactions_write, 
+     no_species, integer_stoichiometries) = _reactionsystem_from_SBML(model_SBML, rule_variables)
+    # The model can have have only species or only variables or both. If it has variables they 
+    # are given via SBML rules
+    eval(Meta.parse("ModelingToolkit.@variables t"))
+    eval(Meta.parse("D = Differential(t)"))
+    sps = no_species ? Any[] : eval(Meta.parse(split(_species_write, "\n")[2]))
+    vs = isempty(rule_variables) ? Any[] : eval(Meta.parse(_variables_write))
+    if isempty(rule_variables)
+        sps_arg = sps
+    elseif no_species == false
+        sps_arg = [sps; vs]
+    else
+        sps_arg = vs
+    end                                  
+    # Parameters can not be an empty collection
+    if _parameters_write != "\tps = Catalyst.@parameters "
+        ps = eval(Meta.parse(_parameters_write))
+    else
+        ps = Any[]
+    end
+    _reactions = eval(Meta.parse(_reactions_write))
+    combinatoric_ratelaws = integer_stoichiometries ? true : false
+    # Build reaction system from its components
+    reaction_system = Catalyst.ReactionSystem(_reactions, t, sps_arg, ps; name=Symbol(model_SBML.name), combinatoric_ratelaws=combinatoric_ratelaws)
+    specie_map = eval(Meta.parse(_specie_map_write))
+    parameter_map = eval(Meta.parse(_parameter_map_write))
 
     # Build callback functions 
     cbset, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
@@ -95,6 +125,10 @@ function SBML_to_ReactionSystem(path_SBML::T;
         io = open(path_save, "w")
         write(io, callback_str)
         close(io)
+        _ = reactionsystem_to_string(_species_write, _specie_map_write, _variables_write, 
+                                     _parameters_write, _parameter_map_write, _reactions_write, 
+                                     no_species, integer_stoichiometries, write_to_file, path_save_model, 
+                                     rule_variables, model_SBML)
     end
 
     if ret_all == true
@@ -111,9 +145,12 @@ function SBML_to_ReactionSystem(path_SBML::T;
 end
 
 
-function reactionsystem_from_SBML(model_SBML::ModelSBML, 
-                                  path_save_model::String,
-                                  write_to_file::Bool)::String
+
+function _reactionsystem_from_SBML(model_SBML::ModelSBML, 
+                                   rule_variables::Vector{String})::Tuple{String, String, 
+                                                                          String, String, 
+                                                                          String, String, 
+                                                                          Bool, Bool}
 
     # Check if model is empty of derivatives if the case add dummy state to be able to
     # simulate the model
@@ -132,15 +169,12 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     # In case a specie (or parameter) appear as a rate-rule, algebraic or assignment rule they need to be treated as
     # MTK variable for the the downstream processing. This might turn the species block empty, then it must be removed
     _variables_write = "\tvs = ModelingToolkit.@variables"
-    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
-                                 model_SBML.algebraic_rule_variables))
     filter!(x -> x ∉ keys(model_SBML.generated_ids), rule_variables)
     for variable in rule_variables
         _species_write = replace(_species_write, " " * variable * "(t)" => "")
         _variables_write *= " " * variable * "(t)"
     end
     if !isempty(rule_variables)
-        _species_write *= "\n" * _variables_write * "\n"
         no_species = all([x ∈ rule_variables for x in keys(model_SBML.species)])
     else
         no_species = false
@@ -148,7 +182,7 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
 
     # Reaction stoichiometry and propensities
     integer_stoichiometries::Bool = true
-    _reactions_write = "\treactions = [\n"
+    _reactions_write = "\t_reactions = [\n"
     for (id, r) in model_SBML.reactions
 
         # Can happen for models with species that are boundary conditions, such species 
@@ -200,6 +234,20 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     end
     _reactions_write *= "\t]\n"
 
+    return (_species_write, _specie_map_write, _variables_write, 
+            _parameters_write, _parameter_map_write, _reactions_write, 
+            no_species, integer_stoichiometries)
+
+end
+
+
+function reactionsystem_to_string(_species_write::String, _specie_map_write::String, 
+                                  _variables_write::String, _parameters_write::String, 
+                                  _parameter_map_write::String, _reactions_write::String, 
+                                  no_species::Bool, integer_stoichiometries::Bool, 
+                                  write_to_file::Bool, path_save_model::String, 
+                                  rule_variables::Vector{String}, model_SBML::ModelSBML)::String
+
     # ReactionSystem
     combinatoric_ratelaws_arg = integer_stoichiometries ? "true" : "false"
     if isempty(rule_variables)
@@ -209,7 +257,7 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     else
         sps_arg = "vs"
         _species_write = replace(_species_write, "sps = Catalyst.@species" => "")
-    end
+    end                                  
     # Parameters might be an empty set
     if _parameters_write != "\tps = Catalyst.@parameters "
         _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
@@ -220,6 +268,9 @@ function reactionsystem_from_SBML(model_SBML::ModelSBML,
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
     _function_write = "function get_reaction_system(foo)\n\n"
     _function_write *= _species_write * "\n"
+    if _variables_write != "\tvs = ModelingToolkit.@variables"
+        _function_write *= _variables_write * "\n"
+    end
     if _parameters_write != "\tps = Catalyst.@parameters "
         _function_write *= _parameters_write * "\n\n"
     end

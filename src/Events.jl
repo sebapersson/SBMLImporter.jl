@@ -4,7 +4,7 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
     for (event_name, event) in libsbml_model.events
 
         # Parse the event trigger into proper Julia syntax
-        formula_trigger = parse_SBML_math(event.trigger.math)
+        formula_trigger, _ = parse_SBML_math(event.trigger.math)
         formula_trigger = SBML_function_to_math(formula_trigger, model_SBML.functions)
         if isempty(formula_trigger)
             continue
@@ -18,7 +18,7 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
         for (i, event_assignment) in pairs(event.event_assignments)
 
             # Check if event should be ignored as no math child was provided 
-            if isempty(parse_SBML_math(event_assignment.math))
+            if isempty(parse_SBML_math(event_assignment.math)[1])
                 not_skip_assignments[i] = false
                 continue
             end
@@ -26,7 +26,7 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
             event_assignments[i] = event_assignment.variable
 
             # Parse the event formula into the correct Julia syntax 
-            event_formulas[i] = parse_SBML_math(event_assignment.math)
+            event_formulas[i] = parse_SBML_math(event_assignment.math)[1]
             event_formulas[i] = replace_variable(event_formulas[i], "t", "integrator.t")
             event_formulas[i] = replace_reactionid_formula(event_formulas[i], libsbml_model)
             event_formulas[i] = process_SBML_str_formula(event_formulas[i], model_SBML, libsbml_model; check_scaling=false)

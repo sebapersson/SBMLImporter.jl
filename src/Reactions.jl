@@ -2,7 +2,20 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
 
     for (id, reaction) in libsbml_model.reactions
         # Process kinetic math into Julia syntax 
-        _formula = parse_SBML_math(reaction.kinetic_math)
+        _formula, math_idents = parse_SBML_math(reaction.kinetic_math)
+
+        # Check if reactionId or assignment-rule variable appear in the kinetic math, 
+        # if they do they are a part of the math_idents 
+        has_assignment_rule_variable::Bool = false
+        has_reaction_id::Bool = false
+        for math_ident in math_idents
+            if haskey(model_SBML.reactions, math_ident)
+                has_reaction_id = true
+            end
+            if math_ident ∈ model_SBML.assignment_rule_variables
+                has_assignment_rule_variable = true
+            end
+        end
 
         # Check if mass-action stocihim
         stoichiometry_mass_action::Bool = true       
@@ -59,7 +72,9 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
             products_stoichiometry[i] = stoichiometry * get_compartment_scaling(product.species, formula, model_SBML; stoichiometry=true)
         end
 
-        model_SBML.reactions[id] = ReactionSBML(id, formula, products, products_stoichiometry, reactants, reactants_stoichiometry, stoichiometry_mass_action)
+        model_SBML.reactions[id] = ReactionSBML(id, formula, products, products_stoichiometry, reactants, 
+                                                reactants_stoichiometry, stoichiometry_mass_action, 
+                                                has_assignment_rule_variable, has_reaction_id)
     end
 
     # Species given via assignment rules, or initial assignments which only affect stoichiometry

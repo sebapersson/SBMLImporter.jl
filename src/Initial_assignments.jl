@@ -4,7 +4,7 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
     for (assign_id, initial_assignment) in libsbml_model.initial_assignments
 
         # Parse the assignment formula to Julia syntax
-        formula = parse_SBML_math(initial_assignment)
+        formula, _ = parse_SBML_math(initial_assignment)
         if occursin("piecewise", formula) && assign_id ∈ keys(model_SBML.species)
             throw(SBMLSupport("Piecewise expressions in initial assignments for species are not supported"))
         end
