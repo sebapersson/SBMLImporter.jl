@@ -50,7 +50,6 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, mode
 end
 
 
-
 function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool, 
                            inline_assignment_rules::Bool)::ModelSBML
 
@@ -62,11 +61,12 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     # Specie reference ids can sometimes appear in math expressions, then they should be replaced 
     # by the stoichometry for corresponding reference id, searching for specie reference ids 
-    # can be computationally demanding for larger models therefore the list of such ids is pre-built.
+    # can be computationally demanding if the list of such ids is rebuilt, thus here the 
+    # list is built only once in the beginning
     specie_reference_ids = get_specie_reference_ids(libsbml_model)
 
     # An intermedidate struct storing relevant model informaiton needed for
-    # formulating an ODESystem and callback functions
+    # formulating a ReactionSystem and callback functions
     model_SBML = ModelSBML(model_name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
@@ -85,7 +85,8 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0), 
                            conversion_factor, 
-                           specie_reference_ids)
+                           specie_reference_ids, 
+                           String[])
                         
     parse_SBML_species!(model_SBML, libsbml_model)
 
@@ -133,11 +134,14 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # these are non differentialble, discrete and not allowed
     has_rem_or_div(model_SBML)
 
-    # Inlining assignment rule variables makes the model in a sense less readable, however, if not done for 
-    # larger models Catalyst might crash due to a stack-overflow error, and model load times become longer 
+    # Inlining assignment rule variables makes the model less readable, however, if not done for 
+    # larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true
        inline_assignment_rules!(model_SBML) 
     end
+
+    # For ease of processing down the line storing all rule variables is convenient
+    get_rule_variables!(model_SBML)
 
     return model_SBML
 end

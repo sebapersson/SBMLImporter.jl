@@ -33,7 +33,7 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
             
             # Formulas are given in concentration, but species can also be given in amounts. Thus, we must 
             # adjust for compartment for the latter
-            if event_assignments[i] ∈ keys(model_SBML.species)
+            if haskey(model_SBML.species, event_assignments[i])
                 if model_SBML.species[event_assignments[i]].unit == :Concentration
                     continue
                 end
@@ -44,10 +44,11 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
                 event_formulas[i] = compartment_formula *  " * (" * event_formulas[i] * ')'
                 continue
             end
-            if event_assignments[i] ∈ keys(libsbml_model.parameters)  
+            if haskey(model_SBML.parameters, event_assignments[i])
                 continue
             end
-            if event_assignments[i] ∈ keys(libsbml_model.compartments) && model_SBML.compartments[event_assignments[i]].constant == false
+            if (haskey(model_SBML.compartments, event_assignments[i]) && 
+                model_SBML.compartments[event_assignments[i]].constant == false)      
                 continue
             end
 
@@ -104,7 +105,7 @@ function adjust_event_compartment_change!!!(event_formulas::Vector{String},
 
         # Only potentiallt adjust species if a compartment is assigned to in the 
         # event
-        if assign_to ∉ keys(model_SBML.compartments)
+        if !haskey(model_SBML.compartments, assign_to)
             continue
         end
 

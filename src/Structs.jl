@@ -77,6 +77,7 @@ struct ModelSBML
     variables_with_piecewise::Vector{String}
     conversion_factor::String
     specie_reference_ids::Vector{String}
+    rule_variables::Vector{String}
 end
 function ModelSBML()::ModelSBML
     model_SBML = ModelSBML("",
@@ -96,8 +97,22 @@ function ModelSBML()::ModelSBML
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0), 
-                           "") # Variables with piecewise
+                           "", 
+                           Vector{String}(undef, 0), 
+                           Vector{String}(undef, 0)) # Variables with piecewise
     return model_SBML                           
+end
+
+
+struct ModelSBMLString
+    species::String
+    specie_map::String
+    variables::String 
+    parameters::String 
+    parameter_map::String 
+    reactions::String   
+    no_species::Bool
+    int_stoichiometries::Bool
 end
 
 

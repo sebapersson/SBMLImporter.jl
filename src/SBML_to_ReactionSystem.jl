@@ -69,17 +69,11 @@ function SBML_to_ReactionSystem(path_SBML::T;
 
     # Intermediate model representation of a SBML model which can be processed into
     # an ODESystem
-    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string, 
-                                  inline_assignment_rules=inline_assignment_rules)
-    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
-                                 model_SBML.algebraic_rule_variables))
+    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, 
+                                  model_as_string=model_as_string, inline_assignment_rules=inline_assignment_rules)                                    
 
     # If model is written to file save it in the same directory as the SBML-file
-    if model_as_string == false
-        dir_save = joinpath(splitdir(path_SBML)[1], "SBML")
-    else
-        dir_save = joinpath(@__DIR__, "SBML")
-    end
+    dir_save = model_as_string ? joinpath(@__DIR__, "SBML") : joinpath(splitdir(path_SBML)[1], "SBML")
     if write_to_file == true && !isdir(dir_save)
         mkdir(dir_save)
     end
@@ -87,34 +81,32 @@ function SBML_to_ReactionSystem(path_SBML::T;
 
     # Build the ReactionSystem. Must be done via Meta-parse, because if a function is used 
     # via @RuntimeGeneratedFunction runtime is very slow for large models
-    (_species_write, _specie_map_write, _variables_write, 
-     _parameters_write, _parameter_map_write, _reactions_write, 
-     no_species, integer_stoichiometries) = _reactionsystem_from_SBML(model_SBML, rule_variables)
+    parsed_model_SBML = _reactionsystem_from_SBML(model_SBML)
     # The model can have have only species or only variables or both. If it has variables they 
     # are given via SBML rules
     eval(Meta.parse("ModelingToolkit.@variables t"))
     eval(Meta.parse("D = Differential(t)"))
-    sps = no_species ? Any[] : eval(Meta.parse(split(_species_write, "\n")[2]))
-    vs = isempty(rule_variables) ? Any[] : eval(Meta.parse(_variables_write))
-    if isempty(rule_variables)
+    sps = parsed_model_SBML.no_species ? Any[] : eval(Meta.parse(split(parsed_model_SBML.species, "\n")[2]))
+    vs = isempty(model_SBML.rule_variables) ? Any[] : eval(Meta.parse(parsed_model_SBML.variables))
+    if isempty(model_SBML.rule_variables)
         sps_arg = sps
-    elseif no_species == false
+    elseif parsed_model_SBML.no_species == false
         sps_arg = [sps; vs]
     else
         sps_arg = vs
     end                                  
     # Parameters can not be an empty collection
-    if _parameters_write != "\tps = Catalyst.@parameters "
-        ps = eval(Meta.parse(_parameters_write))
+    if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
+        ps = eval(Meta.parse(parsed_model_SBML.parameters))
     else
         ps = Any[]
     end
-    _reactions = eval(Meta.parse(_reactions_write))
-    combinatoric_ratelaws = integer_stoichiometries ? true : false
+    _reactions = eval(Meta.parse(parsed_model_SBML.reactions))
+    combinatoric_ratelaws = parsed_model_SBML.int_stoichiometries ? true : false
     # Build reaction system from its components
     reaction_system = Catalyst.ReactionSystem(_reactions, t, sps_arg, ps; name=Symbol(model_SBML.name), combinatoric_ratelaws=combinatoric_ratelaws)
-    specie_map = eval(Meta.parse(_specie_map_write))
-    parameter_map = eval(Meta.parse(_parameter_map_write))
+    specie_map = eval(Meta.parse(parsed_model_SBML.specie_map))
+    parameter_map = eval(Meta.parse(parsed_model_SBML.parameter_map))
 
     # Build callback functions 
     cbset, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
@@ -125,10 +117,8 @@ function SBML_to_ReactionSystem(path_SBML::T;
         io = open(path_save, "w")
         write(io, callback_str)
         close(io)
-        _ = reactionsystem_to_string(_species_write, _specie_map_write, _variables_write, 
-                                     _parameters_write, _parameter_map_write, _reactions_write, 
-                                     no_species, integer_stoichiometries, write_to_file, path_save_model, 
-                                     rule_variables, model_SBML)
+        _ = reactionsystem_to_string(parsed_model_SBML, write_to_file, path_save_model, 
+                                     model_SBML)
     end
 
     if ret_all == true
@@ -145,12 +135,8 @@ function SBML_to_ReactionSystem(path_SBML::T;
 end
 
 
-
-function _reactionsystem_from_SBML(model_SBML::ModelSBML, 
-                                   rule_variables::Vector{String})::Tuple{String, String, 
-                                                                          String, String, 
-                                                                          String, String, 
-                                                                          Bool, Bool}
+# Parse the model into a string, which then via Meta.parse becomes a ReactionSystem
+function _reactionsystem_from_SBML(model_SBML::ModelSBML)::ModelSBMLString
 
     # Check if model is empty of derivatives if the case add dummy state to be able to
     # simulate the model
@@ -163,26 +149,25 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML,
     end
 
     # Setup Catalyst ReactionNetwork
-    _species_write, _species_write_array, _specie_map_write = SBMLImporter.get_specie_map(model_SBML, reaction_system=true)
-    _parameters_write, _parameters_write_array, _parameter_map_write = SBMLImporter.get_parameter_map(model_SBML, reaction_system=true)
+    _species_write, _specie_map_write = SBMLImporter.get_specie_map(model_SBML, reaction_system=true)
+    _parameters_write, _parameter_map_write = SBMLImporter.get_parameter_map(model_SBML, reaction_system=true)
 
     # In case a specie (or parameter) appear as a rate-rule, algebraic or assignment rule they need to be treated as
     # MTK variable for the the downstream processing. This might turn the species block empty, then it must be removed
     _variables_write = "\tvs = ModelingToolkit.@variables"
-    filter!(x -> x ∉ keys(model_SBML.generated_ids), rule_variables)
-    for variable in rule_variables
+    for variable in model_SBML.rule_variables
         _species_write = replace(_species_write, " " * variable * "(t)" => "")
         _variables_write *= " " * variable * "(t)"
     end
-    if !isempty(rule_variables)
-        no_species = all([x ∈ rule_variables for x in keys(model_SBML.species)])
+    if !isempty(model_SBML.rule_variables)
+        no_species = all([x ∈ model_SBML.rule_variables for x in keys(model_SBML.species)])
     else
         no_species = false
     end
 
     # Reaction stoichiometry and propensities
-    integer_stoichiometries::Bool = true
-    _reactions_write = "\t_reactions = [\n"
+    int_stoichiometries::Bool = true
+    _reactions = "\t_reactions = [\n"
     for (id, r) in model_SBML.reactions
 
         # Can happen for models with species that are boundary conditions, such species 
@@ -191,75 +176,73 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML,
             continue
         end
 
-        reactants_stoichiometries, reactants, integer_stoichiometries1 = get_reaction_side(r, :Reactants, model_SBML)
-        products_stoichiometries, products, integer_stoichiometries2 = get_reaction_side(r, :Products, model_SBML)
+        reactants_stoichiometries, reactants, int_stoichiometries1 = get_reaction_side(r, :Reactants, model_SBML)
+        products_stoichiometries, products, int_stoichiometries2 = get_reaction_side(r, :Products, model_SBML)
         propensity = r.kinetic_math
-        if reaction_is_mass_action(r, model_SBML) == true && integer_stoichiometries1 && integer_stoichiometries2
-            _reactions_write *= ("\t\tSBMLImporter.update_rate_reaction(Catalyst.Reaction(" * propensity * ", " *
-                                reactants * ", " * products * ", " *
-                                reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=false)),\n")
+        if reaction_is_mass_action(r, model_SBML) == true && int_stoichiometries1 && int_stoichiometries2
+            _reactions *= ("\t\tSBMLImporter.update_rate_reaction(Catalyst.Reaction(" * propensity * ", " *
+                            reactants * ", " * products * ", " *
+                            reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=false)),\n")
         else
-            _reactions_write *= ("\t\tCatalyst.Reaction(" * propensity * ", " *
-                                reactants * ", " * products * ", " *
-                                reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=true),\n")
+            _reactions *= ("\t\tCatalyst.Reaction(" * propensity * ", " *
+                           reactants * ", " * products * ", " *
+                           reactants_stoichiometries * ", " * products_stoichiometries * "; only_use_rate=true),\n")
         end
                         
         # If it has already been assigned false we know that all stoichiometries are not
-        # integer numbers, and if either of integer_stoichiometries are false integer_stoichiometries
+        # integer numbers, and if either of int_stoichiometries are false int_stoichiometries
         # should become false
-        if integer_stoichiometries == true
-            integer_stoichiometries = !any([integer_stoichiometries1, integer_stoichiometries2] .== false)
+        if int_stoichiometries == true
+            int_stoichiometries = !any([int_stoichiometries1, int_stoichiometries2] .== false)
         end
     end
 
     # Rules are directly encoded into the Catalyst.Reaction vector
-    for variable in unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables))
-        if variable ∈ keys(model_SBML.species)
+    for variable in unique(Iterators.flatten((model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables)))
+        if haskey(model_SBML.species, variable)
             @unpack formula, assignment_rule, rate_rule = model_SBML.species[variable]
-        elseif variable ∈ keys(model_SBML.parameters)
+        elseif haskey(model_SBML.parameters, variable)
             @unpack formula, assignment_rule, rate_rule = model_SBML.parameters[variable]
-        elseif variable ∈ keys(model_SBML.compartments)
+        elseif haskey(model_SBML.compartments, variable)
             @unpack formula, assignment_rule, rate_rule = model_SBML.compartments[variable]
         else
             continue
         end
         if rate_rule == true
-            _reactions_write *= "\t\tD(" * variable * ") ~ " * formula * ",\n"
+            _reactions *= "\t\tD(" * variable * ") ~ " * formula * ",\n"
         elseif assignment_rule == true
-            _reactions_write *= "\t\t" * variable * " ~ " * formula * ",\n"
+            _reactions *= "\t\t" * variable * " ~ " * formula * ",\n"
         end
     end
+    # Algebriac rules are already encoded as 0 ~ formula
     for formula in values(model_SBML.algebraic_rules)
-        _reactions_write *= "\t\t" * formula * ",\n"
+        _reactions *= "\t\t" * formula * ",\n"
     end
-    _reactions_write *= "\t]\n"
+    _reactions *= "\t]\n"
 
-    return (_species_write, _specie_map_write, _variables_write, 
-            _parameters_write, _parameter_map_write, _reactions_write, 
-            no_species, integer_stoichiometries)
-
+    return ModelSBMLString(_species_write, _specie_map_write, _variables_write, 
+                           _parameters_write, _parameter_map_write, _reactions, 
+                           no_species, int_stoichiometries)
 end
 
 
-function reactionsystem_to_string(_species_write::String, _specie_map_write::String, 
-                                  _variables_write::String, _parameters_write::String, 
-                                  _parameter_map_write::String, _reactions_write::String, 
-                                  no_species::Bool, integer_stoichiometries::Bool, 
+function reactionsystem_to_string(parsed_model_SBML::ModelSBMLString,
                                   write_to_file::Bool, path_save_model::String, 
-                                  rule_variables::Vector{String}, model_SBML::ModelSBML)::String
+                                  model_SBML::ModelSBML)::String
 
     # ReactionSystem
-    combinatoric_ratelaws_arg = integer_stoichiometries ? "true" : "false"
-    if isempty(rule_variables)
+    combinatoric_ratelaws_arg = parsed_model_SBML.int_stoichiometries ? "true" : "false"
+    _species_write = parsed_model_SBML.species
+    if isempty(model_SBML.rule_variables)
         sps_arg = "sps"
-    elseif no_species == false
+    elseif parsed_model_SBML.no_species == false
         sps_arg = "[sps; vs]"
     else
         sps_arg = "vs"
         _species_write = replace(_species_write, "sps = Catalyst.@species" => "")
     end                                  
     # Parameters might be an empty set
-    if _parameters_write != "\tps = Catalyst.@parameters "
+    if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
         _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
     else
         _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, Any[]; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
@@ -268,17 +251,17 @@ function reactionsystem_to_string(_species_write::String, _specie_map_write::Str
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
     _function_write = "function get_reaction_system(foo)\n\n"
     _function_write *= _species_write * "\n"
-    if _variables_write != "\tvs = ModelingToolkit.@variables"
-        _function_write *= _variables_write * "\n"
+    if parsed_model_SBML.variables != "\tvs = ModelingToolkit.@variables"
+        _function_write *= parsed_model_SBML.variables * "\n"
     end
-    if _parameters_write != "\tps = Catalyst.@parameters "
-        _function_write *= _parameters_write * "\n\n"
+    if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
+        _function_write *= parsed_model_SBML.parameters * "\n\n"
     end
     _function_write *= "\tD = Differential(t)\n\n"
-    _function_write *= _reactions_write * "\n\n"
+    _function_write *= parsed_model_SBML.reactions * "\n\n"
     _function_write *= _rn_write * "\n\n"
-    _function_write *= _specie_map_write * "\n"
-    _function_write *= _parameter_map_write * "\n"
+    _function_write *= parsed_model_SBML.specie_map * "\n"
+    _function_write *= parsed_model_SBML.parameter_map * "\n"
     _function_write *= "\treturn rn, specie_map, parameter_map\nend"
 
     # In case user request file to be written
@@ -313,17 +296,15 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol,
 
     # Process the _toichiometry for the reaction, species vector is not 
     # required to be unique hence potential double counting must be 
-    # considered 
+    # considered (role of k-index)
     k = 1
     _stoichiometries = Vector{String}(undef, length(filter(x -> x != "nothing", unique(species))))
     _species_parsed = fill("", length(filter(x -> x != "nothing", unique(species))))
-
+    integer_stoichiometry::Bool = true
     # Happens when all reactants or products are boundary condition
     if isempty(_species_parsed)
         return "nothing", "nothing", true
     end
-
-    integer_stoichiometry::Bool = true
     for i in eachindex(species)
 
         # Happens when a specie is a boundary condition, it should not be involved in the reaction and 
@@ -334,7 +315,8 @@ function get_reaction_side(r::ReactionSBML, which_side::Symbol,
 
         stoichiometry, _integer_stoichiometry = parse_stoichiometry_reaction_system(stoichiometries[i])
 
-        # SBML models can have conversion factors that scale stoichiometry
+        # SBML models can have conversion factors that scale stoichiometry, in this case the stoichiometry
+        # is not an integer stoichiometry
         if isempty(model_SBML.species[species[i]].conversion_factor) && isempty(model_SBML.conversion_factor)
             _stoichiometry = stoichiometry 
             if integer_stoichiometry == true
@@ -398,30 +380,18 @@ function reaction_is_mass_action(r::ReactionSBML, model_SBML::ModelSBML)::Bool
         return false
     end
 
-    for reactant in r.reactants
-        if reactant == "nothing"
+    for specie in Iterators.flatten((r.reactants, r.products))
+        if specie == "nothing"
             continue
         end
-            
-        if model_SBML.species[reactant].only_substance_units == false
-            return false
-        end
-    end
-    for product in r.products
-        if product == "nothing"
-            continue
-        end
-
-        if model_SBML.species[product].only_substance_units == false
+        if model_SBML.species[specie].only_substance_units == false
             return false
         end
     end
 
     # Check that no rule variables appear in formula
     formula = r.kinetic_math
-    rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
-                                 model_SBML.algebraic_rule_variables))
-    for rule_variable in rule_variables
+    for rule_variable in model_SBML.rule_variables
         if SBMLImporter.replace_variable(formula, rule_variable, "") != formula
             return false
         end
@@ -433,4 +403,138 @@ end
 
 function update_rate_reaction(rx; combinatoric_ratelaw::Bool=true)
     @set rx.rate = (rx.rate^2) / Catalyst.oderatelaw(rx; combinatoric_ratelaw=combinatoric_ratelaw)
+end
+
+
+# Helper for exporting SBML models 
+function get_specie_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tuple{String, String}
+
+    if reaction_system == false
+        _species_write = "\tModelingToolkit.@variables t "
+    else
+        _species_write = "\tModelingToolkit.@variables t\n\tsps = Catalyst.@species "
+    end
+    _specie_map_write = "\tspecie_map = [\n"
+    
+    # Identify which variables/parameters are dynamic 
+    for specie_id in keys(model_SBML.species)
+        _species_write *= specie_id * "(t) "
+    end
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == true
+            continue
+        end
+        # Happens when the assignment rule has been inlined, and thus should not be included 
+        # as a model variable with an initial value
+        if (parameter.assignment_rule == true && 
+            parameter_id ∉ model_SBML.algebraic_rule_variables && 
+            parameter.rate_rule == false)
+            continue
+        end
+        _species_write *= parameter_id * "(t) "
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == true
+            continue
+        end
+        _species_write *= compartment_id * "(t) "
+    end
+
+    # Map for initial values on time-dependent parameters 
+    for (specie_id, specie) in model_SBML.species
+        u0eq = specie.initial_value
+        _specie_map_write *= "\t" * specie_id * " =>" * u0eq * ",\n"
+    end
+    # Parameters
+    for (parameter_id, parameter) in model_SBML.parameters
+        if !(parameter.rate_rule == true || parameter.assignment_rule == true)
+            continue
+        end
+        # See comment above
+        if (parameter.assignment_rule == true && 
+            parameter_id ∉ model_SBML.algebraic_rule_variables && 
+            parameter.rate_rule == false)
+            continue
+        end
+        u0eq = parameter.initial_value
+        _specie_map_write *= "\t" * parameter_id * " => " * u0eq * ",\n"
+    end
+    # Compartments
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.rate_rule != true
+            continue
+        end
+        u0eq = compartment.initial_value
+        _specie_map_write *= "\t" * compartment_id * " => " * u0eq * ",\n"
+    end
+    _specie_map_write *= "\t]"
+
+
+    return _species_write, _specie_map_write
+end
+
+
+# For when exporting to ODESystem or ReactionSystem 
+function get_parameter_map(model_SBML::ModelSBML; reaction_system::Bool=false)::Tuple{String, String}
+
+    if reaction_system == false
+        _parameters_write = "\tModelingToolkit.@parameters "
+    else
+        _parameters_write = "\tps = Catalyst.@parameters "
+    end
+    _parameter_map_write = "\tparameter_map = [\n"
+    
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == false
+            continue
+        end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && parameter.assignment_rule == true
+            continue
+        end
+        # In case assignment rule variables have been inlined they should not be 
+        # a part of the parameter-map 
+        if parameter.assignment_rule == true && parameter_id ∉ model_SBML.assignment_rule_variables
+            continue
+        end
+        _parameters_write *= parameter_id * " "
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == false
+            continue
+        end
+        # For ReactionSystem we carefully need to separate species and variables
+        if reaction_system == true && compartment.assignment_rule == true
+            continue
+        end
+        _parameters_write *= compartment_id * " "
+    end
+    # Special case where we do not have any parameters
+    if length(_parameters_write) == 29 && _parameters_write[1:14] != "\tps = Catalyst"
+        _parameters_write = ""
+    end
+
+    # Map setting initial values for parameters 
+    for (parameter_id, parameter) in model_SBML.parameters
+        if parameter.constant == false
+            continue
+        end
+        # In case assignment rule variables have been inlined they should not be 
+        # a part of the parameter-map 
+        if parameter.assignment_rule == true && parameter_id ∉ model_SBML.assignment_rule_variables
+            continue
+        end
+        peq = parameter.formula
+        _parameter_map_write *= "\t" * parameter_id * " =>" * peq * ",\n"
+    end
+    for (compartment_id, compartment) in model_SBML.compartments
+        if compartment.constant == false
+            continue
+        end
+        ceq = compartment.formula
+        _parameter_map_write *= "\t" * compartment_id * " =>" * ceq * ",\n"
+    end
+    _parameter_map_write *= "\t]"
+
+    return _parameters_write, _parameter_map_write
 end

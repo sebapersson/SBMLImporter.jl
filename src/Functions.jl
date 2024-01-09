@@ -49,7 +49,7 @@ function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:Ab
     match_parentheses_regex = Regex("\\((?:[^)(]*(?R)?)*+\\)")
 
     # In case no functions occur in the formula
-    if !any(occursin.(collect(keys(model_functions)), formula))
+    if !any(occursin.(keys(model_functions), formula))
         return formula
     end
 
@@ -109,8 +109,7 @@ function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:Ab
     end
 
     # In case of nested function recursively processes nested functions
-    _model_functions = collect(keys(model_functions))
-    if any(occursin.(_model_functions, _formula))
+    if any(occursin.(keys(model_functions), _formula))
         _formula = SBML_function_to_math(_formula, model_functions)
     end
 
