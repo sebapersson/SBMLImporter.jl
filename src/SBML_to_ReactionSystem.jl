@@ -1,6 +1,7 @@
 """
     SBML_to_ReactionSystem(path_SBML::AbstractString;
                            ifelse_to_callback::Bool=true,
+                           inline_assignment_rules::Bool=false,
                            write_to_file::Bool=false, 
                            verbose::Bool=true, 
                            return_all::Bool=false, 
@@ -10,7 +11,7 @@ Parse an SBML model into a Catalyst `ReactionSystem` and potentially convert eve
 
 For information on simulating the `ReactionSystem`, refer to the documentation.
 
-For converting the SBML model directly into a ModelingToolkit `ODESystem` see the function `SBML_to_ReactionSystem`.
+For converting the SBML model directly into a ModelingToolkit `ODESystem` see the function `SBML_to_ODESystem`.
 
 For testing `path_SBML` can be the model as a string if `model_as_string=true`.
 
@@ -20,6 +21,8 @@ For testing `path_SBML` can be the model as a string if `model_as_string=true`.
 ## Arguments
 - `path_SBML`: File path to a valid SBML file (level 2 or higher).
 - `ifelse_to_callback=true`: Whether to rewrite `ifelse` (piecewise) expressions to callbacks; recommended for performance.
+- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recomended for model import speed, 
+    however, note that it will not be possible to access the rule-variable then via sol[:var]
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the SBML file.
 - `verbose=true`: Whether or not to display information on the number of return arguments.
 - `return_all=true`: Whether or not to return all possible arguments (see below), regardless of whether the model has events.
