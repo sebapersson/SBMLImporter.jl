@@ -4,8 +4,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
     for (assign_id, initial_assignment) in libsbml_model.initial_assignments
 
         # Parse the assignment formula to Julia syntax
-        formula = parse_SBML_math(initial_assignment)
-        if occursin("piecewise", formula) && assign_id ∈ keys(model_SBML.species)
+        formula, _ = parse_SBML_math(initial_assignment)
+        if occursin("piecewise", formula) && haskey(model_SBML.species, assign_id)
             throw(SBMLSupport("Piecewise expressions in initial assignments for species are not supported"))
         end
         formula = replace_reactionid_formula(formula, libsbml_model)
@@ -16,12 +16,13 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
             throw(SBMLSupport("and, or not supported in initial assignments"))
         end
 
-        if assign_id ∈ keys(model_SBML.species)
+        if haskey(model_SBML.species, assign_id)
             model_SBML.species[assign_id].initial_value = formula
             push!(assigned_states, assign_id)
 
-        elseif assign_id ∈ keys(model_SBML.parameters)
-            if assign_id ∈ keys(libsbml_model.initial_assignments) && assign_id ∈ model_SBML.rate_rule_variables
+        elseif haskey(model_SBML.parameters, assign_id)
+
+            if haskey(libsbml_model.initial_assignments, assign_id) && assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.parameters[assign_id].initial_value = formula
             else
                 # Here the parameter should be treated as given by an assignment rule, as it likelly is non-constant 
@@ -32,8 +33,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
                 model_SBML.parameters[assign_id].assignment_rule = true
             end
 
-        elseif assign_id ∈ keys(model_SBML.compartments)
-            if assign_id ∈ keys(libsbml_model.initial_assignments) && assign_id ∈ model_SBML.rate_rule_variables
+        elseif haskey(model_SBML.compartments, assign_id)
+            if haskey(libsbml_model.initial_assignments, assign_id) && assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.compartments[assign_id].initial_value = formula
             else
                 # Here the compartment should be treated as given by an assignment rule, as it likelly is non-constant 
@@ -63,7 +64,7 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
     # Initial assignment formula is given in conc, but if the state it acts on is given in amount
     # we need to adjust by multiplaying with compartment.
     for assign_id in assigned_states
-        if assign_id ∉ keys(model_SBML.species)
+        if !haskey(model_SBML.species, assign_id)
             continue
         end
         if model_SBML.species[assign_id].unit == :Concentration

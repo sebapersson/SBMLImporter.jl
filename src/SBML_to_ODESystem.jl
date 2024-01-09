@@ -1,6 +1,7 @@
 """
     SBML_to_ODESystem(path_SBML::AbstractString;
                       ifelse_to_callback::Bool=true,
+                      inline_assignment_rules::Bool=false,
                       write_to_file::Bool=false,
                       verbose::Bool=true,
                       return_all::Bool=false,
@@ -20,6 +21,8 @@ For testing `path_SBML` can be the model as a string if `model_as_string=true`
 ## Arguments
 - `path_SBML`: File path to a valid SBML file (level 2 or higher).
 - `ifelse_to_callback=true`: Whether to rewrite `ifelse` (piecewise) expressions to callbacks; recommended for performance.
+- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recomended for model import speed, 
+    however, note that it will not be possible to access the rule-variable then via sol[:var]
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the SBML file.
 - `verbose=true`: Whether or not to display information on the number of return arguments.
 - `return_all=true`: Whether or not to return all possible arguments (see below), regardless of whether the model has events.
@@ -59,56 +62,28 @@ sol = solve(prob, Rodas5P(), tstops=tstops, callback=callbacks)
 """
 function SBML_to_ODESystem(path_SBML::T;
                            ifelse_to_callback::Bool=true,
+                           inline_assignment_rules::Bool=true,
                            write_to_file::Bool=false,
                            verbose::Bool=true,
                            ret_all::Bool=false,
                            model_as_string::Bool=false) where T <: AbstractString
 
-    # Intermediate model representation of a SBML model which can be processed into
-    # an ODESystem
-    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, model_as_string=model_as_string)
-
-    # If model is written to file save it in the same directory as the SBML-file
-    if model_as_string == false
-        dir_save = joinpath(splitdir(path_SBML)[1], "SBML")
-    else
-        dir_save = joinpath(@__DIR__, "SBML")
-    end
-    if write_to_file == true && !isdir(dir_save)
-        mkdir(dir_save)
-    end
-    path_save_model = joinpath(dir_save, model_SBML.name * ".jl")
-
-    # Build the ReactionSystem
-    _model = reactionsystem_from_SBML(model_SBML, path_save_model, write_to_file)
-    _get_reaction_system = @RuntimeGeneratedFunction(Meta.parse(_model))
-    reaction_system, specie_map, parameter_map = _get_reaction_system("https://xkcd.com/303/") # Argument needed by @RuntimeGeneratedFunction
-    # Build callback functions
-    cbset, callback_str = create_callbacks_SBML(reaction_system, model_SBML, model_SBML.name)
-    # Convert into an ODESystem
-    if isempty(model_SBML.algebraic_rules)
-        ode_system = structural_simplify(convert(ODESystem, reaction_system))
-    else
-        ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, reaction_system)))
-    end
-
-    # if model is written to file write the callback
-    if write_to_file == true
-        path_save = joinpath(dir_save, model_SBML.name * "_callbacks.jl")
-        io = open(path_save, "w")
-        write(io, callback_str)
-        close(io)
-    end
+    rn, specie_map, parameter_map, cb = SBML_to_ReactionSystem(path_SBML; ifelse_to_callback=ifelse_to_callback, 
+                                                               inline_assignment_rules=inline_assignment_rules, 
+                                                               write_to_file=write_to_file, 
+                                                               verbose=verbose, ret_all=true, 
+                                                               model_as_string=model_as_string)
+    sys = structural_simplify(convert(ODESystem, rn))
 
     if ret_all == true
-        return ode_system, specie_map, parameter_map, cbset
+        return sys, specie_map, parameter_map, cb
     end
 
     # Depending on model return what is needed to perform forward simulations
     if isempty(model_SBML.events) && isempty(model_SBML.ifelse_bool_expressions)
-        return ode_system, specie_map, parameter_map
+        return sys, specie_map, parameter_map
     end
-
+    
     verbose && @info "SBML model with events - output returned as odesys, specie_map, parameter_map, cbset\nFor how to simulate model see documentation"
-    return ode_system, specie_map, parameter_map, cbset
+    return sys, specie_map, parameter_map, cb
 end

@@ -31,11 +31,10 @@ include("Math.jl")
 include("Initial_assignments.jl")
 include("Reactions.jl")
 
-
 # Model with piecewise for PrecompileTools to make model reading faster
 @setup_workload begin
     path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Boehm_JProteomeRes2014.xml")
-    ode_system, specie_map, parameter_map, cb = SBML_to_ODESystem(path_SBML, ret_all=true, write_to_file=false)
+    ode_system, specie_map, parameter_map, cb = SBML_to_ODESystem(path_SBML, ret_all=true)
     ode_problem = ODEProblem(ode_system, specie_map, (0.0, 10.0), parameter_map, jac=true)
     sol = solve(ode_problem, Rodas5P(), abstol=1e-8, reltol=1e-8, callback=cb)
 end

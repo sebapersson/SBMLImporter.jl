@@ -18,7 +18,7 @@ function piecewise_to_ifelse(rule_formula::String, model_SBML::ModelSBML, libsbm
     for (i, piecewise_eq) in pairs(piecewise_eqs)
 
         # Do not re-processes piecewise if already has been done
-        if piecewise_eq ∈ keys(model_SBML.piecewise_expressions)
+        if haskey(model_SBML.piecewise_expressions, piecewise_eq)
             ifelse_eqs[i] = model_SBML.piecewise_expressions[piecewise_eq]
             continue
         end
@@ -311,7 +311,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML, 
     for i in eachindex(indices_ifelse)
 
         ifelse_eq = formula[indices_ifelse[i]]
-        if ifelse_eq ∈ keys(model_SBML.ifelse_bool_expressions)
+        if haskey(model_SBML.ifelse_bool_expressions, ifelse_eq)
             formula_ret = replace(formula_ret, ifelse_eq => model_SBML.ifelse_bool_expressions[ifelse_eq])
         end
 
@@ -376,7 +376,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML, 
         local j = 1
         while true
             parameter_name = "__parameter_ifelse" * string(j)
-            if parameter_name ∉ keys(model_SBML.ifelse_parameters)
+            if !haskey(model_SBML.ifelse_parameters, parameter_name)
                 break
             end
             j += 1

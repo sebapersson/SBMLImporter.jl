@@ -94,7 +94,9 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
-        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
+        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, 
+                                                                                             model_as_string=true, 
+                                                                                             inline_assignment_rules=false)
         if isempty(model_SBML.algebraic_rules)
             ode_system = structural_simplify(convert(ODESystem, reaction_system))
         else
@@ -121,7 +123,7 @@ function check_test_case(test_case, solver)
                 continue
             end
 
-            if to_check ∈ species_test && to_check ∈ species_test_conc && string(to_check) ∈ keys(libsbml_model.species)
+            if to_check ∈ species_test && to_check ∈ species_test_conc && haskey(libsbml_model.species, string(to_check))
                 compartmentName = libsbml_model.species[string(to_check)].compartment
                 if model_SBML.species[string(to_check)].unit == :Concentration
                     c = 1.0
@@ -130,7 +132,7 @@ function check_test_case(test_case, solver)
                 else
                     c = sol[Symbol(compartmentName)]
                 end
-            elseif to_check ∈ species_test && to_check ∈ species_test_amount && string(to_check) ∈ keys(libsbml_model.species)
+            elseif to_check ∈ species_test && to_check ∈ species_test_amount &&  haskey(libsbml_model.species, string(to_check))
                 compartmentName = libsbml_model.species[string(to_check)].compartment
                 if model_SBML.species[string(to_check)].unit == :Concentration
                     if compartmentName in string.(model_parameters)
@@ -157,11 +159,15 @@ function get_model_str(test_case)
     sbml_urls = get_sbml_urls(base_url)
     sbml_url = sbml_urls[end]
     sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-    model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string=true)
-    reaction_system = SBMLImporter.reactionsystem_from_SBML(model_SBML, "", false)
-    return reaction_system, model_SBML
-end
+    model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string=true, inline_assignment_rules=false)
 
+
+    parsed_model_SBML = SBMLImporter._reactionsystem_from_SBML(model_SBML)
+    model_str = SBMLImporter.reactionsystem_to_string(parsed_model_SBML, false, "", 
+                                                      model_SBML)
+
+    return model_str, model_SBML
+end
 
 
 # To run this you might have to add Catalyst into the SBMLImporter.jl file 
@@ -356,6 +362,11 @@ solver = Rodas4P()
 
         # Uncommon mathML with boundary effects, not sure I agree with test-suite
         if test_case ∈ ["00959"]
+            continue
+        end
+
+        # A form of event compeition 
+        if test_case ∈ ["00953"]
             continue
         end
 

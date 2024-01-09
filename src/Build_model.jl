@@ -9,7 +9,8 @@ Rewriting ifelse to Boolean callbacks is strongly recomended if possible.
 
 For testing path_SBML can be the model as a string if model_as_string=true
 """
-function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true)::ModelSBML
+function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true, 
+                         inline_assignment_rules::Bool=true)::ModelSBML
 
     if model_as_string == false
         f = open(path_SBML, "r")
@@ -45,18 +46,27 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, mode
                                  end)
     end
 
-    return _build_SBML_model(libsbml_model, ifelse_to_callback)
+    return _build_SBML_model(libsbml_model, ifelse_to_callback, inline_assignment_rules)
 end
 
 
+function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool, 
+                           inline_assignment_rules::Bool)::ModelSBML
 
-function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool)::ModelSBML
-
-    # An intermedidate struct storing relevant model informaiton needed for
-    # formulating an ODESystem and callback functions
     conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
+    
+    # Convert model name to a valid Julia string
     model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
     model_name = replace(model_name, " " => "_")
+
+    # Specie reference ids can sometimes appear in math expressions, then they should be replaced 
+    # by the stoichometry for corresponding reference id, searching for specie reference ids 
+    # can be computationally demanding if the list of such ids is rebuilt, thus here the 
+    # list is built only once in the beginning
+    specie_reference_ids = get_specie_reference_ids(libsbml_model)
+
+    # An intermedidate struct storing relevant model informaiton needed for
+    # formulating a ReactionSystem and callback functions
     model_SBML = ModelSBML(model_name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
@@ -74,8 +84,10 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0), 
-                           conversion_factor) # Variables with piecewise
-
+                           conversion_factor, 
+                           specie_reference_ids, 
+                           String[])
+                        
     parse_SBML_species!(model_SBML, libsbml_model)
 
     parse_SBML_parameters!(model_SBML, libsbml_model)
@@ -121,6 +133,15 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool):
     # Up to this point for models parameter the SBML rem or div function might appear in the model dynamics,
     # these are non differentialble, discrete and not allowed
     has_rem_or_div(model_SBML)
+
+    # Inlining assignment rule variables makes the model less readable, however, if not done for 
+    # larger models Catalyst might crash due to a stack-overflow error
+    if inline_assignment_rules == true
+       inline_assignment_rules!(model_SBML) 
+    end
+
+    # For ease of processing down the line storing all rule variables is convenient
+    get_rule_variables!(model_SBML)
 
     return model_SBML
 end

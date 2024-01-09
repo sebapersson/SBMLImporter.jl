@@ -23,7 +23,7 @@ end
 function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
 
     rule_variable = rule.variable
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     rule_formula = replace_variable(rule_formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
@@ -44,7 +44,7 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
 
     # Check if variable affects a specie, parameter or compartment. In case of specie the assignment rule takes 
     # priority over any potential reactions later.
-    if rule_variable ∈ keys(model_SBML.species)
+    if haskey(model_SBML.species, rule_variable)
         model_SBML.species[rule_variable].assignment_rule = true
         # If specie is given in amount account for the fact the that equation is given 
         # in conc. per SBML standard 
@@ -58,13 +58,13 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
         end
         return nothing
     end
-    if rule_variable ∈ keys(model_SBML.parameters)
+    if haskey(model_SBML.parameters, rule_variable)
         model_SBML.parameters[rule_variable].assignment_rule = true
         model_SBML.parameters[rule_variable].formula = rule_formula
         model_SBML.parameters[rule_variable].initial_value = rule_formula
         return nothing
     end
-    if rule_variable ∈ keys(model_SBML.compartments)
+    if haskey(model_SBML.compartments, rule_variable)
         model_SBML.compartments[rule_variable].assignment_rule = true
         model_SBML.compartments[rule_variable].formula = rule_formula
         return nothing
@@ -90,7 +90,7 @@ end
 function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
 
     rule_variable = rule.variable
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     rule_formula = replace_variable(rule_formula, "time", "t")    
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
@@ -111,7 +111,7 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
         rule_formula = replace_variable(rule_formula, specie_id, "(" * specie_id * "/" * compartment * ")")
     end
 
-    if rule_variable ∈ keys(model_SBML.species)
+    if haskey(model_SBML.species, rule_variable)
         model_SBML.species[rule_variable].rate_rule = true
         # Must multiply with compartment if specie is given in amount as 
         # SBML formulas are given in conc. 
@@ -124,13 +124,13 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
 
         return nothing
     end
-    if rule_variable ∈ keys(model_SBML.parameters)
+    if haskey(model_SBML.parameters, rule_variable)
         model_SBML.parameters[rule_variable].rate_rule = true
         model_SBML.parameters[rule_variable].initial_value = model_SBML.parameters[rule_variable].formula
         model_SBML.parameters[rule_variable].formula = rule_formula        
         return nothing
     end
-    if rule_variable ∈ keys(model_SBML.compartments)
+    if haskey(model_SBML.compartments, rule_variable)
         model_SBML.compartments[rule_variable].rate_rule = true
         model_SBML.compartments[rule_variable].initial_value = model_SBML.compartments[rule_variable].formula
         model_SBML.compartments[rule_variable].formula = rule_formula        
@@ -148,7 +148,7 @@ end
 
 
 function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule)::Nothing
-    rule_formula = parse_SBML_math(rule.math)
+    rule_formula, _ = parse_SBML_math(rule.math)
     if occursin("piecewise(", rule_formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end

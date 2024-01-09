@@ -170,7 +170,7 @@ function adjust_conversion_factor!(model_SBML::ModelSBML, libsbml_model::SBML.Mo
             continue
         end
 
-        if specie_id ∉ keys(libsbml_model.species)
+        if !haskey(libsbml_model.species, specie_id)
             continue
         end
 

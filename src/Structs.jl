@@ -52,6 +52,8 @@ mutable struct ReactionSBML
     const reactants::Vector{String}
     const reactants_stoichiometry::Vector{String}
     const stoichiometry_mass_action::Bool
+    const has_assignment_rule_variable::Bool
+    const has_reaction_id::Bool
 end
 
 
@@ -74,6 +76,8 @@ struct ModelSBML
     species_in_reactions::Vector{String}
     variables_with_piecewise::Vector{String}
     conversion_factor::String
+    specie_reference_ids::Vector{String}
+    rule_variables::Vector{String}
 end
 function ModelSBML()::ModelSBML
     model_SBML = ModelSBML("",
@@ -93,8 +97,22 @@ function ModelSBML()::ModelSBML
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
                            Vector{String}(undef, 0), 
-                           "") # Variables with piecewise
+                           "", 
+                           Vector{String}(undef, 0), 
+                           Vector{String}(undef, 0)) # Variables with piecewise
     return model_SBML                           
+end
+
+
+struct ModelSBMLString
+    species::String
+    specie_map::String
+    variables::String 
+    parameters::String 
+    parameter_map::String 
+    reactions::String   
+    no_species::Bool
+    int_stoichiometries::Bool
 end
 
 

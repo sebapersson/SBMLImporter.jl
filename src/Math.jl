@@ -3,9 +3,10 @@
 
 Parse a SBML math expression via recursion to a string    
 """
-function parse_SBML_math(math)::String
-    math_parsed, _ = _parse_SBML_math(math)
-    return math_parsed
+function parse_SBML_math(math)::Tuple{String, Vector{String}}
+    math_idents = String[]
+    math_parsed, _ = _parse_SBML_math!(math_idents, math)
+    return math_parsed, math_idents
 end
 """
     parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::String
@@ -13,20 +14,24 @@ end
 Parse a SBML math expression via recursion to a str with inequality rewritten to 
 Julia syntax, geq(x, 2) -> x ≥ 2 (instead of keeping geq-syntax)
 """
-function parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::String
-    math_parsed, _ = _parse_SBML_math(math; inequality_to_julia=inequality_to_julia)
-    return math_parsed
+function parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::Tuple{String, Vector{String}}
+    math_idents = String[]
+    math_parsed, _ = _parse_SBML_math!(math_idents, math; inequality_to_julia=inequality_to_julia)
+    return math_parsed, math_idents
 end
-function parse_SBML_math(math, inequality_to_julia::Bool)::String
-    math_parsed, _ = _parse_SBML_math(math)
-    return math_parsed
+function parse_SBML_math(math, inequality_to_julia::Bool)::Tuple{String, Vector{String}}
+    math_idents = String[]
+    math_parsed, _ = _parse_SBML_math!(math_idents, math)
+    return math_parsed, math_idents
 end
-function parse_SBML_math(math::Nothing)::String
-    return ""
+function parse_SBML_math(math::Nothing)::Tuple{String, Vector{String}}
+    math_idents = String[]
+    return "", math_idents
 end
 
 
-function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
+                           inequality_to_julia::Bool=false)::Tuple{String, Bool}
 
     # Single argument times allowed according to MathML standard
     if math.fn == "*" && length(math.args) == 0
@@ -40,8 +45,8 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
 
     if math.fn ∈ ["*", "/", "+", "-", "power"] && length(math.args) == 2
         fn = math.fn == "power" ? "^" : math.fn
-        _part1, add_parenthesis1 = _parse_SBML_math(math.args[1])
-        _part2, add_parenthesis2 = _parse_SBML_math(math.args[2])
+        _part1, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
+        _part2, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
         part1 = add_parenthesis1 ?  '(' * _part1 * ')' : _part1
         part2 = add_parenthesis2 ?  '(' * _part2 * ')' : _part2
 
@@ -61,36 +66,36 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
     end
 
     if math.fn == "log" && length(math.args) == 2
-        base, add_parenthesis1 = _parse_SBML_math(math.args[1])
-        arg, add_parenthesis2 = _parse_SBML_math(math.args[2])
+        base, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
+        arg, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
         part1 = add_parenthesis1 ?  '(' * base * ')' : base
         part2 = add_parenthesis2 ?  '(' * arg * ')' : arg
         return "log(" * part1 * ", " * part2 * ")", false
     end
 
     if math.fn == "root" && length(math.args) == 2
-        base, add_parenthesis1 = _parse_SBML_math(math.args[1])
-        arg, add_parenthesis2 = _parse_SBML_math(math.args[2])
+        base, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
+        arg, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
         part1 = add_parenthesis1 ?  '(' * base * ')' : base
         part2 = add_parenthesis2 ?  '(' * arg * ')' : arg
         return  part2 * "^(1 / " * part1 * ")", false
     end
 
     if math.fn ∈ ["-"] && length(math.args) == 1
-        _formula, add_parenthesis = _parse_SBML_math(math.args[1])
+        _formula, add_parenthesis = _parse_SBML_math!(math_idents, math.args[1])
         formula = add_parenthesis ? '(' * _formula * ')' : _formula
         return math.fn * formula, false
     end
 
     if math.fn ∈ ["*", "+"] && length(math.args) == 1
-        _formula, add_parenthesis = _parse_SBML_math(math.args[1])
+        _formula, add_parenthesis = _parse_SBML_math!(math_idents, math.args[1])
         formula = add_parenthesis ? '(' * _formula * ')' : _formula
         return formula, false
     end
 
     if math.fn == "quotient" 
-        arg1, _ = _parse_SBML_math(math.args[1])
-        arg2, _ = _parse_SBML_math(math.args[2])
+        arg1, _ = _parse_SBML_math!(math_idents, math.args[1])
+        arg2, _ = _parse_SBML_math!(math_idents, math.args[2])
         return "div(" * arg1 * ", " * arg2 * ")", false
     end
 
@@ -98,7 +103,7 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
     if math.fn == "piecewise"
         formula = "piecewise("
         for arg in math.args
-            _formula, _ = _parse_SBML_math(arg) 
+            _formula, _ = _parse_SBML_math!(math_idents, arg) 
             formula *= _formula * ", "
         end
         return formula[1:end-2] * ')', false
@@ -108,8 +113,8 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
         if length(math.args) != 2
             throw(SBMLSupport("lt, gt, leq, geq with more than 2 arguments are not supported"))
         end
-        part1, _ = _parse_SBML_math(math.args[1]) 
-        part2, _ = _parse_SBML_math(math.args[2])
+        part1, _ = _parse_SBML_math!(math_idents, math.args[1]) 
+        part2, _ = _parse_SBML_math!(math_idents, math.args[2])
         return math.fn * "(" * part1 * ", " * part2 * ')', false
     end
 
@@ -117,8 +122,8 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
         if length(math.args) != 2
             throw(SBMLSupport("lt, gt, leq, geq with more than 2 arguments are not supported"))
         end
-        part1, _ = _parse_SBML_math(math.args[1]) 
-        part2, _ = _parse_SBML_math(math.args[2])
+        part1, _ = _parse_SBML_math!(math_idents, math.args[1]) 
+        part2, _ = _parse_SBML_math!(math_idents, math.args[2])
         if math.fn == "lt"
             operator = "<"
         elseif math.fn == "gt"
@@ -138,27 +143,27 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
 
     if math.fn ∈ ["exp", "log", "log2", "log10", "sin", "cos", "tan"]
         @assert length(math.args) == 1
-        formula, _ = _parse_SBML_math(math.args[1])
+        formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return math.fn * '(' * formula * ')', false
     end
 
     if math.fn ∈ ["arctan", "arcsin", "arccos", "arcsec", "arctanh", "arcsinh", "arccosh", 
                   "arccsc", "arcsech", "arccoth", "arccot", "arccot", "arccsch"]
         @assert length(math.args) == 1
-        formula, _ = _parse_SBML_math(math.args[1])
+        formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return "a" * math.fn[4:end] * '(' * formula * ')', false
     end
 
     if math.fn ∈ ["exp", "log", "log2", "log10", "sin", "cos", "tan", "csc", "ln"]
         fn = math.fn == "ln" ? "log" : math.fn
         @assert length(math.args) == 1
-        formula, _ = _parse_SBML_math(math.args[1])
+        formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return fn * '(' * formula * ')', false
     end
 
     # Special function which must be rewritten to Julia syntax 
     if math.fn == "ceiling"
-        formula, _ = _parse_SBML_math(math.args[1])
+        formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return "ceil" * '(' * formula * ')', false
     end
 
@@ -167,7 +172,7 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
     if math.fn == "factorial"
         @warn "Factorial in the ODE model. SBMLImporter can handle factorials, but, solving the ODEs with factorial is 
             numerically challenging, and thus if possible should be avioded"
-        formula, _ = _parse_SBML_math(math.args[1])
+        formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return "SpecialFunctions.gamma" * '(' * formula * " + 1.0)", false
     end
 
@@ -187,26 +192,27 @@ function _parse_SBML_math(math::SBML.MathApply; inequality_to_julia::Bool=false)
         return formula * ')', false
     end
     for arg in math.args
-        _formula, _ = _parse_SBML_math(arg) 
+        _formula, _ = _parse_SBML_math!(math_idents, arg) 
         formula *= _formula * ", "
     end
     return formula[1:end-2] * ')', false
 end
-function _parse_SBML_math(math::SBML.MathVal)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents, math::SBML.MathVal)::Tuple{String, Bool}
     return string(math.val), false
 end
-function _parse_SBML_math(math::SBML.MathIdent)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents, math::SBML.MathIdent)::Tuple{String, Bool}
+    push!(math_idents, math.id)
     return string(math.id), false
 end
-function _parse_SBML_math(math::SBML.MathTime)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents, math::SBML.MathTime)::Tuple{String, Bool}
     # Time unit is consistently in models refered to as time 
     return "t", false
 end
-function _parse_SBML_math(math::SBML.MathAvogadro)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents, math::SBML.MathAvogadro)::Tuple{String, Bool}
     # Time unit is consistently in models refered to as time 
     return "6.02214179e23", false
 end
-function _parse_SBML_math(math::SBML.MathConst)::Tuple{String, Bool}
+function _parse_SBML_math!(math_idents, math::SBML.MathConst)::Tuple{String, Bool}
     if math.id == "exponentiale"
         return "2.718281828459045", false
     elseif math.id == "pi"
