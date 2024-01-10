@@ -11,3 +11,7 @@ end
 @safetestset "SBML stochastic test-suite" begin
     include("Stochastic_tests.jl")
 end
+
+@safetestset "Currated jump simulation test" begin
+    include("curated_jump_test.jl")
+end
