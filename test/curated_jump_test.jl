@@ -2,7 +2,7 @@
 # Checks that simulations are correct and generates mass action jumps. 
 
 # Fetch packages.
-using Catalyst, SBMLImporter, Test
+using Catalyst, JumpProcesses, SBMLImporter, Test
 
 # Creates models.
 rn_sbml, u0_sbml, ps_sbml = SBML_to_ReactionSystem("Models/brusselator.xml")
