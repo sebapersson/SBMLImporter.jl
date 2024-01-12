@@ -102,7 +102,6 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer=20000)
         else
             sol = solve(eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, callback=cb)
         end
-        model_parameters = parameters(reaction_system)
 
         for to_check in species_test
             to_check_no_whitespace = replace(string(to_check), " " => "")
