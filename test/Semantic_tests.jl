@@ -94,15 +94,13 @@ function check_test_case(test_case, solver)
                                 end)
         end
 
-        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, 
-                                                                                             model_as_string=true, 
-                                                                                             inline_assignment_rules=false)
+        parsed_rn, cb = load_SBML(sbml_string, model_as_string=true, inline_assignment_rules=false)
         if isempty(model_SBML.algebraic_rules)
-            ode_system = structural_simplify(convert(ODESystem, reaction_system))
+            ode_system = structural_simplify(convert(ODESystem, parsed_rn.rn))
         else
-            ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, reaction_system)))
+            ode_system = structural_simplify(dae_index_lowering(convert(ODESystem, parsed_rn.rn)))
         end
-        ode_problem = ODEProblem(ode_system, specie_map, (0.0, tmax), parameter_map, jac=true)
+        ode_problem = ODEProblem(ode_system, parsed_rn.u₀, (0.0, tmax), parsed_rn.p, jac=true)
 
         sol = solve(ode_problem, solver, abstol=1e-12, reltol=1e-12, saveat=t_save, callback=cb)
         model_parameters = parameters(sol.prob.f.sys)
@@ -399,3 +397,6 @@ solver = Rodas4P()
         check_test_case(test_case, solver)
     end
 end
+
+
+

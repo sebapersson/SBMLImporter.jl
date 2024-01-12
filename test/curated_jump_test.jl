@@ -5,7 +5,10 @@
 using Catalyst, JumpProcesses, SBMLImporter, Test
 
 # Creates models.
-rn_sbml, u0_sbml, ps_sbml = SBML_to_ReactionSystem("Models/brusselator.xml")
+parsed_rn, cb = load_SBML("Models/brusselator.xml")
+rn_sbml = parsed_rn.rn
+u0_sbml = parsed_rn.u₀
+p_sbml = parsed_rn.p
 
 rn_catalyst = @reaction_network $(rn_sbml.name) begin
     @species Y(t) X(t) # SBMLImporter has flipped order of species and parameters.
