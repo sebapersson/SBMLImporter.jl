@@ -63,7 +63,8 @@ function load_SBML(path_SBML::AbstractString;
     # Intermediate model representation of a SBML model which can be processed into
     # an ODESystem
     model_SBML = build_SBML_model(path_SBML; ifelse_to_callback=ifelse_to_callback, 
-                                  model_as_string=model_as_string, inline_assignment_rules=inline_assignment_rules)                                    
+                                  model_as_string=model_as_string, 
+                                  inline_assignment_rules=inline_assignment_rules)                                    
 
     # If model is written to file save it in the same directory as the SBML-file
     dir_save = model_as_string ? joinpath(@__DIR__, "SBML") : joinpath(splitdir(path_SBML)[1], "SBML")
@@ -227,9 +228,9 @@ function reactionsystem_to_string(parsed_model_SBML::ModelSBMLString,
     end                                  
     # Parameters might be an empty set
     if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
-        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, ps; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+        _rn_write = "\trn = Catalyst.ReactionSystem(_reactions, t, $sps_arg, ps; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
     else
-        _rn_write = "\trn = Catalyst.ReactionSystem(reactions, t, $sps_arg, Any[]; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
+        _rn_write = "\trn = Catalyst.ReactionSystem(_reactions, t, $sps_arg, Any[]; name=Symbol(\"" * model_SBML.name * "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
     end
 
     # Create a function returning the ReactionSystem, specie-map, and parameter-map
