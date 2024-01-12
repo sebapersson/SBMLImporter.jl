@@ -3,6 +3,7 @@ module SBMLImporter
 using Catalyst
 using DiffEqBase
 using DiffEqCallbacks
+using JumpProcesses
 using PrecompileTools
 using ReactionNetworkImporters
 using RuntimeGeneratedFunctions
