@@ -6,7 +6,7 @@
 [![Build Status](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-SBMLImporter.jl is an importer for dynamic models defined in the Systems Biology Markup Language (SBML). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. It imports models as a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`, which can be converted into a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic simulations. For a detailed list of supported features, see below.
+SBMLImporter.jl is an importer for dynamic models defined in the [Systems Biology Markup Language (SBML)](https://sbml.org/). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. It imports models as a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`, which can be converted into a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic simulations. For a detailed list of supported features, see below.
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
@@ -26,31 +26,31 @@ or alternatively
 julia> using Pkg; Pkg.add("SBMLImporter")
 ```
 
-SBMLImporter.jl is compatible with Julia version 1.6 and above. For best performance we strongly recommend using Julia version 1.10.
+SBMLImporter.jl is compatible with Julia version 1.6 and above. For best performance we strongly recommend using the latest Julia version.
 
 ## Quick Start
 
-Importing an SBML model is straightforward. For example, given the path to the Brusselator model (the file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)) import the model with `load_SBML`:
+SBML models can be straightforwardly imported using the `load_SBML` function. For example, here we import a [Brusselator](https://en.wikipedia.org/wiki/Brusselator) model (which file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)):
 
 ```julia
 using SBMLImporter
-prnbng, cb = load_SBML(path_SBML)
+prnbng, cb = load_SBML(brusselator_SBML_path)
 ```
 
-This returns two outputs a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial values of each specie (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
+This returns two outputs: a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial condition values of each species (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
 
-To for example perform SDE simulations, convert the reaction-system `prnbng.rn` into a `SDEProblem`.
+Next, the fields of the `ParsedReactionSystem` structure can be used to create various differential equation problem types. For example, an SDE simulation can be performed using:
 
 ```julia
 using StochasticDiffEq, Plots
 tspan = (0.0, 10.0)
 sprob = SDEProblem(prnbng.rn, prnbng.u₀, tspan, prnbng.p)
-sol = solve(sprob, LambaEM(), callback=cb)
+sol = solve(sprob, LambaEM(); callback=cb)
 plot(sol; lw=2)
 ```
 ![](assets/Images/index-30fb5e80.svg)
 
-Alternatively, to perform ODE simulations, convert the reaction-system `prnbng.rn` into an `ODEProblem`.
+Alternatively, to perform ODE simulations, we instead convert the reaction system (`prnbng.rn`) into an `ODEProblem`:
 
 ```julia
 using ModelingToolkit, OrdinaryDiffEq, Plots
@@ -68,27 +68,29 @@ For more details, see the [documentation](https://sebapersson.github.io/SBMLImpo
 
 The key differences between SBMLToolkit and SBMLImporter are:
 
-* SBMLToolkit works with (and transforms) species to be in amount. SBMLImporter supports species in amount and/or concentration.
+* SBMLToolkit works with (and transforms) species to be in amount. SBMLImporter supports species as either amount or concentration.
 
 * SBMLToolkit has a cleaner interface, as it performs all model processing via Symbolics.jl.
 
 * SBMLImporter has wider event support, including events with directionality. It further processes events without species in the trigger into a `DiscreteCallback`, making simulations more efficient.
 
 * SBMLImporter rewrites SBML piecewise expressions to callbacks if possible instead of using `ifelse`, this improves integration stability and reduces runtime.
+  
+* When possible, SBMLImporter converts reactions to so-called `MassActionJump`s. This greatly improve performance for most Jump simulations.
 
 * SBMLImporter has more extensive SBML support, passing more tests in the test-suite. It is further the SBML importer for PEtab.jl, which regularly tests against several published models of various sizes.
 
 ## Supported SBML Features
 
-SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1257 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. The features not supported are:
+SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1257 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. Currently unsupported features are:
 
-* Models with empty SBML reactions
-* Delay (creating a delay-differential-equations)
-* Events with delay
-* Events with priority
-* Hierarchical models
-* Fast reactions
-* Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`)
+* Models with empty SBML reactions.
+* Delay (creating a delay-differential-equations).
+* Events with delay.
+* Events with priority.
+* Hierarchical models.
+* Fast reactions.
+* Parameter or species names corresponding to Julia constants (`pi`, `NaN`, `true`, `false`).
 * Certain uncommon math expressions, such as `lt` with three arguments, `implies` etc...
 
 Import might also fail for complicated nested piecewise expressions inside SBML functions.
