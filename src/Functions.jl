@@ -26,7 +26,7 @@ end
 """
     SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:AbstractString
 
-Substitutes any potential SBML functions recursively with math expressions, by 
+Substitutes any potential SBML functions recursively with math expressions. Does so by 
 inserting the function arguments into the function.
 
 # Example

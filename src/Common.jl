@@ -302,7 +302,7 @@ end
 """
     is_number(x::String)::Bool
 
-    Check if a string x is a number (Float) taking sciencetific notation into account.
+    Check if a string x is a number (Float) taking scientific notation into account.
 """
 function is_number(x::AbstractString)::Bool
     re1 = r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)$" # Picks up scientific notation

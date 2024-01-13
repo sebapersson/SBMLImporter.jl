@@ -5,9 +5,9 @@ Given the path to a SBML file, builds an intermediate SBML model struct.
 
 The SBML model struct stores the information needed to create a ODESystem or ReactionSystem.
 
-Rewriting ifelse to Boolean callbacks is strongly recomended if possible.
+Rewriting ifelse to Boolean callbacks is strongly recommended (if possible).
 
-For testing path_SBML can be the model as a string if model_as_string=true
+For testing path_SBML can be the model as a string if model_as_string=true.
 """
 function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true, 
                          inline_assignment_rules::Bool=true)::ModelSBML
