@@ -1,7 +1,7 @@
 """
     replace_variable(formula::T, to_replace::String, replace_with::String)::T where T<:AbstractString
 
-In a formula replaces to_replace with replace_with. Exact match is required, so if to_replace=time1
+In formula, replaces to_replace with replace_with. Exact match is required, so if to_replace=time1
 and replace_with=1 while formula = time * 2 nothing is replaced.
 """
 function replace_variable(formula::T, to_replace::String, replace_with::String)::T where T<:AbstractString
@@ -19,7 +19,7 @@ end
     process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model; 
                              check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString
 
-Processes a string formula by inserting SBML functions, rewriting piecewise to ifelse, and scaling species
+Processes a string formula by inserting SBML functions, rewriting piecewise to ifelse, and scaling species.
 """
 function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model; 
                                   check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString

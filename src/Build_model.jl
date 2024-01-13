@@ -1,9 +1,9 @@
 """
     build_SBML_model(libsbml_model::SBML.Model; ifelse_to_callback::Bool=true)::ModelSBML
 
-Given the path to a SBML file build an intermediate SBML model struct.
+Given the path to a SBML file, builds an intermediate SBML model struct.
 
-The SBML model struct stores the information needed to create a ODESystem or ReactionSystem
+The SBML model struct stores the information needed to create a ODESystem or ReactionSystem.
 
 Rewriting ifelse to Boolean callbacks is strongly recomended if possible.
 
