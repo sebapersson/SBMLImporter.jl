@@ -22,10 +22,9 @@ SBMLImporter.jl is compatible with Julia version 1.6 and above. For best perform
 
 ## Tutorial
 
-SBMLImporter import SBML models into a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This provides several benefits, such as symbolic model pre-processing for efficient simulations. The imported `ReactionSystem` can be converted to a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic ODE simulations
+SBMLImporter import SBML models as a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This provides several benefits, such as symbolic model pre-processing for efficient simulations. The imported `ReactionSystem` can be converted to a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic ODE simulations
 
 As example, consider the Brusselator model (the SBML file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)). The first step is to import the model with `load_SBML`:
-
 
 ```@example 1
 using SBMLImporter

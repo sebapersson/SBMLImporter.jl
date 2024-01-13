@@ -1,5 +1,9 @@
 using SafeTestsets
 
+@safetestset "Aqua Quality Check" begin
+    include("Aqua.jl")
+end
+
 @safetestset "SBML large model" begin
     include("Large_model.jl")
 end
