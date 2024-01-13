@@ -16,16 +16,16 @@ an `ODEProblem` see the documentation.
 - `path_SBML`: File path to a valid SBML file (level 2 or higher).
 - `ifelse_to_callback=true`: Whether to rewrite `ifelse` (piecewise) expressions to callbacks; recommended 
     for performance.
-- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recomended for 
-    model import speed, however, it will not be possible to access the rule-variable via sol[:var]
+- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recommended for 
+    model import speed, however, it will not be possible to access the rule-variable via sol[:var].
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the 
     SBML file.
-- `model_as_string=false` : Whether or not the model (`path_SBML`) is provided as a string.
+- `model_as_string=false`: Whether or not the model (`path_SBML`) is provided as a string.
 
 ## Returns
-- `parsed_rn`: A `ParsedReactionNetwork` struct that can be converted into `JumpProblem`, a `SDEProblem`, or 
+- `parsed_rn`: A `ParsedReactionNetwork` struct that can be converted into a `JumpProblem`, a `SDEProblem`, or 
     an `ODEProblem`
-- `cbset` - Callbackset (events, piecewise etc...) for the model.
+- `cbset`: Callbackset (events, piecewise etc...) for the model.
 
 ## Examples
 ```julia

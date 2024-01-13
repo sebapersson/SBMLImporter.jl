@@ -1,7 +1,7 @@
 """
     parse_SBML_math(math)::String
 
-Parse a SBML math expression via recursion to a string    
+Parse a SBML math expression via recursion to a string.
 """
 function parse_SBML_math(math)::Tuple{String, Vector{String}}
     math_idents = String[]
@@ -12,7 +12,7 @@ end
     parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::String
 
 Parse a SBML math expression via recursion to a str with inequality rewritten to 
-Julia syntax, geq(x, 2) -> x ≥ 2 (instead of keeping geq-syntax)
+Julia syntax, geq(x, 2) -> x ≥ 2 (instead of keeping geq-syntax).
 """
 function parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::Tuple{String, Vector{String}}
     math_idents = String[]
