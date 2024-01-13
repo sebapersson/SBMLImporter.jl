@@ -4,8 +4,9 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/dev/)
 [![Build Status](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sebapersson/SBMLImporter.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-SBMLImporter.jl is an importer for dynamic models defined in the Systems Biology Markup Language (SBML). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. It imports models into a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`, which can be converted to a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulation, or an `ODEProblem` for deterministic simulations. For a detailed list of supported features, see below.
+SBMLImporter.jl is an importer for dynamic models defined in the Systems Biology Markup Language (SBML). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. It imports models as a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`, which can be converted into a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic simulations. For a detailed list of supported features, see below.
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
@@ -29,16 +30,16 @@ SBMLImporter.jl is compatible with Julia version 1.6 and above. For best perform
 
 ## Quick Start
 
-Importing an SBML model is straightforward. For example, given the path to a SBML file for the Brusselator model (the file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)) import the model with `load_SBML`:
+Importing an SBML model is straightforward. For example, given the path to the Brusselator model (the file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)) import the model with `load_SBML`:
 
 ```julia
 using SBMLImporter
 prnbng, cb = load_SBML(path_SBML)
 ```
 
-This returns two outputs a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial values of each species (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
+This returns two outputs a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial values of each specie (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
 
-To perform SDE simulations, convert the reaction-system `prnbng.rn` into a `SDEProblem`.
+To for example perform SDE simulations, convert the reaction-system `prnbng.rn` into a `SDEProblem`.
 
 ```julia
 using StochasticDiffEq, Plots
