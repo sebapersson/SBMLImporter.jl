@@ -16,17 +16,28 @@ Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
+Aqua = "0.8"
 Catalyst = "13"
+CSV = "0.10"
+DataFrames = "1.6"
+DiffEqBase = "6"
 DiffEqCallbacks = "2"
+Downloads = "1"
+JumpProcesses = "9"
 ModelingToolkit = "8"
+OrdinaryDiffEq = "6"
 PrecompileTools = "1"
+ReactionNetworkImporters = "0.14"
 RuntimeGeneratedFunctions = "0.5"
-SBML = "1"
+SafeTestsets = "0.1"
+SBML = "1.5.1"
 Setfield = "1"
 SpecialFunctions = "2"
+Test = "1"
 julia = "1"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -36,4 +47,4 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "CSV", "DataFrames", "Downloads", "JumpProcesses", "SafeTestsets", "OrdinaryDiffEq"]
+test = ["Aqua", "Test", "CSV", "DataFrames", "Downloads", "SafeTestsets", "OrdinaryDiffEq"]
