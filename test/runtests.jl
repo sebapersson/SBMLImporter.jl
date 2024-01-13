@@ -5,7 +5,7 @@ using SafeTestsets
 end
 
 @safetestset "SBML semantic test-suite" begin
-    include("Testsuite_catalyst.jl")
+    include("Semantic_tests.jl")
 end
 
 @safetestset "SBML stochastic test-suite" begin

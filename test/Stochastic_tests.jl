@@ -92,17 +92,16 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer=20000)
         end
 
         #SBMLImporter.SBML_to_ODESystem(sbml_string, ret_all=true, model_as_string=true, write_to_file=true)
-        reaction_system, specie_map, parameter_map, cb = SBMLImporter.SBML_to_ReactionSystem(sbml_string, ret_all=true, model_as_string=true)
+        parsed_rn, cb = load_SBML(sbml_string, model_as_string=true, inline_assignment_rules=false)
         tspan = (0.0, tmax)
-        dprob = DiscreteProblem(reaction_system, specie_map, tspan, parameter_map)
-        jprob = JumpProblem(reaction_system, dprob, Direct(); save_positions=(false, false))
+        dprob = DiscreteProblem(parsed_rn.rn, parsed_rn.u₀, tspan, parsed_rn.p)
+        jprob = JumpProblem(parsed_rn.rn, dprob, Direct(); save_positions=(false, false))
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
             sol = solve(eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, callback=cb)
         else
             sol = solve(eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve, saveat=t_save, callback=cb)
         end
-        model_parameters = parameters(reaction_system)
 
         for to_check in species_test
             to_check_no_whitespace = replace(string(to_check), " " => "")

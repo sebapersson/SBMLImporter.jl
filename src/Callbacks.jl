@@ -135,7 +135,7 @@ function create_callback_ifelse(parameter_name::String,
     side_inequality = side_activated_with_time == "right" ? "!" : "" # Check if true or false evaluates expression to true
     active_t0_function = "function is_active_t0_" * parameter_name * "!(c, u, t, integrator)\n"
     active_t0_function *= "\tt = 0.0 # Used to check conditions activated at t0=0\n" * "\tp[" * string(i_ifelse_parameter) * "] = 0.0 # Default to being off\n"
-    active_t0_function *= "\tif " * side_inequality *"(" * condition_active_t0 * ")\n" * "\t\tintegrator.p[" * string(i_ifelse_parameter) * "] = 1.0\n\tend\n"
+    active_t0_function *= "\tif " * side_inequality *"(" * _condition_for_t0 * ")\n" * "\t\tintegrator.p[" * string(i_ifelse_parameter) * "] = 1.0\n\tend\n"
     if first_callback == false
         active_t0_function *= "end\n"
     else

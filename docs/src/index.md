@@ -1,97 +1,108 @@
-# SBMLImporter.jl
+# SBMLImporter.jl 
 
-This is the documentation for SBMLImporter.jl, a Julia importer for dynamic models specified in the Systems Biology Markup Language (SBML). This importer supports many SBML features such as events, dynamic compartments size, rate-, assignment-, and algebraic-rules. For a list of supported features, see [here](@ref support). For a list of differences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), see the [README](https://github.com/sebapersson/SBMLImporter.jl).
+SBMLImporter.jl is an importer for dynamic models defined in the Systems Biology Markup Language (SBML). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. For a complete list of supported features see [here](@ref support). For differences compared to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl) see the [README](https://github.com/sebapersson/SBMLImporter.jl).
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
+## Installation
+
+To install SBMLImporter.jl in the Julia REPL enter
+
+```julia
+julia> ] add SBMLImporter
+```
+
+or alternatively
+
+```julia
+julia> using Pkg; Pkg.add("SBMLImporter")
+```
+
+SBMLImporter.jl is compatible with Julia version 1.6 and above. For best performance we strongly recommend using Julia version 1.10.
+
 ## Tutorial
 
-SBMLImporter is a tool for importing SBML models into a [ModelingToolkit.jl](https://github.com/SciML/ModelingToolkit.jl) `ODESystem` or a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This offers several benefits, such as symbolic model pre-processing for efficient simulations. An `ODESystem` can easily be converted into an `ODEProblem` and solved using any ODE solver in [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl), while a `ReactionSystem` can for example easily be converted into an `ODESystem` or `SDESystem`. If the model includes events, [callbacks](https://docs.sciml.ai/DiffEqDocs/stable/features/callback_functions/) are generated during the import.
+SBMLImporter import SBML models into a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This provides several benefits, such as symbolic model pre-processing for efficient simulations. The imported `ReactionSystem` can be converted to a `JumpProblem` for Gillespie simulations, a `SDEProblem` for Langevin SDE simulations, or an `ODEProblem` for deterministic ODE simulations
 
-!!! note
-    The number of arguments returned by `SBML_to_ReactionSystem` and `SBML_to_ODESystem` varies depending on whether the model has events. When importing an SBML model, the import function will inform about the number of returned arguments.
+As example, consider the Brusselator model (the SBML file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)). The first step is to import the model with `load_SBML`:
 
-### Importing a Model Without Events and Without Piecewise Expressions
 
-Importing an SBML model is straightforward. Given the path to a SBML file to import into a `ReactionSystem` do:
-
-```julia
+```@example 1
 using SBMLImporter
-rn, specie_map, parameter_map = SBML_to_ReactionSystem(path_SBML)
+path_SBML = joinpath(@__DIR__, "..", "..", "test", "Models", "brusselator.xml") # hide
+prnbng, cb = load_SBML(path_SBML)
+nothing # hide
 ```
 
-Here, `rn` is the `ReactionSystem` that for example can be converted into an `ODESystem` or a `SDESystem`, `specie_map` is a mapping for the initial values, and `parameter_map` is a mapping/values for the model parameters. To simulate the model with an ODE-solver, construct an `ODEProblem` and solve it using any ODE solver from [OrdinaryDiffeq](https://github.com/SciML/OrdinaryDiffEq.jl):
+This returns two outputs a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial values of each species (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events, along with SBML piecewise functions that have been parsed into events.
 
-```julia
-using OrdinaryDiffEq
-sys = convert(ODESystem, rn)
-tspan = (0, 10.0)
-prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
-sol = solve(prob, Rodas5P())
+### Gillespie simulations
+
+To perform Gillespie simulations, convert the reaction-system `prnbng.rn` into a `JumpProblem`.
+
+```@example 1
+using JumpProcesses
+using Random # hide
+Random.seed!(1) # hide
+tspan = (0.0, 10.0)
+dprob = DiscreteProblem(prnbng.rn, prnbng.u₀, tspan, prnbng.p)
+jprob = JumpProblem(prnbng.rn, dprob, Direct())
+nothing # hide
 ```
 
-Setting `jac=true` mean that the Jacobian of the ODE is computed symbolically, which is recommended for performance. To get the order of the species and parameters in the model do:
+The `JumpProblem` can be solved with any solver from the [JumpProcesses.jl](https://github.com/SciML/JumpProcesses.jl) package, such as the `SSAStepper`:
 
-```julia
-using ModelingToolkit
-states(sys) # species
-parameters(sys)
+```@example 1
+using Plots
+sol = solve(jprob, SSAStepper(), callback=cb)
+plot(sol; lw=2)
 ```
 
-Alternatively, the model can be imported directly into an `ODESystem` with:
+For more information on Gillespie simulations, see the documentation for [JumpProcesses.jl](https://github.com/SciML/JumpProcesses.jl).
 
-```julia
-sys, specie_map, parameter_map = SBML_to_ODESystem(path_SBML)
+!!! warn
+    For efficient Gillespie simulations two conditions must be met: the model should be a mass-action model and each species should have units amount. This translates to ensuring that every species has the attribute `hasOnlySubstanceUnits=true`, and no rule variables are used in the kinetic math expressions for the SBML reactions.
+
+### SDE simulations
+
+To perform SDE simulations, convert the reaction-system `prnbng.rn` into a `SDEProblem`.
+
+```@example 1
+using StochasticDiffEq
+tspan = (0.0, 10.0)
+sprob = SDEProblem(prnbng.rn, prnbng.u₀, tspan, prnbng.p)
+nothing # hide
 ```
 
-From this point the documentation focuses on ODE-models, but any model that can be imported as an `ODESystem` can also be imported as a `ReactionSystem`.
+The `SDEProblem` can be solved with any solver from the [StochasticDiffEq.jl](https://github.com/SciML/StochasticDiffEq.jl) package, such as the `LambaEM` solver:
 
-### Importing a Model with Events
-
-When importing a SBML model with events, the events are rewritten to [callbacks](https://docs.sciml.ai/DiffEqDocs/stable/features/callback_functions/). There are two types of callbacks, `ContinuousCallback` and `DiscreteCallback`. The former use root-finding to identify when the event is triggered, while a `DiscreteCallback` solves the ODE up to the event time, applies the event, and then proceeds. Since root-finding can be computationally demanding, SBMLImporter rewrites a SBML events into a `DiscreteCallback` when possible. To keep track of the discrete event times, the importer also returns a function for computing event times given the model parameters:
-
-```julia
-sys, specie_map, parameter_map, cb, get_tstops = SBML_to_ODESystem(path_SBML)
+```@example 1
+sol = solve(sprob, LambaEM(), callback=cb)
+plot(sol; lw=2)
 ```
 
-Here, `cb` represent the model's events, and `get_tstops` is a function to compute the event times. To simulate the model, do:
+For more information on SDE simulations, see the documentation for [StochasticDiffEq.jl](https://github.com/SciML/StochasticDiffEq.jl).
 
-```julia
-tspan = (0, 10.0)
-prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
-# Compute event times
-tstops = get_tstops(prob.u0, prob.p)
-sol = solve(prob, Rodas5P(), tstops=tstops, callback=callbacks)
+### ODE simulations
+
+To perform ODE simulations, convert the reaction-system `prnbng.rn` into an `ODEProblem`.
+
+```@example 1
+using ModelingToolkit, OrdinaryDiffEq
+tspan = (0.0, 10.0)
+sys = convert(ODESystem, prnbng.rn)
+oprob = ODEProblem(sys, prnbng.u₀, tspan, prnbng.p, jac=true)
+nothing # hide
 ```
 
-### Importing a Model with Time-Dependent Piecewise Expressions
+Here `jac=true` means that the ODE Jacobian is computed symbolically which can help with simulation performance. The `ODEProblem` can be solved with any solver from the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) package, such as the `Rodas5` solver:
 
-In SBML Piecewise expressions correspond to the Julia `ifelse` function:
-
-```julia
-ifelse(cond, value_true, value_false)
+```@example 1
+sol = solve(oprob, Rodas5(), callback=cb)
+plot(sol; lw=2)
 ```
 
-If `cond==true`, the statement evaluates to `value_true`. While `ifelse` statements can be directly encoded in the model, this may decrease performance as a discontinuity is added. Therefore, SBMLImporter attempts to rewrite `ifelse` to callbacks (events). Additionally, as `ifelse` can sometimes be active at time `t0`, SBMLImporter provides a function to adjust ifelse rewritten callbacks at time zero:
-
-```julia
-sys, specie_map, parameter_map, cb, get_tstops, ifelse_t0 = SBML_to_ODESystem(path_SBML)
-```
-
-Here, `ifelse_t0` is a vector of functions handling piecewise (ifelse) conditions rewritten to events which are active at time zero. To solve the model do:
-
-```julia
-tspan = (0, 10.0)
-prob = ODEProblem(sys, specie_map, tspan, parameter_map, jac=true)
-tstops = get_tstops(prob.p, prob.u0)
-# Adjust ifelse statements active at time zero
-for _f! in ifelse_t0
-    _f!(prob.u0, prob.p)
-end
-sol = solve(prob, Rodas5P(), tstops=tstops, callback=cb)
-```
-
-To not rewrite `ifelse` to events when creating the ODESystem, set `ifelse_to_callback=false` when calling `SBML_to_ODESystem`.
+For more information on ODE simulations, see the documentation for [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl).
 
 ## Citation
 
