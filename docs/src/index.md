@@ -1,6 +1,6 @@
 # SBMLImporter.jl 
 
-SBMLImporter.jl is an importer for dynamic models defined in the [Systems Biology Markup Language (SBML)](https://sbml.org/). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. For a complete list of supported features see [here](@ref support). A comparison of SBMLImporter.jl to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), listing the packages' differences, can be found [here](@ref SBMLToolkit_comparison).
+SBMLImporter.jl is an importer for dynamic models defined in the [Systems Biology Markup Language (SBML)](https://sbml.org/). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. For a complete list of supported features see [here](@ref support). A comparison of SBMLImporter.jl to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), listing the packages' differences, can be found towards the end of the [README](https://github.com/sebapersson/SBMLImporter.jl).
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
