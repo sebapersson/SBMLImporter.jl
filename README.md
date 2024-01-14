@@ -30,14 +30,14 @@ SBMLImporter.jl is compatible with Julia version 1.6 and above. For best perform
 
 ## Quick Start
 
-SBML models can be straightforwardly imported using the `load_SBML` function. For example, here we import a [Brusselator](https://en.wikipedia.org/wiki/Brusselator) model (which file can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)):
+SBML models can be straightforwardly imported using the `load_SBML` function. For example, here we import the [Brusselator](https://en.wikipedia.org/wiki/Brusselator) model (which can be downloaded from [here](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)):
 
 ```julia
 using SBMLImporter
 prnbng, cb = load_SBML(brusselator_SBML_path)
 ```
 
-This returns two outputs: a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial condition values of each species (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
+This returns two outputs: a `ParsedReactionSystem` (`prnbng`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prnbng.rn`), a map for the initial condition values of each specie (`prnbng.u₀`), and a map setting the model parameter values (`prnbng.p`). The `CallbackSet` holds any potential SBML events.
 
 Next, the fields of the `ParsedReactionSystem` structure can be used to create various differential equation problem types. For example, an SDE simulation can be performed using:
 
