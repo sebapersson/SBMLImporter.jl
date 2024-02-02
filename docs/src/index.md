@@ -54,6 +54,7 @@ The `JumpProblem` can be simulated with any solver from the [JumpProcesses.jl](h
 ```@example 1
 using Plots
 sol = solve(jprob, SSAStepper(), callback=cb)
+default(left_margin=12.5Plots.Measures.mm, bottom_margin=12.5Plots.Measures.mm) # hide
 plot(sol; lw=2)
 ```
 
