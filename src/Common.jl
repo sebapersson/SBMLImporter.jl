@@ -4,8 +4,8 @@
 In formula, replaces to_replace with replace_with. Exact match is required, so if to_replace=time1
 and replace_with=1 while formula = time * 2 nothing is replaced.
 """
-function replace_variable(formula::T, to_replace::String, replace_with::String)::T where T<:AbstractString
-
+function replace_variable(formula::T, to_replace::String,
+                          replace_with::String)::T where {T <: AbstractString}
     if !occursin(to_replace, formula)
         return formula
     end
@@ -14,16 +14,16 @@ function replace_variable(formula::T, to_replace::String, replace_with::String):
     return replace(formula, _to_replace => replace_with)
 end
 
-
 """
     process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model; 
                              check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString
 
 Processes a string formula by inserting SBML functions, rewriting piecewise to ifelse, and scaling species.
 """
-function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model; 
-                                  check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString
-    
+function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
+                                  libsbml_model::SBML.Model;
+                                  check_scaling::Bool = false,
+                                  rate_rule::Bool = false)::T where {T <: AbstractString}
     _formula = SBML_function_to_math(formula, model_SBML.functions)
     if occursin("piecewise(", _formula)
         _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
@@ -44,7 +44,8 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
         end
 
         compartment = specie.compartment
-        _formula = replace_variable(_formula, specie_id, "(" * specie_id * "/" * compartment * ")")
+        _formula = replace_variable(_formula, specie_id,
+                                    "(" * specie_id * "/" * compartment * ")")
     end
 
     # Replace potential expressions given in initial assignment and that appear in stoichemetric experssions
@@ -64,11 +65,13 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
             continue
         end
         # Do not rewrite is stoichemetric is controlled via event
-        if !isempty(model_SBML.events) && any(occursin.(id, reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
+        if !isempty(model_SBML.events) &&
+           any(occursin.(id, reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
             continue
         end
         if rate_rule == false
-            _formula = replace_variable(_formula, id, "(" * model_SBML.species[id].initial_value * ")")
+            _formula = replace_variable(_formula, id,
+                                        "(" * model_SBML.species[id].initial_value * ")")
         else
             replace_with, _ = parse_SBML_math(libsbml_model.initial_assignments[id])
             _formula = replace_variable(_formula, id, "(" * replace_with * ")")
@@ -80,7 +83,10 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
     # corresponding stoichemetry
     if any(occursin.(model_SBML.specie_reference_ids, _formula))
         for (_, reaction) in libsbml_model.reactions
-            specie_references = Iterators.flatten(([reactant for reactant in reaction.reactants], [product for product in reaction.products]))
+            specie_references = Iterators.flatten(([reactant
+                                                    for reactant in reaction.reactants],
+                                                   [product
+                                                    for product in reaction.products]))
             for specie_reference in specie_references
                 if isnothing(specie_reference.id)
                     continue
@@ -88,13 +94,15 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
                 if haskey(libsbml_model.species, specie_reference.id)
                     continue
                 end
-                if haskey(libsbml_model.initial_assignments, specie_reference.id) 
+                if haskey(libsbml_model.initial_assignments, specie_reference.id)
                     continue
                 end
-                if specie_reference.id ∈ [rule isa SBML.AlgebraicRule ? "" : rule.variable for rule in libsbml_model.rules]
+                if specie_reference.id ∈ [rule isa SBML.AlgebraicRule ? "" : rule.variable
+                    for rule in libsbml_model.rules]
                     continue
                 end
-                _formula = replace_variable(_formula, specie_reference.id, string(specie_reference.stoichiometry))
+                _formula = replace_variable(_formula, specie_reference.id,
+                                            string(specie_reference.stoichiometry))
             end
         end
     end
@@ -102,15 +110,14 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_mod
     return _formula
 end
 
-
 function time_in_formula(formula::String)::Bool
     _formula = replace_variable(formula, "t", "")
     return formula != _formula
 end
 
-
-function replace_reactionid_formula(formula::T, libsbml_model::SBML.Model)::T where T<:AbstractString
-
+function replace_reactionid_formula(formula::T,
+                                    libsbml_model::SBML.Model)::T where {T <:
+                                                                         AbstractString}
     if !any(occursin.(keys(libsbml_model.reactions), formula))
         return formula
     end
@@ -122,9 +129,7 @@ function replace_reactionid_formula(formula::T, libsbml_model::SBML.Model)::T wh
     return formula
 end
 
-
 function replace_rateOf!(model_SBML::ModelSBML)::Nothing
-
     for (parameter_id, parameter) in model_SBML.parameters
         parameter.formula = replace_rateOf(parameter.formula, model_SBML)
         parameter.initial_value = replace_rateOf(parameter.initial_value, model_SBML)
@@ -149,9 +154,10 @@ function replace_rateOf!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-
-function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Union{<:AbstractString, <:Real}
-
+function replace_rateOf(_formula::T,
+                        model_SBML::ModelSBML)::String where {
+                                                              T <: Union{<:AbstractString,
+                                                                    <:Real}}
     formula = string(_formula)
     if !occursin("rateOf", formula)
         return formula
@@ -162,15 +168,17 @@ function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Uni
     formula = replace(formula, "≥" => ">=")
 
     # Find rateof expressions
-    start_rateof = findall(i -> formula[i:(i+6)] == "rateOf(", 1:(length(formula)-6))
-    end_rateof = [findfirst(x -> x == ')', formula[start:end])+start-1 for start in start_rateof]
+    start_rateof = findall(i -> formula[i:(i + 6)] == "rateOf(", 1:(length(formula) - 6))
+    end_rateof = [findfirst(x -> x == ')', formula[start:end]) + start - 1
+                  for start in start_rateof]
     # Compenstate for nested paranthesis 
-    for i in eachindex(end_rateof) 
+    for i in eachindex(end_rateof)
         if any(occursin.(['*', '/'], formula[start_rateof[i]:end_rateof[i]]))
             end_rateof[i] += 1
         end
     end
-    args = [formula[start_rateof[i]+7:end_rateof[i]-1] for i in eachindex(start_rateof)]
+    args = [formula[(start_rateof[i] + 7):(end_rateof[i] - 1)]
+            for i in eachindex(start_rateof)]
 
     replace_with = Vector{String}(undef, length(args))
     for (i, arg) in pairs(args)
@@ -181,7 +189,8 @@ function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Uni
             continue
         end
         # A parameter via a rate-rule has a rate
-        if haskey(model_SBML.parameters, arg) && model_SBML.parameters[arg].rate_rule == true
+        if haskey(model_SBML.parameters, arg) &&
+           model_SBML.parameters[arg].rate_rule == true
             replace_with[i] = model_SBML.parameters[arg].formula
             continue
         end
@@ -202,10 +211,11 @@ function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Uni
         # Here it might happen that arg is scaled with compartment, e.g. S / C thus 
         # first the specie is extracted 
         arg = filter(x -> x ∉ ['(', ')'], arg)
-        arg = occursin('/', arg) ? arg[1:findfirst(x -> x == '/', arg)-1] : arg
-        arg = occursin('*', arg) ? arg[1:findfirst(x -> x == '*', arg)-1] : arg
+        arg = occursin('/', arg) ? arg[1:(findfirst(x -> x == '/', arg) - 1)] : arg
+        arg = occursin('*', arg) ? arg[1:(findfirst(x -> x == '*', arg) - 1)] : arg
         specie = model_SBML.species[arg]
-        scale_with_compartment = specie.unit == :Amount && specie.only_substance_units == false
+        scale_with_compartment = specie.unit == :Amount &&
+                                 specie.only_substance_units == false
         if scale_with_compartment == true
             replace_with[i] = "(" * specie.formula * ") / " * specie.compartment
         else
@@ -215,7 +225,8 @@ function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Uni
 
     formula_cp = deepcopy(formula)
     for i in eachindex(replace_with)
-        formula = replace(formula, formula_cp[start_rateof[i]:end_rateof[i]] => replace_with[i])
+        formula = replace(formula,
+                          formula_cp[start_rateof[i]:end_rateof[i]] => replace_with[i])
     end
 
     formula = replace(formula, "<=" => "≤")
@@ -224,9 +235,7 @@ function replace_rateOf(_formula::T, model_SBML::ModelSBML)::String where T<:Uni
     return formula
 end
 
-
 function replace_reactionid!(model_SBML::ModelSBML)::Nothing
-
     reaction_ids::Vector{String} = collect(keys(model_SBML.reactions))
     for (specie_id, specie) in model_SBML.species
         if specie.rate_rule == false && specie.assignment_rule == false
@@ -238,7 +247,8 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
         end
         for reaction_id in reaction_ids[iids]
             reaction = model_SBML.reactions[reaction_id]
-            specie.formula = replace_variable(specie.formula, reaction_id, reaction.kinetic_math)
+            specie.formula = replace_variable(specie.formula, reaction_id,
+                                              reaction.kinetic_math)
         end
     end
 
@@ -251,16 +261,15 @@ function replace_reactionid!(model_SBML::ModelSBML)::Nothing
             if reaction_id == _reaction_id
                 continue
             end
-            reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id, _reaction.kinetic_math)
+            reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id,
+                                                     _reaction.kinetic_math)
         end
     end
 
     return nothing
 end
 
-
 function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
-
     for (reaction_id, reaction) in model_SBML.reactions
         if reaction.has_assignment_rule_variable == false
             continue
@@ -283,8 +292,9 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                 elseif haskey(model_SBML.compartments, variable)
                     formula = model_SBML.compartments[variable].formula
                 end
-                reaction.kinetic_math = replace_variable(reaction.kinetic_math, variable, formula)
-            end    
+                reaction.kinetic_math = replace_variable(reaction.kinetic_math, variable,
+                                                         formula)
+            end
 
             if reaction.kinetic_math == _kinetic_math
                 break
@@ -297,7 +307,6 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
 
     return nothing
 end
-
 
 """
     is_number(x::String)::Bool
@@ -318,9 +327,7 @@ function is_number(x::SubString{String})::Bool
     return (occursin(re1, x) || occursin(re2, x))
 end
 
-
 function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
-
     specie_reference_ids = String[]
     for r in values(libsbml_model.reactions)
         for reactant in r.reactants
@@ -339,10 +346,9 @@ function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
     return specie_reference_ids
 end
 
-
 function get_rule_variables!(model_SBML::ModelSBML)::Nothing
-
-    _rule_variables = unique(vcat(model_SBML.rate_rule_variables, model_SBML.assignment_rule_variables,
+    _rule_variables = unique(vcat(model_SBML.rate_rule_variables,
+                                  model_SBML.assignment_rule_variables,
                                   model_SBML.algebraic_rule_variables))
     filter!(x -> x ∉ keys(model_SBML.generated_ids), _rule_variables)
 

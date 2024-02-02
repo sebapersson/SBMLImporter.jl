@@ -1,11 +1,11 @@
 # Compares a model (with non-unitary stoichiometries) for which we know the catalyst reaction system it should be produced.
-# Checks that simulations are correct and generates mass action jumps. 
+# Checks that simulations are correct and generates mass action jumps.
 
 # Fetch packages.
 using Catalyst, JumpProcesses, SBMLImporter, Test
 
 # Creates models.
-parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models" , "brusselator.xml"))
+parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"))
 rn_sbml = parsed_rn.rn
 u0_sbml = parsed_rn.u₀
 ps_sbml = parsed_rn.p
@@ -13,10 +13,10 @@ ps_sbml = parsed_rn.p
 rn_catalyst = @reaction_network $(rn_sbml.name) begin
     @species Y(t) X(t) # SBMLImporter has flipped order of species and parameters.
     @parameters B A
-    A*compartment, ∅ --> X
-    2*compartment, 2X + Y --> 3X
-    B*compartment, X --> Y
-    1*compartment, X --> ∅
+    A * compartment, ∅ --> X
+    2 * compartment, 2X + Y --> 3X
+    B * compartment, X --> Y
+    1 * compartment, X --> ∅
 end
 u0_catalyst = [:X => 2.0, :Y => 10.0]
 ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
@@ -30,17 +30,18 @@ ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
 @test isequal(reactions(rn_sbml)[4], reactions(rn_catalyst)[4])
 
 # Makes and tests jump simulations.
-dprob_sbml = DiscreteProblem(rn_sbml, u0_sbml, (0.0,100.0), ps_sbml)
+dprob_sbml = DiscreteProblem(rn_sbml, u0_sbml, (0.0, 100.0), ps_sbml)
 jprob_sbml = JumpProblem(rn_sbml, dprob_sbml, Direct())
-sol_sbml = solve(jprob_sbml, SSAStepper(); seed=1234)
+sol_sbml = solve(jprob_sbml, SSAStepper(); seed = 1234)
 
-dprob_catalyst = DiscreteProblem(rn_catalyst, u0_catalyst, (0.0,100.0), ps_catalyst)
+dprob_catalyst = DiscreteProblem(rn_catalyst, u0_catalyst, (0.0, 100.0), ps_catalyst)
 jprob_catalyst = JumpProblem(rn_catalyst, dprob_catalyst, Direct())
-sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed=1234)
+sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
 
 @test sol_sbml == sol_catalyst
 
 # Tests that both generates mass actions jumps.
 @test jprob_sbml.massaction_jump.scaled_rates == jprob_catalyst.massaction_jump.scaled_rates
-@test jprob_sbml.massaction_jump.reactant_stoch == jprob_catalyst.massaction_jump.reactant_stoch
+@test jprob_sbml.massaction_jump.reactant_stoch ==
+      jprob_catalyst.massaction_jump.reactant_stoch
 @test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch

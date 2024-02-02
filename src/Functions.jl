@@ -1,11 +1,9 @@
 function parse_SBML_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-    
     for (function_name, SBML_function) in libsbml_model.function_definitions
-        
         if isnothing(SBML_function.body)
             continue
         end
-        
+
         args = get_SBML_function_args(SBML_function)
         function_formula, _ = parse_SBML_math(SBML_function.body.body, true)
         model_SBML.functions[function_name] = [args, function_formula]
@@ -13,15 +11,13 @@ function parse_SBML_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
     return nothing
 end
 
-
 function get_SBML_function_args(SBML_function::SBML.FunctionDefinition)::String
     if isempty(SBML_function.body.args)
         return ""
     end
-    args = prod([arg * ", " for arg in SBML_function.body.args])[1:end-2]
+    args = prod([arg * ", " for arg in SBML_function.body.args])[1:(end - 2)]
     return args
 end
-
 
 """
     SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:AbstractString
@@ -42,8 +38,8 @@ println(SBML_function_to_math(formula, model_functions))
 "((a*b)^(c+d))"
 ```
 """
-function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:AbstractString
-
+function SBML_function_to_math(formula::T,
+                               model_functions::Dict)::T where {T <: AbstractString}
     _formula = formula
     outside_comma_regex = Regex(",(?![^()]*\\))")
     match_parentheses_regex = Regex("\\((?:[^)(]*(?R)?)*+\\)")
@@ -80,9 +76,10 @@ function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:Ab
             # Extracts the function arguments
             function_start = match(function_start_regex, _formula)
             function_start_position = function_start.offset
-            inside_function = match(match_parentheses_regex, _formula[function_start_position-1:end]).match
-            inside_function = inside_function[2:end-1]
-            replace_to = split(replace(inside_function,", "=>","), outside_comma_regex)
+            inside_function = match(match_parentheses_regex,
+                                    _formula[(function_start_position - 1):end]).match
+            inside_function = inside_function[2:(end - 1)]
+            replace_to = split(replace(inside_function, ", " => ","), outside_comma_regex)
 
             # Replace each variable used in the formula with the
             # variable name used as input for the function.
@@ -90,7 +87,7 @@ function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:Ab
             for ind in eachindex(replace_to)
                 replace_from_regex = Regex("(\\b" * replace_from[ind] * "\\b)")
                 if !isempty(replace_from[ind])
-                    replace_dict[replace_from_regex] = '(' * replace_to[ind] * ')'                        
+                    replace_dict[replace_from_regex] = '(' * replace_to[ind] * ')'
                 else
                     replace_dict[replace_from_regex] = ""
                 end
@@ -99,12 +96,14 @@ function SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:Ab
 
             if key != "pow"
                 # Replace function(input) with formula where each variable in formula has the correct name.
-                _formula = replace(_formula, key * "(" * inside_function * ")" => "(" * replace_str * ")")
+                _formula = replace(_formula,
+                                   key * "(" * inside_function * ")" => "(" * replace_str *
+                                                                        ")")
             else
                 # Same as above, but skips extra parentheses around the entire power.
-                _formula = replace(_formula, key * "(" * inside_function * ")" => replace_str)
+                _formula = replace(_formula,
+                                   key * "(" * inside_function * ")" => replace_str)
             end
-
         end
     end
 

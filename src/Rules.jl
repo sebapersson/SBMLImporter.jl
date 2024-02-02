@@ -1,7 +1,5 @@
 function parse_SBML_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-
     for rule in libsbml_model.rules
-
         if rule isa SBML.AssignmentRule
             push!(model_SBML.assignment_rule_variables, rule.variable)
             parse_assignment_rule!(model_SBML, rule, libsbml_model)
@@ -15,13 +13,12 @@ function parse_SBML_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::No
         if rule isa SBML.AlgebraicRule
             parse_algebraic_rule!(model_SBML, rule)
         end
-    end    
+    end
     return nothing
 end
 
-
-function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
-
+function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule,
+                                libsbml_model::SBML.Model)::Nothing
     rule_variable = rule.variable
     rule_formula, _ = parse_SBML_math(rule.math)
     rule_formula = replace_variable(rule_formula, "time", "t")
@@ -40,7 +37,8 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
 
     # Handle reaction ids, and unnest potential SBML functions 
     rule_formula = replace_reactionid_formula(rule_formula, libsbml_model)
-    rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model; check_scaling=true, rate_rule=false)
+    rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model;
+                                            check_scaling = true, rate_rule = false)
 
     # Check if variable affects a specie, parameter or compartment. In case of specie the assignment rule takes 
     # priority over any potential reactions later.
@@ -78,20 +76,21 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
         return nothing
     end
     # Case with new specie 
-    model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false, rule_formula, 
-                                                      rule_formula, 
-                                                      collect(keys(libsbml_model.compartments))[1], "", :Amount, 
-                                                      false, true, false, false)
+    model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false,
+                                                   rule_formula,
+                                                   rule_formula,
+                                                   collect(keys(libsbml_model.compartments))[1],
+                                                   "", :Amount,
+                                                   false, true, false, false)
 
     return nothing
 end
 
-
-function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
-
+function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
+                          libsbml_model::SBML.Model)::Nothing
     rule_variable = rule.variable
     rule_formula, _ = parse_SBML_math(rule.math)
-    rule_formula = replace_variable(rule_formula, "time", "t")    
+    rule_formula = replace_variable(rule_formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
     # Rewrite rule to function if there are not any piecewise, eles rewrite to formula with ifelse
@@ -101,14 +100,16 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
     end
 
     rule_formula = replace_reactionid_formula(rule_formula, libsbml_model)
-    rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model; check_scaling=false, rate_rule=true)
+    rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model;
+                                            check_scaling = false, rate_rule = true)
     # Adjust formula to be in conc. (if any specie is given in amount must divide with compartment)
     for (specie_id, specie) in model_SBML.species
         if specie.unit == :Concentration && specie.only_substance_units == false
             continue
         end
         compartment = specie.compartment
-        rule_formula = replace_variable(rule_formula, specie_id, "(" * specie_id * "/" * compartment * ")")
+        rule_formula = replace_variable(rule_formula, specie_id,
+                                        "(" * specie_id * "/" * compartment * ")")
     end
 
     if haskey(model_SBML.species, rule_variable)
@@ -127,25 +128,25 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_mo
     if haskey(model_SBML.parameters, rule_variable)
         model_SBML.parameters[rule_variable].rate_rule = true
         model_SBML.parameters[rule_variable].initial_value = model_SBML.parameters[rule_variable].formula
-        model_SBML.parameters[rule_variable].formula = rule_formula        
+        model_SBML.parameters[rule_variable].formula = rule_formula
         return nothing
     end
     if haskey(model_SBML.compartments, rule_variable)
         model_SBML.compartments[rule_variable].rate_rule = true
         model_SBML.compartments[rule_variable].initial_value = model_SBML.compartments[rule_variable].formula
-        model_SBML.compartments[rule_variable].formula = rule_formula        
+        model_SBML.compartments[rule_variable].formula = rule_formula
         return nothing
     end
 
     # At this specie we introduce a new specie for said rule, this for example happens when we a 
     # special stoichometry        
-    model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false, "1.0", 
-                                                      rule_formula, 
-                                                      collect(keys(libsbml_model.compartments))[1], "", :Amount, 
-                                                      false, false, true, false)
+    model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false, "1.0",
+                                                   rule_formula,
+                                                   collect(keys(libsbml_model.compartments))[1],
+                                                   "", :Amount,
+                                                   false, false, true, false)
     return nothing
 end
-
 
 function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule)::Nothing
     rule_formula, _ = parse_SBML_math(rule.math)
@@ -154,11 +155,11 @@ function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule):
     end
     rule_formula = replace_variable(rule_formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
-    rule_name = isempty(model_SBML.algebraic_rules) ? "1" : maximum(keys(model_SBML.algebraic_rules)) * "1" # Need placeholder key 
+    rule_name = isempty(model_SBML.algebraic_rules) ? "1" :
+                maximum(keys(model_SBML.algebraic_rules)) * "1" # Need placeholder key 
     model_SBML.algebraic_rules[rule_name] = "0 ~ " * rule_formula
     return nothing
 end
-
 
 function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
 
@@ -170,8 +171,8 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
 
     candidates = String[]
     for (specie_id, specie) in model_SBML.species
-        
-        if specie.rate_rule == true || specie.assignment_rule == true || specie.constant == true
+        if specie.rate_rule == true || specie.assignment_rule == true ||
+           specie.constant == true
             continue
         end
         if specie_id ∈ model_SBML.species_in_reactions && specie.boundary_condition == false
@@ -184,7 +185,7 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
         # Check if specie-id actually occurs in any algebraic rule
         should_continue::Bool = false
         for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, specie_id, "") != rule 
+            if replace_variable(rule, specie_id, "") != rule
                 should_continue = false
             end
         end
@@ -201,14 +202,15 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
     end
 
     for (parameter_id, parameter) in model_SBML.parameters
-        if parameter.rate_rule == true || parameter.assignment_rule == true || parameter.constant == true
+        if parameter.rate_rule == true || parameter.assignment_rule == true ||
+           parameter.constant == true
             continue
         end
 
         # Check if specie-id actually occurs in any algebraic rule
         should_continue::Bool = false
         for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, parameter_id, "") != rule 
+            if replace_variable(rule, parameter_id, "") != rule
                 should_continue = false
             end
         end
@@ -219,14 +221,15 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
     end
 
     for (compartment_id, compartment) in model_SBML.compartments
-        if compartment.rate_rule == true || compartment.assignment_rule == true || compartment.constant == true
+        if compartment.rate_rule == true || compartment.assignment_rule == true ||
+           compartment.constant == true
             continue
         end
 
         # Check if specie-id actually occurs in any algebraic rule
         should_continue::Bool = false
         for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, compartment_id, "") != rule 
+            if replace_variable(rule, compartment_id, "") != rule
                 should_continue = false
             end
         end

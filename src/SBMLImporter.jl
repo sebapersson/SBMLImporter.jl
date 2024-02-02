@@ -32,7 +32,8 @@ include("Reactions.jl")
 
 @setup_workload begin
     # Model without events 
-    path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Boehm_JProteomeRes2014.xml")
+    path_SBML = joinpath(@__DIR__, "..", "test", "Models",
+                         "model_Boehm_JProteomeRes2014.xml")
     parsed_rn, cb = load_SBML(path_SBML)
     # Model with events 
     path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Brannmark_JBC2010.xml")

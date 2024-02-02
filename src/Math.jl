@@ -14,9 +14,11 @@ end
 Parse a SBML math expression via recursion to a str with inequality rewritten to 
 Julia syntax, geq(x, 2) -> x ≥ 2 (instead of keeping geq-syntax).
 """
-function parse_SBML_math(math::SBML.MathApply, inequality_to_julia::Bool)::Tuple{String, Vector{String}}
+function parse_SBML_math(math::SBML.MathApply,
+                         inequality_to_julia::Bool)::Tuple{String, Vector{String}}
     math_idents = String[]
-    math_parsed, _ = _parse_SBML_math!(math_idents, math; inequality_to_julia=inequality_to_julia)
+    math_parsed, _ = _parse_SBML_math!(math_idents, math;
+                                       inequality_to_julia = inequality_to_julia)
     return math_parsed, math_idents
 end
 function parse_SBML_math(math, inequality_to_julia::Bool)::Tuple{String, Vector{String}}
@@ -29,9 +31,8 @@ function parse_SBML_math(math::Nothing)::Tuple{String, Vector{String}}
     return "", math_idents
 end
 
-
 function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
-                           inequality_to_julia::Bool=false)::Tuple{String, Bool}
+                           inequality_to_julia::Bool = false)::Tuple{String, Bool}
 
     # Single argument times allowed according to MathML standard
     if math.fn == "*" && length(math.args) == 0
@@ -47,8 +48,8 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         fn = math.fn == "power" ? "^" : math.fn
         _part1, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
         _part2, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
-        part1 = add_parenthesis1 ?  '(' * _part1 * ')' : _part1
-        part2 = add_parenthesis2 ?  '(' * _part2 * ')' : _part2
+        part1 = add_parenthesis1 ? '(' * _part1 * ')' : _part1
+        part2 = add_parenthesis2 ? '(' * _part2 * ')' : _part2
 
         # For power always have the exponential in parenthesis for 
         # ensuring corectness
@@ -57,7 +58,8 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         elseif fn ∈ ["+", "-", "/"]
             return part1 * fn * part2, true
         elseif fn == "*"
-            if any(occursin.(["+", "-", "/"], part1)) || any(occursin.(["+", "-", "/"], part2))
+            if any(occursin.(["+", "-", "/"], part1)) ||
+               any(occursin.(["+", "-", "/"], part2))
                 return part1 * fn * part2, true
             else
                 return part1 * fn * part2, true
@@ -68,17 +70,17 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
     if math.fn == "log" && length(math.args) == 2
         base, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
         arg, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
-        part1 = add_parenthesis1 ?  '(' * base * ')' : base
-        part2 = add_parenthesis2 ?  '(' * arg * ')' : arg
+        part1 = add_parenthesis1 ? '(' * base * ')' : base
+        part2 = add_parenthesis2 ? '(' * arg * ')' : arg
         return "log(" * part1 * ", " * part2 * ")", false
     end
 
     if math.fn == "root" && length(math.args) == 2
         base, add_parenthesis1 = _parse_SBML_math!(math_idents, math.args[1])
         arg, add_parenthesis2 = _parse_SBML_math!(math_idents, math.args[2])
-        part1 = add_parenthesis1 ?  '(' * base * ')' : base
-        part2 = add_parenthesis2 ?  '(' * arg * ')' : arg
-        return  part2 * "^(1 / " * part1 * ")", false
+        part1 = add_parenthesis1 ? '(' * base * ')' : base
+        part2 = add_parenthesis2 ? '(' * arg * ')' : arg
+        return part2 * "^(1 / " * part1 * ")", false
     end
 
     if math.fn ∈ ["-"] && length(math.args) == 1
@@ -93,7 +95,7 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         return formula, false
     end
 
-    if math.fn == "quotient" 
+    if math.fn == "quotient"
         arg1, _ = _parse_SBML_math!(math_idents, math.args[1])
         arg2, _ = _parse_SBML_math!(math_idents, math.args[2])
         return "div(" * arg1 * ", " * arg2 * ")", false
@@ -103,17 +105,17 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
     if math.fn == "piecewise"
         formula = "piecewise("
         for arg in math.args
-            _formula, _ = _parse_SBML_math!(math_idents, arg) 
+            _formula, _ = _parse_SBML_math!(math_idents, arg)
             formula *= _formula * ", "
         end
-        return formula[1:end-2] * ')', false
+        return formula[1:(end - 2)] * ')', false
     end
 
     if math.fn ∈ ["lt", "gt", "leq", "geq", "eq", "neq"] && inequality_to_julia == false
         if length(math.args) != 2
             throw(SBMLSupport("lt, gt, leq, geq with more than 2 arguments are not supported"))
         end
-        part1, _ = _parse_SBML_math!(math_idents, math.args[1]) 
+        part1, _ = _parse_SBML_math!(math_idents, math.args[1])
         part2, _ = _parse_SBML_math!(math_idents, math.args[2])
         return math.fn * "(" * part1 * ", " * part2 * ')', false
     end
@@ -122,7 +124,7 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         if length(math.args) != 2
             throw(SBMLSupport("lt, gt, leq, geq with more than 2 arguments are not supported"))
         end
-        part1, _ = _parse_SBML_math!(math_idents, math.args[1]) 
+        part1, _ = _parse_SBML_math!(math_idents, math.args[1])
         part2, _ = _parse_SBML_math!(math_idents, math.args[2])
         if math.fn == "lt"
             operator = "<"
@@ -147,8 +149,8 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         return math.fn * '(' * formula * ')', false
     end
 
-    if math.fn ∈ ["arctan", "arcsin", "arccos", "arcsec", "arctanh", "arcsinh", "arccosh", 
-                  "arccsc", "arcsech", "arccoth", "arccot", "arccot", "arccsch"]
+    if math.fn ∈ ["arctan", "arcsin", "arccos", "arcsec", "arctanh", "arcsinh", "arccosh",
+        "arccsc", "arcsech", "arccoth", "arccot", "arccot", "arccsch"]
         @assert length(math.args) == 1
         formula, _ = _parse_SBML_math!(math_idents, math.args[1])
         return "a" * math.fn[4:end] * '(' * formula * ')', false
@@ -192,10 +194,10 @@ function _parse_SBML_math!(math_idents::Vector{String}, math::SBML.MathApply;
         return formula * ')', false
     end
     for arg in math.args
-        _formula, _ = _parse_SBML_math!(math_idents, arg) 
+        _formula, _ = _parse_SBML_math!(math_idents, arg)
         formula *= _formula * ", "
     end
-    return formula[1:end-2] * ')', false
+    return formula[1:(end - 2)] * ')', false
 end
 function _parse_SBML_math!(math_idents, math::SBML.MathVal)::Tuple{String, Bool}
     return string(math.val), false
