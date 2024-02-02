@@ -9,9 +9,9 @@ Rewriting ifelse to Boolean callbacks is strongly recommended (if possible).
 
 For testing path_SBML can be the model as a string if model_as_string=true.
 """
-function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, model_as_string=true, 
-                         inline_assignment_rules::Bool=true)::ModelSBML
-
+function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
+                          model_as_string = true,
+                          inline_assignment_rules::Bool = true)::ModelSBML
     if model_as_string == false
         f = open(path_SBML, "r")
         model_str = read(f, String)
@@ -36,25 +36,24 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool=true, mode
         throw(SBMLSupport("FBA models are not supported. Checkout COBREXA.jl"))
     end
 
-
     if occursin("stoichiometryMath", model_str) == false
         libsbml_model = readSBMLFromString(model_str)
     else
-        libsbml_model = readSBMLFromString(model_str, doc -> begin
-                                 set_level_and_version(3, 2)(doc)
-                                 convert_promotelocals_expandfuns(doc)
-                                 end)
+        libsbml_model = readSBMLFromString(model_str,
+                                           doc -> begin
+                                               set_level_and_version(3, 2)(doc)
+                                               convert_promotelocals_expandfuns(doc)
+                                           end)
     end
 
     return _build_SBML_model(libsbml_model, ifelse_to_callback, inline_assignment_rules)
 end
 
-
-function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool, 
+function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
                            inline_assignment_rules::Bool)::ModelSBML
+    conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" :
+                        libsbml_model.conversion_factor
 
-    conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" : libsbml_model.conversion_factor
-    
     # Convert model name to a valid Julia string
     model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
     model_name = replace(model_name, " " => "_")
@@ -83,11 +82,11 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
                            Vector{String}(undef, 0), # Assignment rule variables
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
-                           Vector{String}(undef, 0), 
-                           conversion_factor, 
-                           specie_reference_ids, 
+                           Vector{String}(undef, 0),
+                           conversion_factor,
+                           specie_reference_ids,
                            String[])
-                        
+
     parse_SBML_species!(model_SBML, libsbml_model)
 
     parse_SBML_parameters!(model_SBML, libsbml_model)
@@ -137,7 +136,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # Inlining assignment rule variables makes the model less readable, however, if not done for 
     # larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true
-       inline_assignment_rules!(model_SBML) 
+        inline_assignment_rules!(model_SBML)
     end
 
     # For ease of processing down the line storing all rule variables is convenient

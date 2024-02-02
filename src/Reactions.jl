@@ -1,5 +1,4 @@
 function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-
     for (id, reaction) in libsbml_model.reactions
         # Process kinetic math into Julia syntax
         _formula, math_idents = parse_SBML_math(reaction.kinetic_math)
@@ -29,7 +28,8 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
         end
 
         # Replace SBML functions, rescale species properly etc...
-        formula = process_SBML_str_formula(_formula, model_SBML, libsbml_model, check_scaling=true)
+        formula = process_SBML_str_formula(_formula, model_SBML, libsbml_model,
+                                           check_scaling = true)
         reactants = Vector{String}(undef, length(reaction.reactants))
         reactants_stoichiometry = similar(reactants)
         products = Vector{String}(undef, length(reaction.products))
@@ -43,15 +43,23 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
                 reactants[i] = "nothing"
                 continue
             end
-            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(reactant, model_SBML)
+            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(reactant,
+                                                                            model_SBML)
             reactants[i] = reactant.species
-            stoichiometry_mass_action = stoichiometry_mass_action == true && _stoichiometry_mass_action == false ? false : stoichiometry_mass_action
-            compartment_scaling = get_compartment_scaling(reactant.species, formula, model_SBML)
-            model_SBML.species[reactant.species].formula *= " - " * stoichiometry * compartment_scaling * "(" * formula * ")"
+            stoichiometry_mass_action = stoichiometry_mass_action == true &&
+                                        _stoichiometry_mass_action == false ? false :
+                                        stoichiometry_mass_action
+            compartment_scaling = get_compartment_scaling(reactant.species, formula,
+                                                          model_SBML)
+            model_SBML.species[reactant.species].formula *= " - " * stoichiometry *
+                                                            compartment_scaling * "(" *
+                                                            formula * ")"
 
             # In case a specie is given in unit concentration we must scale the stoichiometry
-            reactants_stoichiometry[i] = stoichiometry * get_compartment_scaling(reactant.species, formula, model_SBML; 
-                                                                                 stoichiometry=true)
+            reactants_stoichiometry[i] = stoichiometry *
+                                         get_compartment_scaling(reactant.species, formula,
+                                                                 model_SBML;
+                                                                 stoichiometry = true)
         end
 
         for (i, product) in pairs(reaction.products)
@@ -61,19 +69,31 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
                 products[i] = "nothing"
                 continue
             end
-            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(product, model_SBML)
-            stoichiometry_mass_action = stoichiometry_mass_action == true && _stoichiometry_mass_action == false ? false : stoichiometry_mass_action
-            compartment_scaling = get_compartment_scaling(product.species, formula, model_SBML)
-            model_SBML.species[product.species].formula *= " + " * stoichiometry * compartment_scaling * "(" * formula * ")"
+            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(product,
+                                                                            model_SBML)
+            stoichiometry_mass_action = stoichiometry_mass_action == true &&
+                                        _stoichiometry_mass_action == false ? false :
+                                        stoichiometry_mass_action
+            compartment_scaling = get_compartment_scaling(product.species, formula,
+                                                          model_SBML)
+            model_SBML.species[product.species].formula *= " + " * stoichiometry *
+                                                           compartment_scaling * "(" *
+                                                           formula * ")"
 
             products[i] = product.species
             # See comment above regarding scaling for species given in concentration
-            products_stoichiometry[i] = stoichiometry * get_compartment_scaling(product.species, formula, model_SBML; stoichiometry=true)
+            products_stoichiometry[i] = stoichiometry *
+                                        get_compartment_scaling(product.species, formula,
+                                                                model_SBML;
+                                                                stoichiometry = true)
         end
 
-        model_SBML.reactions[id] = ReactionSBML(id, formula, products, products_stoichiometry, reactants,
-                                                reactants_stoichiometry, stoichiometry_mass_action,
-                                                has_assignment_rule_variable, has_reaction_id)
+        model_SBML.reactions[id] = ReactionSBML(id, formula, products,
+                                                products_stoichiometry, reactants,
+                                                reactants_stoichiometry,
+                                                stoichiometry_mass_action,
+                                                has_assignment_rule_variable,
+                                                has_reaction_id)
     end
 
     # Species given via assignment rules, or initial assignments which only affect stoichiometry
@@ -82,9 +102,8 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
     remove_stoichiometry_math_from_species!(model_SBML, libsbml_model)
 end
 
-
 function get_compartment_scaling(specie::String, formula::String, model_SBML::ModelSBML;
-                                 stoichiometry::Bool=false)::String
+                                 stoichiometry::Bool = false)::String
 
     # The case of the specie likelly being given via an algebraic rule
     if isempty(formula)
@@ -108,21 +127,20 @@ function get_compartment_scaling(specie::String, formula::String, model_SBML::Mo
     end
 end
 
-
-function parse_stoichiometry(specie_reference::SBML.SpeciesReference, model_SBML::ModelSBML)::Tuple{String, Bool}
-
+function parse_stoichiometry(specie_reference::SBML.SpeciesReference,
+                             model_SBML::ModelSBML)::Tuple{String, Bool}
     mass_action_stoichiometry = isnothing(specie_reference.id)
     if !isnothing(specie_reference.id)
-
         if haskey(model_SBML.generated_ids, specie_reference.id)
             stoichiometry = model_SBML.generated_ids[specie_reference.id]
             return stoichiometry, mass_action_stoichiometry
 
-        # Two following special cases where the stoichiometry is given by another variable in the model
+            # Two following special cases where the stoichiometry is given by another variable in the model
         elseif specie_reference.id ∈ model_SBML.rate_rule_variables
             return specie_reference.id, mass_action_stoichiometry
 
-        elseif !isempty(model_SBML.events) && any(occursin.(specie_reference.id, reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
+        elseif !isempty(model_SBML.events) && any(occursin.(specie_reference.id,
+                             reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
             return specie_reference.id, mass_action_stoichiometry
         end
 
@@ -132,10 +150,12 @@ function parse_stoichiometry(specie_reference::SBML.SpeciesReference, model_SBML
         if haskey(model_SBML.species, stoichiometry)
             stoichiometry = model_SBML.species[stoichiometry].initial_value
             if is_number(stoichiometry)
-                stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ? "1" : stoichiometry
+                stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ?
+                                "1" : stoichiometry
             end
             # Can be nested 1 level
-            if haskey(model_SBML.species, stoichiometry) && model_SBML.species[stoichiometry].assignment_rule == true
+            if haskey(model_SBML.species, stoichiometry) &&
+               model_SBML.species[stoichiometry].assignment_rule == true
                 stoichiometry = model_SBML.species[stoichiometry].initial_value
             end
 
@@ -147,22 +167,24 @@ function parse_stoichiometry(specie_reference::SBML.SpeciesReference, model_SBML
         stoichiometry = string(specie_reference.stoichiometry)
 
     else
-        stoichiometry = isnothing(specie_reference.stoichiometry) ? "1" : string(specie_reference.stoichiometry)
+        stoichiometry = isnothing(specie_reference.stoichiometry) ? "1" :
+                        string(specie_reference.stoichiometry)
         stoichiometry = stoichiometry[1] == '-' ? "(" * stoichiometry * ")" : stoichiometry
     end
 
-    _stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ? "1" : stoichiometry
+    _stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ? "1" :
+                     stoichiometry
     return _stoichiometry, mass_action_stoichiometry
 end
 
-
-function remove_stoichiometry_math_from_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-
+function remove_stoichiometry_math_from_species!(model_SBML::ModelSBML,
+                                                 libsbml_model::SBML.Model)::Nothing
     for (id, reaction) in libsbml_model.reactions
-        specie_references = vcat([reactant for reactant in reaction.reactants], [product for product in reaction.products])
+        specie_references = vcat([reactant for reactant in reaction.reactants],
+                                 [product for product in reaction.products])
         for specie_reference in specie_references
-
-            if haskey(model_SBML.generated_ids, specie_reference.id) || isnothing(specie_reference.id)
+            if haskey(model_SBML.generated_ids, specie_reference.id) ||
+               isnothing(specie_reference.id)
                 continue
             end
 
@@ -170,12 +192,14 @@ function remove_stoichiometry_math_from_species!(model_SBML::ModelSBML, libsbml_
                 if haskey(libsbml_model.initial_assignments, specie_reference.id)
                     continue
                 end
-                stoichiometry_t0 = isnothing(specie_reference.stoichiometry) ? "1.0" : string(specie_reference.stoichiometry)
+                stoichiometry_t0 = isnothing(specie_reference.stoichiometry) ? "1.0" :
+                                   string(specie_reference.stoichiometry)
                 model_SBML.species[specie_reference.id].initial_value = stoichiometry_t0
                 continue
             end
 
-            if !isempty(model_SBML.events) && any(occursin.(specie_reference.id, reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
+            if !isempty(model_SBML.events) && any(occursin.(specie_reference.id,
+                             reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
                 continue
             end
 

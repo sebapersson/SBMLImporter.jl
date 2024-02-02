@@ -13,7 +13,6 @@ mutable struct SpecieSBML
     algebraic_rule::Bool
 end
 
-
 mutable struct ParameterSBML
     const name::String
     const constant::Bool
@@ -23,7 +22,6 @@ mutable struct ParameterSBML
     rate_rule::Bool
     algebraic_rule::Bool
 end
-
 
 mutable struct CompartmentSBML
     const name::String
@@ -35,14 +33,12 @@ mutable struct CompartmentSBML
     algebraic_rule::Bool
 end
 
-
 mutable struct EventSBML
     const name::String
     trigger::String
     const formulas::Vector{String}
     const trigger_initial_value::Bool
 end
-
 
 mutable struct ReactionSBML
     const name::String
@@ -55,7 +51,6 @@ mutable struct ReactionSBML
     const has_assignment_rule_variable::Bool
     const has_reaction_id::Bool
 end
-
 
 struct ModelSBML
     name::String
@@ -96,25 +91,23 @@ function ModelSBML()::ModelSBML
                            Vector{String}(undef, 0), # Assignment rule variables
                            Vector{String}(undef, 0), # Algebraic rule variables
                            Vector{String}(undef, 0), # Species_appearing in reactions
-                           Vector{String}(undef, 0), 
-                           "", 
-                           Vector{String}(undef, 0), 
+                           Vector{String}(undef, 0),
+                           "",
+                           Vector{String}(undef, 0),
                            Vector{String}(undef, 0)) # Variables with piecewise
-    return model_SBML                           
+    return model_SBML
 end
-
 
 struct ModelSBMLString
     species::String
     specie_map::String
-    variables::String 
-    parameters::String 
-    parameter_map::String 
-    reactions::String   
+    variables::String
+    parameters::String
+    parameter_map::String
+    reactions::String
     no_species::Bool
     int_stoichiometries::Bool
 end
-
 
 struct SBMLSupport <: Exception
     var::String

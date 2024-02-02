@@ -1,5 +1,5 @@
-function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-
+function parse_SBML_initial_assignments!(model_SBML::ModelSBML,
+                                         libsbml_model::SBML.Model)::Nothing
     assigned_states = String[]
     for (assign_id, initial_assignment) in libsbml_model.initial_assignments
 
@@ -21,8 +21,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
             push!(assigned_states, assign_id)
 
         elseif haskey(model_SBML.parameters, assign_id)
-
-            if haskey(libsbml_model.initial_assignments, assign_id) && assign_id ∈ model_SBML.rate_rule_variables
+            if haskey(libsbml_model.initial_assignments, assign_id) &&
+               assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.parameters[assign_id].initial_value = formula
             else
                 # Here the parameter should be treated as given by an assignment rule, as it likelly is non-constant 
@@ -34,7 +34,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
             end
 
         elseif haskey(model_SBML.compartments, assign_id)
-            if haskey(libsbml_model.initial_assignments, assign_id) && assign_id ∈ model_SBML.rate_rule_variables
+            if haskey(libsbml_model.initial_assignments, assign_id) &&
+               assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.compartments[assign_id].initial_value = formula
             else
                 # Here the compartment should be treated as given by an assignment rule, as it likelly is non-constant 
@@ -43,15 +44,15 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
                 model_SBML.compartments[assign_id].initial_value = formula
                 push!(model_SBML.assignment_rule_variables, assign_id)
                 model_SBML.compartments[assign_id].assignment_rule = true
-            end            
+            end
 
-        # At this point the assignment should be accepted as a state in the model, as it is neither a
-        # model parameter or state
+            # At this point the assignment should be accepted as a state in the model, as it is neither a
+            # model parameter or state
         else
             model_SBML.species[assign_id] = SpecieSBML(assign_id, false, false, formula,
-                                                          "",
-                                                          "1.0", "", :Amount,
-                                                          false, false, false, false)
+                                                       "",
+                                                       "1.0", "", :Amount,
+                                                       false, false, false, false)
         end
     end
 
@@ -70,7 +71,10 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
         if model_SBML.species[assign_id].unit == :Concentration
             continue
         end
-        model_SBML.species[assign_id].initial_value = '(' * model_SBML.species[assign_id].initial_value * ") * " * model_SBML.species[assign_id].compartment
+        model_SBML.species[assign_id].initial_value = '(' *
+                                                      model_SBML.species[assign_id].initial_value *
+                                                      ") * " *
+                                                      model_SBML.species[assign_id].compartment
     end
 
     # Adjusting for unit, sometimes species might have their initial value multiplied by a 
@@ -81,17 +85,18 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML, libsbml_model::S
             if compartment.assignment_rule == false
                 continue
             end
-            specie.initial_value = replace_variable(specie.initial_value, compartment_id, compartment.formula)
+            specie.initial_value = replace_variable(specie.initial_value, compartment_id,
+                                                    compartment.formula)
         end
         for (parameter_id, parameter) in model_SBML.parameters
             if parameter.assignment_rule == false
                 continue
             end
-            specie.initial_value = replace_variable(specie.initial_value, parameter_id, parameter.formula)
+            specie.initial_value = replace_variable(specie.initial_value, parameter_id,
+                                                    parameter.formula)
         end
     end
 end
-
 
 function unnest_initial_assignment!(model_SBML::ModelSBML, assign_id::String)::Nothing
 
@@ -121,4 +126,3 @@ function unnest_initial_assignment!(model_SBML::ModelSBML, assign_id::String)::N
     model_SBML.species[assign_id].initial_value = formula
     return nothing
 end
-
