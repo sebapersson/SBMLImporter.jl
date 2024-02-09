@@ -15,7 +15,7 @@ function replace_variable(formula::T, to_replace::String,
 end
 
 """
-    process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model; 
+    process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model;
                              check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString
 
 Processes a string formula by inserting SBML functions, rewriting piecewise to ifelse, and scaling species.
@@ -30,7 +30,7 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
     end
     _formula = replace_variable(_formula, "time", "t") # Sometimes t is decoded as time
 
-    # SBML equations are given in concentration, in case an amount specie appears in the equation scale with the 
+    # SBML equations are given in concentration, in case an amount specie appears in the equation scale with the
     # compartment in the formula every time the species appear
     for (specie_id, specie) in model_SBML.species
         if !occursin(specie_id, _formula)
@@ -78,8 +78,8 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
         end
     end
 
-    # Sometimes we have a stoichemetric expression appearing in for example rule expressions, etc..., but it does not 
-    # have any initial assignment, or rule assignment. In this case the reference should be replaced with its 
+    # Sometimes we have a stoichemetric expression appearing in for example rule expressions, etc..., but it does not
+    # have any initial assignment, or rule assignment. In this case the reference should be replaced with its
     # corresponding stoichemetry
     if any(occursin.(model_SBML.specie_reference_ids, _formula))
         for (_, reaction) in libsbml_model.reactions
@@ -171,7 +171,7 @@ function replace_rateOf(_formula::T,
     start_rateof = findall(i -> formula[i:(i + 6)] == "rateOf(", 1:(length(formula) - 6))
     end_rateof = [findfirst(x -> x == ')', formula[start:end]) + start - 1
                   for start in start_rateof]
-    # Compenstate for nested paranthesis 
+    # Compenstate for nested paranthesis
     for i in eachindex(end_rateof)
         if any(occursin.(['*', '/'], formula[start_rateof[i]:end_rateof[i]]))
             end_rateof[i] += 1
@@ -208,8 +208,8 @@ function replace_rateOf(_formula::T,
         end
 
         # Default case, use formula for given specie, and if specie is given in amount
-        # Here it might happen that arg is scaled with compartment, e.g. S / C thus 
-        # first the specie is extracted 
+        # Here it might happen that arg is scaled with compartment, e.g. S / C thus
+        # first the specie is extracted
         arg = filter(x -> x ∉ ['(', ')'], arg)
         arg = occursin('/', arg) ? arg[1:(findfirst(x -> x == '/', arg) - 1)] : arg
         arg = occursin('*', arg) ? arg[1:(findfirst(x -> x == '*', arg) - 1)] : arg
@@ -275,8 +275,8 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
             continue
         end
 
-        # Assignment rule can be nested so must go via recursion here, and 
-        # break when after one iteration kinetic-math formula has not changed 
+        # Assignment rule can be nested so must go via recursion here, and
+        # break when after one iteration kinetic-math formula has not changed
         while true
             _kinetic_math = reaction.kinetic_math
 
@@ -302,7 +302,7 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
         end
     end
 
-    # As assignment rule variables have been inlined they can be removed from the model 
+    # As assignment rule variables have been inlined they can be removed from the model
     filter!(isempty, model_SBML.assignment_rule_variables)
 
     return nothing
@@ -313,15 +313,7 @@ end
 
     Check if a string x is a number (Float) taking scientific notation into account.
 """
-function is_number(x::AbstractString)::Bool
-    re1 = r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)$" # Picks up scientific notation
-    re2 = r"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"
-    return (occursin(re1, x) || occursin(re2, x))
-end
-"""
-    is_number(x::SubString{String})::Bool
-"""
-function is_number(x::SubString{String})::Bool
+function is_number(x::Union{AbstractString, SubString{String}})::Bool
     re1 = r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)$" # Picks up scientific notation
     re2 = r"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"
     return (occursin(re1, x) || occursin(re2, x))

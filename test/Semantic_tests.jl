@@ -340,7 +340,9 @@ solver = Rodas4P()
         end
 
         if test_case in fba_models
-            continue
+            @test_throws SBMLImporter.SBMLSupport begin
+                check_test_case(test_case, Rodas4P())
+            end
         end
         if test_case ∈ piecewise_algebraic_rules
             @test_throws SBMLImporter.SBMLSupport begin

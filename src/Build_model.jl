@@ -58,34 +58,16 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
     model_name = replace(model_name, " " => "_")
 
-    # Specie reference ids can sometimes appear in math expressions, then they should be replaced 
-    # by the stoichometry for corresponding reference id, searching for specie reference ids 
-    # can be computationally demanding if the list of such ids is rebuilt, thus here the 
+    # Specie reference ids can sometimes appear in math expressions, then they should be replaced
+    # by the stoichometry for corresponding reference id, searching for specie reference ids
+    # can be computationally demanding if the list of such ids is rebuilt, thus here the
     # list is built only once in the beginning
     specie_reference_ids = get_specie_reference_ids(libsbml_model)
 
     # An intermedidate struct storing relevant model informaiton needed for
     # formulating a ReactionSystem and callback functions
-    model_SBML = ModelSBML(model_name,
-                           Dict{String, SpecieSBML}(),
-                           Dict{String, ParameterSBML}(),
-                           Dict{String, CompartmentSBML}(),
-                           Dict{String, EventSBML}(),
-                           Dict{String, ReactionSBML}(),
-                           Dict{String, Vector{String}}(), # SBML reactions
-                           Dict{String, String}(), # Algebraic rules
-                           Dict{String, String}(), # Generated id:s
-                           Dict{String, String}(), # Piecewise to ifelse_expressions
-                           Dict{String, String}(), # Ifelse to bool expression
-                           Dict{String, Vector{String}}(), # Ifelse parameters
-                           Vector{String}(undef, 0), # Rate rule variables
-                           Vector{String}(undef, 0), # Assignment rule variables
-                           Vector{String}(undef, 0), # Algebraic rule variables
-                           Vector{String}(undef, 0), # Species_appearing in reactions
-                           Vector{String}(undef, 0),
-                           conversion_factor,
-                           specie_reference_ids,
-                           String[])
+    model_SBML = ModelSBML(model_name; specie_reference_ids = specie_reference_ids,
+                           conversion_factor = conversion_factor)
 
     parse_SBML_species!(model_SBML, libsbml_model)
 
@@ -133,7 +115,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # these are non differentialble, discrete and not allowed
     has_rem_or_div(model_SBML)
 
-    # Inlining assignment rule variables makes the model less readable, however, if not done for 
+    # Inlining assignment rule variables makes the model less readable, however, if not done for
     # larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true
         inline_assignment_rules!(model_SBML)
