@@ -315,7 +315,7 @@ solver = Rodas4P()
                                    ["0" * string(i) for i in 1344:1394],
                                    ["0" * string(i) for i in 1467:1477], ["01778"])
 
-        fba_models = vcat(["01" * string(i) for i in 186:197],
+        fba_models = vcat(["01" * string(i) for i in 186:196],
                           ["01" * string(i) for i in 606:625],
                           ["01627", "01628", "01629", "01630"])
 
