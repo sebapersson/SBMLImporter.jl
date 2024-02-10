@@ -79,7 +79,7 @@ function check_test_case(test_case, solver)
     # Case for FBA models an exceptions should be thrown
     if !("Time" ∈ names(results) || "time" ∈ names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
-        SBMLImport.build_SBML_model(sbml_string; model_as_string = true)
+        SBMLImporter.build_SBML_model(sbml_string; model_as_string = true)
     end
 
     t_save = "Time" in names(results) ? Float64.(results[!, :Time]) :
