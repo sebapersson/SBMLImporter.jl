@@ -3,8 +3,7 @@ using Documenter
 
 DocMeta.setdocmeta!(SBMLImporter, :DocTestSetup, :(using SBMLImporter); recursive = true)
 
-makedocs(;
-         modules = [SBMLImporter],
+makedocs(; modules = [SBMLImporter],
          repo = "https://github.com/sebapersson/SBMLImporter.jl/blob/{commit}{path}#{line}",
          checkdocs = :exports,
          warnonly = false,
@@ -20,6 +19,5 @@ makedocs(;
              "API" => "API_choosen.md",
          ],)
 
-deploydocs(;
-           repo = "github.com/sebapersson/SBMLImporter.jl.git",
+deploydocs(; repo = "github.com/sebapersson/SBMLImporter.jl.git",
            devbranch = "main",)

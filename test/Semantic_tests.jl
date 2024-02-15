@@ -79,7 +79,7 @@ function check_test_case(test_case, solver)
     # Case for FBA models an exceptions should be thrown
     if !("Time" ∈ names(results) || "time" ∈ names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
-        SBMLImport.build_SBML_model(sbml_string; model_as_string = true)
+        SBMLImporter.build_SBML_model(sbml_string; model_as_string = true)
     end
 
     t_save = "Time" in names(results) ? Float64.(results[!, :Time]) :
@@ -315,7 +315,7 @@ solver = Rodas4P()
                                    ["0" * string(i) for i in 1344:1394],
                                    ["0" * string(i) for i in 1467:1477], ["01778"])
 
-        fba_models = vcat(["01" * string(i) for i in 186:197],
+        fba_models = vcat(["01" * string(i) for i in 186:196],
                           ["01" * string(i) for i in 606:625],
                           ["01627", "01628", "01629", "01630"])
 
@@ -340,7 +340,9 @@ solver = Rodas4P()
         end
 
         if test_case in fba_models
-            continue
+            @test_throws SBMLImporter.SBMLSupport begin
+                check_test_case(test_case, Rodas4P())
+            end
         end
         if test_case ∈ piecewise_algebraic_rules
             @test_throws SBMLImporter.SBMLSupport begin

@@ -22,17 +22,17 @@ end
 """
     SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:AbstractString
 
-Substitutes any potential SBML functions recursively with math expressions. Does so by 
+Substitutes any potential SBML functions recursively with math expressions. Does so by
 inserting the function arguments into the function.
 
 # Example
 
 ```
 formula = fun1(fun2(a,b),fun3(c,d))
-model_functions = Dict("fun1" => ["a,b","a^b"], 
-                       "fun2" => ["a,b","a*b"], 
+model_functions = Dict("fun1" => ["a,b","a^b"],
+                       "fun2" => ["a,b","a*b"],
                        "fun3" => ["a,b","a+b"])
-println(SBML_function_to_math(formula, model_functions))                       
+println(SBML_function_to_math(formula, model_functions))
 ```
 ```
 "((a*b)^(c+d))"
@@ -94,16 +94,9 @@ function SBML_function_to_math(formula::T,
             end
             replace_str = replace(replace_str, replace_dict...)
 
-            if key != "pow"
-                # Replace function(input) with formula where each variable in formula has the correct name.
-                _formula = replace(_formula,
-                                   key * "(" * inside_function * ")" => "(" * replace_str *
-                                                                        ")")
-            else
-                # Same as above, but skips extra parentheses around the entire power.
-                _formula = replace(_formula,
-                                   key * "(" * inside_function * ")" => replace_str)
-            end
+            # Replace function(input) with formula where each variable in formula has the correct name.
+            _formula = replace(_formula,
+                               key * "(" * inside_function * ")" => "(" * replace_str * ")")
         end
     end
 

@@ -8,6 +8,10 @@ end
     include("Large_model.jl")
 end
 
+@safetestset "Write model" begin
+    include("Write_model.jl")
+end
+
 @safetestset "SBML semantic test-suite" begin
     include("Semantic_tests.jl")
 end
