@@ -21,6 +21,7 @@ an `ODEProblem` see the documentation.
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the
     SBML file.
 - `model_as_string=false`: Whether or not the model (`path_SBML`) is provided as a string.
+- `check_massaction=true`: Whether to check if and rewrite a reaction to mass action if possible.
 
 ## Returns
 - `parsed_rn`: A `ParsedReactionNetwork` struct that can be converted into a `JumpProblem`, a `SDEProblem`, or
@@ -54,11 +55,9 @@ oprob = ODEProblem(sys, prnbng.u₀, tspan, prnbng.p, jac=true)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
-function load_SBML(path_SBML::AbstractString;
-                   ifelse_to_callback::Bool = true,
-                   inline_assignment_rules::Bool = true,
-                   write_to_file::Bool = false,
-                   model_as_string::Bool = false)
+function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
+                   inline_assignment_rules::Bool = true, write_to_file::Bool = false,
+                   model_as_string::Bool = false, check_massaction::Bool = true)
 
     # Intermediate model representation of a SBML model which can be processed into
     # an ODESystem
@@ -76,7 +75,8 @@ function load_SBML(path_SBML::AbstractString;
 
     # Build the ReactionSystem. Must be done via Meta-parse, because if a function is used
     # via @RuntimeGeneratedFunction runtime is very slow for large models
-    parsed_model_SBML = _reactionsystem_from_SBML(model_SBML)
+    parsed_model_SBML = _reactionsystem_from_SBML(model_SBML;
+                                                  check_massaction = check_massaction)
     # The model can have have only species or only variables or both. If it has variables they
     # are given via SBML rules
     eval(Meta.parse("ModelingToolkit.@variables t"))
@@ -124,7 +124,8 @@ function load_SBML(path_SBML::AbstractString;
 end
 
 # Parse the model into a string, which then via Meta.parse becomes a ReactionSystem
-function _reactionsystem_from_SBML(model_SBML::ModelSBML)::ModelSBMLString
+function _reactionsystem_from_SBML(model_SBML::ModelSBML;
+                                   check_massaction::Bool = true)::ModelSBMLString
 
     # Check if model is empty of derivatives if the case add dummy state to be able to
     # simulate the model
@@ -175,8 +176,8 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML)::ModelSBMLString
                                                                                      :Products,
                                                                                      model_SBML)
         propensity = r.kinetic_math
-        if reaction_is_mass_action(r, model_SBML) == true && int_stoichiometries1 &&
-           int_stoichiometries2
+        is_massaction = reaction_is_mass_action(r, model_SBML)
+        if check_massaction && is_massaction && int_stoichiometries1 && int_stoichiometries2
             _reactions *= ("\t\tSBMLImporter.update_rate_reaction(Catalyst.Reaction(" *
                            propensity * ", " *
                            reactants * ", " * products * ", " *
