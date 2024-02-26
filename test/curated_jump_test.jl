@@ -2,7 +2,7 @@
 # Checks that simulations are correct and generates mass action jumps.
 
 # Fetch packages.
-using Catalyst, JumpProcesses, SBMLImporter, Test
+using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEq, Test
 
 # Creates models.
 parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"))
@@ -45,3 +45,16 @@ sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
 @test jprob_sbml.massaction_jump.reactant_stoch ==
       jprob_catalyst.massaction_jump.reactant_stoch
 @test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch
+
+# Check consistent simulations when model is imported with and without rewriting to
+# Catalyst mass-action format
+path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
+parsed_rn1, cb1 = load_SBML(path_SBML)
+parsed_rn2, cb2 = load_SBML(path_SBML; check_massaction=false)
+@test reactions(parsed_rn1.rn)[1].only_use_rate == false
+@test reactions(parsed_rn2.rn)[1].only_use_rate == true
+oprob1 = ODEProblem(parsed_rn1.rn, parsed_rn1.u0, (0.0, 10.0), parsed_rn1.p)
+oprob2 = ODEProblem(parsed_rn2.rn, parsed_rn2.u0, (0.0, 10.0), parsed_rn2.p)
+sol1 = solve(oprob1, Rodas5())
+sol2 = solve(oprob2, Rodas5())
+@test sol1 == sol2
