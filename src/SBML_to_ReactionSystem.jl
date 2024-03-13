@@ -98,11 +98,32 @@ function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
     else
         ps = Any[]
     end
-    _reactions = eval(Meta.parse(parsed_model_SBML.reactions))
     combinatoric_ratelaws = parsed_model_SBML.int_stoichiometries ? true : false
-    # Build reaction system from its components
-    rn = Catalyst.ReactionSystem(_reactions, t, sps_arg, ps; name = Symbol(model_SBML.name),
-                                 combinatoric_ratelaws = combinatoric_ratelaws)
+    # Build reaction system from its components. The reactions must be parsed sequentially
+    # to avoid any stackoverflow error for very large models with more than 10^4 reactions
+    _reactions_vec = reaction_str_to_vector(parsed_model_SBML)
+    r1 = eval(Meta.parse(_reactions_vec[1]))
+    if !isnothing(r1)
+        rn = Catalyst.ReactionSystem([r1], t, sps_arg, ps; name = Symbol(model_SBML.name),
+                                     combinatoric_ratelaws = combinatoric_ratelaws)
+    else
+        rn = Catalyst.ReactionSystem(Catalyst.Reaction[], t, sps_arg, ps;
+                                     name = Symbol(model_SBML.name),
+                                     combinatoric_ratelaws = combinatoric_ratelaws)
+    end
+    for i in eachindex(_reactions_vec)
+        if i == 1
+            continue
+        end
+        _r = eval(Meta.parse(_reactions_vec[i]))
+        if occursin("Reaction", _reactions_vec[i])
+            Catalyst.addreaction!(rn, _r)
+        else
+            Catalyst.reset_networkproperties!(rn)
+            push!(Catalyst.get_eqs(rn), _r)
+            sort(Catalyst.get_eqs(rn); by = Catalyst.eqsortby)
+        end
+    end
     specie_map = eval(Meta.parse(parsed_model_SBML.specie_map))
     parameter_map = eval(Meta.parse(parsed_model_SBML.parameter_map))
 
@@ -278,6 +299,15 @@ function reactionsystem_to_string(parsed_model_SBML::ModelSBMLString,
     end
 
     return _function_write
+end
+
+# Help for extractig each reaction from ModelSBMLString
+function reaction_str_to_vector(parsed_model_SBML::ModelSBMLString)
+    _reactions = parsed_model_SBML.reactions[15:(end - 5)]
+    _reactions = replace(_reactions, '\t' => "")
+    _reactions = split(_reactions, ",\n")
+    _reactions[1] = _reactions[1][3:end]
+    return _reactions
 end
 
 function get_reaction_side(r::ReactionSBML, which_side::Symbol,
