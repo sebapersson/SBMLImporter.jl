@@ -3,7 +3,9 @@
               ifelse_to_callback::Bool=true,
               inline_assignment_rules::Bool=false,
               write_to_file::Bool=false,
-              model_as_string::Bool=false)
+              model_as_string::Bool=false,
+              check_massaction=true,
+              mass_action::Bool=false)
 
 Parse an SBML model into a `ParsedReactionNetwork` and convert SBML events/piecewise to callbacks.
 
@@ -17,11 +19,14 @@ an `ODEProblem` see the documentation.
 - `ifelse_to_callback=true`: Whether to rewrite `ifelse` (piecewise) expressions to callbacks; recommended
     for performance.
 - `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recommended for
-    model import speed, however, it will not be possible to access the rule-variable via sol[:var].
+    model import speed, however, it will not be possible to access the rule-variable via `sol[:var]`.
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the
     SBML file.
 - `model_as_string=false`: Whether or not the model (`path_SBML`) is provided as a string.
 - `check_massaction=true`: Whether to check if and rewrite a reaction to mass action if possible.
+- `mass_action=false`: Determines if reactions are treated as mass-action reactions. This option should
+    be set to true **only** if it is certain that the model has mass action reactions, for example
+    if the model is an SBML file produced by BioNetGen.
 
 ## Returns
 - `parsed_rn`: A `ParsedReactionNetwork` struct that can be converted into a `JumpProblem`, a `SDEProblem`, or
@@ -57,13 +62,15 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 """
 function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
                    inline_assignment_rules::Bool = true, write_to_file::Bool = false,
-                   model_as_string::Bool = false, check_massaction::Bool = true)
+                   model_as_string::Bool = false, check_massaction::Bool = true,
+                   mass_action::Bool = false)
 
     # Intermediate model representation of a SBML model which can be processed into
     # an ODESystem
     model_SBML = build_SBML_model(path_SBML; ifelse_to_callback = ifelse_to_callback,
                                   model_as_string = model_as_string,
-                                  inline_assignment_rules = inline_assignment_rules)
+                                  inline_assignment_rules = inline_assignment_rules,
+                                  mass_action = mass_action)
 
     # If model is written to file save it in the same directory as the SBML-file
     dir_save = model_as_string ? joinpath(@__DIR__, "SBML") :
@@ -433,8 +440,8 @@ function reaction_is_mass_action(r::ReactionSBML, model_SBML::ModelSBML)::Bool
 end
 
 function update_rate_reaction(rx; combinatoric_ratelaw::Bool = true)
-    @set rx.rate = (rx.rate^2) /
-                   Catalyst.oderatelaw(rx; combinatoric_ratelaw = combinatoric_ratelaw)
+    @set rx.rate = Catalyst.simplify((rx.rate^2) / Catalyst.oderatelaw(rx;
+                                                         combinatoric_ratelaw = combinatoric_ratelaw))
 end
 
 # Helper for exporting SBML models

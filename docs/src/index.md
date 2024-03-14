@@ -1,6 +1,6 @@
 # SBMLImporter.jl 
 
-SBMLImporter.jl is an importer for dynamic models defined in the [Systems Biology Markup Language (SBML)](https://sbml.org/). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. For a complete list of supported features see [here](@ref support). A comparison of SBMLImporter.jl to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), listing the packages' differences, can be found towards the end of the [README](https://github.com/sebapersson/SBMLImporter.jl).
+SBMLImporter.jl is an importer for dynamic models defined in the [Systems Biology Markup Language (SBML)](https://sbml.org/). It supports most SBML features, such as events, dynamic compartment sizes, and rate, assignment, and algebraic rules. For a complete list of supported features see [here](@ref support). A comparison of SBMLImporter.jl to [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl), can be found towards the end of the [README](https://github.com/sebapersson/SBMLImporter.jl).
 
 To perform parameter estimation for a SBML model, see [PEtab.jl](https://github.com/sebapersson/PEtab.jl).
 
@@ -60,8 +60,8 @@ plot(sol; lw=2)
 
 For more information on jump simulations, see [JumpProcesses.jl's documentation](https://github.com/SciML/JumpProcesses.jl).
 
-!!! warn
-    For efficient jump simulations two conditions must be met: the model should be a mass-action model and each species should have units amount. This translates to ensuring that every species has the attribute `hasOnlySubstanceUnits=true`, and no rule variables are used in the kinetic math expressions for the SBML reactions.
+!!! info
+    For efficient jump simulations two conditions must be met: the model should be a mass-action model and each species should have units amount. This translates to ensuring that every species has the attribute `hasOnlySubstanceUnits=true`, and no rule variables are used in the kinetic math expressions for the SBML reactions. In case the user is confident that the model is mass-action (e.g. if the model is generated from BioNetGen) mass action kinetics can be enforced by setting `mass_action=true` in the `load_SBML` call.
 
 ### SDE simulations
 

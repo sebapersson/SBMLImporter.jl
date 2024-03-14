@@ -3,6 +3,7 @@
 =#
 
 using SBMLImporter
+using JumpProcesses
 using Downloads
 using Test
 
@@ -19,3 +20,12 @@ b1 = @elapsed parsed_rn, cb = load_SBML(sbml_string; model_as_string = true)
 path_SBML = joinpath(@__DIR__, "Models", "fceri_gamma2.xml")
 b2 = @elapsed parsed_rn, cb = load_SBML(path_SBML)
 @test b2 ≤ 500
+
+# Test that SBMLImporter correctly enforces mass action
+path_SBML = joinpath(@__DIR__, "Models", "egfr_net.xml")
+b3 = @elapsed model, cb = load_SBML(path_SBML; mass_action=true)
+dprob = DiscreteProblem(model.rn, model.u₀, (0.0,0.0), model.p)
+dprob = remake(dprob, u0 = Int64.(dprob.u0));
+jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions=(false,false))
+@test b3 ≤ 20
+@test length(jprob.massaction_jump.net_stoch) == 3749
