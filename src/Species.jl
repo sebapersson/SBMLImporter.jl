@@ -2,7 +2,8 @@
     Functionality for parsing, and handling SBML species (e.g conversion factor etc...)
 =#
 
-function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
+                             mass_action::Bool)::Nothing
     for (specie_id, specie) in libsbml_model.species
         if specie_id ∈ ["true", "false", "time", "pi", "Inf", "NaN"]
             throw(SBMLSupport("Parameter name cannot be true, false, time, pi, Inf, NaN"))
@@ -21,14 +22,16 @@ function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::
             unit = :Amount
         end
 
-        # Specie data
-        only_substance_units = isnothing(specie.only_substance_units) ? false :
-                               specie.only_substance_units
+        # Specie data. In case mass_action=true the user has enforced that the model
+        # should be a mass-action model, and therefore only_substance_units is set to
+        # true
+        _substance_units = specie.only_substance_units
+        only_substance_units = isnothing(_substance_units) ? false : _substance_units
+        only_substance_units = mass_action ? true : only_substance_units
         boundary_condition = specie.boundary_condition
-        compartment = specie.compartment
-        conversion_factor = isnothing(specie.conversion_factor) ? "" :
-                            specie.conversion_factor
-        constant = isnothing(specie.constant) ? false : specie.constant
+        @unpack compartment, conversion_factor, constant = specie
+        conversion_factor = isnothing(conversion_factor) ? "" : conversion_factor
+        constant = isnothing(constant) ? false : constant
 
         # In case being a boundary condition the specie can only be changed events, or rate-rules so set
         # derivative to zero, likewise for constant the formula should be zero (no rate of change)
@@ -45,9 +48,8 @@ function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::
         end
 
         model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant,
-                                                   initial_value,
-                                                   formula, compartment, conversion_factor,
-                                                   unit,
+                                                   initial_value, formula, compartment,
+                                                   conversion_factor, unit,
                                                    only_substance_units, false, false,
                                                    false)
     end
@@ -85,14 +87,14 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
                              compartment.name
         formula_conc = model_SBML.species[specie_id].formula * "/" * compartment.name
 
-        # Formula for amount specie. Treated as rate-rule as this is a feature we do not support 
-        # for mass-action models 
+        # Formula for amount specie. Treated as rate-rule as this is a feature we do not support
+        # for mass-action models
         model_SBML.species[specie_id].formula = formula_conc * "*" * compartment.name *
                                                 " + " * specie_id * "*" *
                                                 compartment.formula * " / " *
                                                 compartment.name
 
-        # Add new conc. specie to model. See comment on rate-rule above 
+        # Add new conc. specie to model. See comment on rate-rule above
         model_SBML.species[specie_conc_id] = SpecieSBML(specie_conc_id, false, false,
                                                         initial_value_conc,
                                                         formula_conc, compartment.name,
@@ -135,7 +137,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         specie_amount_id = "__" * specie_id * "__amount__"
         initial_value_amount = specie.initial_value * "*" * compartment.name
 
-        # If boundary condition is true only amount, not concentration should stay constant with 
+        # If boundary condition is true only amount, not concentration should stay constant with
         # compartment size
         if specie.boundary_condition == true
             formula_amount = "0.0"
@@ -176,7 +178,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-# Adjust specie via conversion factor 
+# Adjust specie via conversion factor
 function adjust_conversion_factor!(model_SBML::ModelSBML,
                                    libsbml_model::SBML.Model)::Nothing
     for (specie_id, specie) in model_SBML.species
@@ -188,13 +190,13 @@ function adjust_conversion_factor!(model_SBML::ModelSBML,
             continue
         end
 
-        # Conversion factors only affect species whose values are changed via reactions, 
+        # Conversion factors only affect species whose values are changed via reactions,
         # but not rate-rules
         if specie.rate_rule == true
             continue
         end
 
-        # Boundary value species are not affected 
+        # Boundary value species are not affected
         if specie.boundary_condition == true
             continue
         end

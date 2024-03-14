@@ -10,8 +10,8 @@ Rewriting ifelse to Boolean callbacks is strongly recommended (if possible).
 For testing path_SBML can be the model as a string if model_as_string=true.
 """
 function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
-                          model_as_string = true,
-                          inline_assignment_rules::Bool = true)::ModelSBML
+                          model_as_string = true, inline_assignment_rules::Bool = true,
+                          mass_action::Bool = false)::ModelSBML
     if model_as_string == false
         f = open(path_SBML, "r")
         model_str = read(f, String)
@@ -46,11 +46,12 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
                                            end)
     end
 
-    return _build_SBML_model(libsbml_model, ifelse_to_callback, inline_assignment_rules)
+    return _build_SBML_model(libsbml_model, ifelse_to_callback, inline_assignment_rules,
+                             mass_action)
 end
 
 function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
-                           inline_assignment_rules::Bool)::ModelSBML
+                           inline_assignment_rules::Bool, mass_action::Bool)::ModelSBML
     conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" :
                         libsbml_model.conversion_factor
 
@@ -69,7 +70,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     model_SBML = ModelSBML(model_name; specie_reference_ids = specie_reference_ids,
                            conversion_factor = conversion_factor)
 
-    parse_SBML_species!(model_SBML, libsbml_model)
+    parse_SBML_species!(model_SBML, libsbml_model, mass_action)
 
     parse_SBML_parameters!(model_SBML, libsbml_model)
 
