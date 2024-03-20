@@ -34,7 +34,7 @@ jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions=(false,false))
 # Lots of edge cases
 sbml_url = "https://www.ebi.ac.uk/biomodels/model/download/BIOMD0000000627.3?filename=BIOMD0000000627_url.xml"
 sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-mdl, cb = load_SBML(sbml_string; inline_assignment_rules=false, ifelse_to_callback=true, check_massaction=false,
+mdl, cb = load_SBML(sbml_string; inline_assignment_rules=true, ifelse_to_callback=true, check_massaction=false,
                     model_as_string=true)
 sys = structural_simplify(convert(ODESystem, mdl.rn))
 @test length(states(sys)) == 66
