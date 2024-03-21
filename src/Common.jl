@@ -274,7 +274,6 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
         if reaction.has_assignment_rule_variable == false
             continue
         end
-
         # Assignment rule can be nested so must go via recursion here, and
         # break when after one iteration kinetic-math formula has not changed
         while true
@@ -298,6 +297,39 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
 
             if reaction.kinetic_math == _kinetic_math
                 break
+            end
+        end
+
+        # Need to inline into rate-rules
+        for rule_id in model_SBML.rate_rule_variables
+            if haskey(model_SBML.compartments, rule_id)
+                raterule = model_SBML.compartments[rule_id]
+            elseif haskey(model_SBML.parameters, rule_id)
+                raterule = model_SBML.parameters[rule_id]
+            elseif haskey(model_SBML.species, rule_id)
+                raterule = model_SBML.species[rule_id]
+            end
+            # Assignment rule can be nested so must go via recursion here
+            while true
+                _kinetic_math = deepcopy(raterule.formula)
+                for variable in model_SBML.assignment_rule_variables
+                    if !occursin(variable, raterule.formula)
+                        continue
+                    end
+
+                    if haskey(model_SBML.species, variable)
+                        formula = model_SBML.species[variable].formula
+                    elseif haskey(model_SBML.parameters, variable)
+                        formula = model_SBML.parameters[variable].formula
+                    elseif haskey(model_SBML.compartments, variable)
+                        formula = model_SBML.compartments[variable].formula
+                    end
+                    raterule.formula = replace_variable(reaction.kinetic_math, variable,
+                                                        formula)
+                end
+                if raterule.formula == _kinetic_math
+                    break
+                end
             end
         end
     end

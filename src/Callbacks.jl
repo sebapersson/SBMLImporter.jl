@@ -143,7 +143,7 @@ function create_callback_ifelse(parameter_name::String,
     active_t0_function = "function is_active_t0_" * parameter_name *
                          "!(c, u, t, integrator)\n"
     active_t0_function *= "\tt = 0.0 # Used to check conditions activated at t0=0\n" *
-                          "\tp[" * string(i_ifelse_parameter) *
+                          "\tintegrator.p[" * string(i_ifelse_parameter) *
                           "] = 0.0 # Default to being off\n"
     active_t0_function *= "\tif " * side_inequality * "(" * _condition_for_t0 * ")\n" *
                           "\t\tintegrator.p[" * string(i_ifelse_parameter) *
