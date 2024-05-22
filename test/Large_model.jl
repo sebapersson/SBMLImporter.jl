@@ -14,7 +14,7 @@ sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
 b1 = @elapsed parsed_rn, cb = load_SBML(sbml_string; model_as_string = true)
 
 # Usually takes around 4s locally, but better to brace for GitHub CI
-@test b1 ≤ 20
+@test b1 ≤ 40
 
 # Large fceri-γ model with ≈ 58,000 reactions. Should take around 4min locally, but it
 # is always good to brace for GitHub CI
