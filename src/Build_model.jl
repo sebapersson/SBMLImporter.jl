@@ -13,6 +13,9 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
                           model_as_string = true, inline_assignment_rules::Bool = true,
                           mass_action::Bool = false)::ModelSBML
     if model_as_string == false
+        if !isfile(path_SBML)
+            throw(SBMLSupport("$path_SBML is not the path to a SBML file"))
+        end
         f = open(path_SBML, "r")
         model_str = read(f, String)
         close(f)
