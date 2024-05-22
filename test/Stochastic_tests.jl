@@ -9,33 +9,7 @@ using Downloads
 using Catalyst
 using JumpProcesses
 
-function get_sbml_urls(base_url::String)
-    levels = ["2", "3"]
-    sublevels = ["1", "2", "3", "4", "5"]
-    sbml_urls = Vector{String}(undef, 0)
-
-    for level in levels
-        for sublevel in sublevels
-            sbml_url = base_url * "-sbml-l" * level * "v" * sublevel * ".xml"
-            try
-                sbml = String(take!(Downloads.download(sbml_url, IOBuffer())))
-                push!(sbml_urls, sbml_url)
-            catch
-            end
-        end
-    end
-    return sbml_urls
-end
-
-function get_model_str(test_case)
-    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/stochastic/$test_case/$test_case"
-    sbml_urls = get_sbml_urls(base_url)
-    sbml_url = sbml_urls[end]
-    sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-    model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string = true)
-    reaction_system = SBMLImporter.reactionsystem_from_SBML(model_SBML, "", false)
-    return reaction_system, model_SBML
-end
+include(joinpath(@__DIR__, "common.jl"))
 
 function read_settings(settings_url::String)
     settings = String(take!(Downloads.download(settings_url, IOBuffer())))
@@ -132,8 +106,8 @@ end
 @testset "Stochastic tests" begin
     for i in 1:39
 
-        # 19 has assignment rule 
-        # 33 has continious callback
+        # 19 has assignment rule
+        # 33 has continous callback
         if i ∈ [19, 33]
             continue
         end
@@ -141,7 +115,7 @@ end
         @info "Test case $i"
         test_case = repeat("0", 5 - length(string(i))) * string(i)
 
-        # i = 5 nast test case were many simulations must be run to get a 
+        # i = 5 nast test case were many simulations must be run to get a
         # good mean estimate (as amounts are large)
         if i == 5
             test_stochastic_testcase(test_case; nsolve = 70000)
