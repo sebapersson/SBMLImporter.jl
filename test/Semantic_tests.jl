@@ -106,7 +106,7 @@ function check_test_case(test_case, solver)
                     absdiff = abs.(sol.prob.p[ip] .- expected_res)
                     @test all(absdiff .< abstol_test .+ reltol_test .* abs.(expected_res))
                 end
-                #continue
+                continue
             end
 
             is_sbml_specie = haskey(libsbml_model.species, component_test)
