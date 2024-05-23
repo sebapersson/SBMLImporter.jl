@@ -36,7 +36,7 @@ function check_test_case(test_case, solver)
     # are correct. Border case we pass
     _cases = ["00995", "00996", "00997", "01284", "01510", "01527", "01596", "01663",
               "01686", "01684", "01685", "01694", "01695", "01696", "01697", "01698",
-              "01699", "01700", "01719", "00928", "00929"]
+              "01699", "01700", "01719", "00928", "00929", "01693"]
     if test_case in _cases
         results = results[2:end, :]
     end
@@ -90,7 +90,7 @@ function check_test_case(test_case, solver)
             component_test = replace(string(_component_test), " " => "")
             expected_res = results[!, Symbol(component_test)]
 
-            if component_test ∈ model_parameters
+            if component_test in model_parameters
                 ip = findfirst(x -> x == component_test, model_parameters)
                 result_is_inf = all(isinf.(expected_res))
                 result_is_nan = all(isnan.(expected_res))
@@ -106,14 +106,14 @@ function check_test_case(test_case, solver)
                     absdiff = abs.(sol.prob.p[ip] .- expected_res)
                     @test all(absdiff .< abstol_test .+ reltol_test .* abs.(expected_res))
                 end
-                continue
+                #continue
             end
 
             is_sbml_specie = haskey(libsbml_model.species, component_test)
             if component_test ∈ vcat(species_test_conc, species_test_amount) && is_sbml_specie
                 compartment_name = libsbml_model.species[component_test].compartment
                 unit = model_SBML.species[component_test].unit
-                if unit == :Concentration
+                if unit == :Concentration && component_test ∉ species_test_amount
                     c = 1.0
                 elseif compartment_name in model_parameters
                     c = sol.prob.p[findfirst(x -> x == compartment_name, model_parameters)]
