@@ -83,9 +83,8 @@ The key differences between SBMLToolkit and SBMLImporter are:
 
 ## Supported SBML Features
 
-SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1257 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. Currently unsupported features are:
+SBMLImporter supports many SBML features for SBML models (level 2 or higher). Currently, excluding FBA models, it successfully passes 1265 out of 1785 test cases. The failed test cases cover features currently not supported. If SBMLImporter lacks support for a feature you would like, please file an issue on GitHub. Currently unsupported features are:
 
-* Models with empty SBML reactions.
 * Delay (creating a delay-differential-equations).
 * Events with delay.
 * Events with priority.

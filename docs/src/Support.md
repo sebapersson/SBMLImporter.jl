@@ -1,6 +1,6 @@
 # [Supported SBML Features](@id support)
 
-SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1257 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
+SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1265 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
 
 - Events.
 - Rate rules.
@@ -17,7 +17,6 @@ Species can be specified in either concentrations or amounts. The unit is determ
 
 Currently SBMLImporter does not support the following features:
 
-* Models with empty SBML reactions.
 * Delay (creating a delay-differential-equations).
 * Events with delay.
 * Events with priority.

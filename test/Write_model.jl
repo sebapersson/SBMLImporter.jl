@@ -6,10 +6,10 @@ isfile(path_model) && rm(path_model)
 isfile(path_cb) && rm(path_cb)
 
 path_SBML = joinpath(@__DIR__, "Models", "model_Boehm_JProteomeRes2014.xml")
-parsed_rn, cb = load_SBML(path_SBML; write_to_file=true)
+parsed_rn, cb = load_SBML(path_SBML; write_to_file = true)
 sys_ref = structural_simplify(convert(ODESystem, parsed_rn.rn))
 oprob_ref = ODEProblem(sys_ref, parsed_rn.u₀, (0.0, 5.0), parsed_rn.p, jac = true)
-sol_ref = solve(oprob_ref, Rodas4P(), saveat=1:5)
+sol_ref = solve(oprob_ref, Rodas4P(), saveat = 1:5)
 
 include(path_model)
 include(path_cb)
@@ -17,7 +17,7 @@ include(path_cb)
 rn, u0map, pmap = get_reaction_system([])
 sys_check = structural_simplify(convert(ODESystem, rn))
 oprob_check = ODEProblem(sys_ref, u0map, (0.0, 5.0), pmap, jac = true)
-sol_check = solve(oprob_check, Rodas4P(), saveat=1:5)
+sol_check = solve(oprob_check, Rodas4P(), saveat = 1:5)
 
 @test oprob_check.u0 == oprob_ref.u0
 @test oprob_check.p == oprob_ref.p

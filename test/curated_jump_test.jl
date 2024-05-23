@@ -50,7 +50,7 @@ sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
 # Catalyst mass-action format
 path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
 parsed_rn1, cb1 = load_SBML(path_SBML)
-parsed_rn2, cb2 = load_SBML(path_SBML; check_massaction=false)
+parsed_rn2, cb2 = load_SBML(path_SBML; check_massaction = false)
 @test reactions(parsed_rn1.rn)[1].only_use_rate == false
 @test reactions(parsed_rn2.rn)[1].only_use_rate == true
 oprob1 = ODEProblem(parsed_rn1.rn, parsed_rn1.u0, (0.0, 10.0), parsed_rn1.p)
