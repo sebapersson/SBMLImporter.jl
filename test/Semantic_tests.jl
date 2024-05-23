@@ -57,6 +57,7 @@ function check_test_case(test_case, solver)
     # Read settings file
     settings_url = base_url * "-settings.txt"
     species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(settings_url)
+    sbml_url = sbml_urls[end]
 
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
@@ -105,21 +106,24 @@ function check_test_case(test_case, solver)
                     absdiff = abs.(sol.prob.p[ip] .- expected_res)
                     @test all(absdiff .< abstol_test .+ reltol_test .* abs.(expected_res))
                 end
-                #continue
+                continue
             end
 
             is_sbml_specie = haskey(libsbml_model.species, component_test)
             if component_test ∈ vcat(species_test_conc, species_test_amount) && is_sbml_specie
                 compartment_name = libsbml_model.species[component_test].compartment
-                if model_SBML.species[component_test].unit == :Concentration
+                unit = model_SBML.species[component_test].unit
+                if unit == :Concentration
                     c = 1.0
                 elseif compartment_name in model_parameters
                     c = sol.prob.p[findfirst(x -> x == compartment_name, model_parameters)]
                 else
                     c = sol[Symbol(compartment_name)]
                 end
-                if component_test ∈ species_test_amount
-                    c = 1 / c
+                if component_test in species_test_amount && unit == :Amount
+                    c = 1.0
+                elseif component_test in species_test_amount
+                    c = 1 ./ c
                 end
             else
                 c = 1.0
