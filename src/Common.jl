@@ -73,8 +73,8 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
             _formula = replace_variable(_formula, id,
                                         "(" * model_SBML.species[id].initial_value * ")")
         else
-            replace_with, _ = parse_SBML_math(libsbml_model.initial_assignments[id])
-            _formula = replace_variable(_formula, id, "(" * replace_with * ")")
+            math_expression = parse_math(libsbml_model.initial_assignments[id], libsbml_model)
+            _formula = replace_variable(_formula, id, "(" * math_expression.formula * ")")
         end
     end
 
@@ -123,8 +123,8 @@ function replace_reactionid_formula(formula::T,
     end
 
     for (reaction_id, reaction) in libsbml_model.reactions
-        reaction_math, _ = parse_SBML_math(reaction.kinetic_math)
-        formula = replace_variable(formula, reaction_id, reaction_math)
+        math_expression = parse_math(reaction.kinetic_math, libsbml_model)
+        formula = replace_variable(formula, reaction_id, math_expression.formula)
     end
     return formula
 end

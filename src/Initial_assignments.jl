@@ -4,7 +4,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML,
     for (assign_id, initial_assignment) in libsbml_model.initial_assignments
 
         # Parse the assignment formula to Julia syntax
-        formula, _ = parse_SBML_math(initial_assignment)
+        math_expression = parse_math(initial_assignment, libsbml_model)
+        formula = math_expression.formula
         if occursin("piecewise", formula) && haskey(model_SBML.species, assign_id)
             throw(SBMLSupport("Piecewise expressions in initial assignments for species are not supported"))
         end
@@ -25,7 +26,7 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML,
                assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.parameters[assign_id].initial_value = formula
             else
-                # Here the parameter should be treated as given by an assignment rule, as it likelly is non-constant 
+                # Here the parameter should be treated as given by an assignment rule, as it likelly is non-constant
                 # and will enter the final model similar as assignment rules
                 model_SBML.parameters[assign_id].formula = formula
                 model_SBML.parameters[assign_id].initial_value = formula
@@ -38,7 +39,7 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML,
                assign_id ∈ model_SBML.rate_rule_variables
                 model_SBML.compartments[assign_id].initial_value = formula
             else
-                # Here the compartment should be treated as given by an assignment rule, as it likelly is non-constant 
+                # Here the compartment should be treated as given by an assignment rule, as it likelly is non-constant
                 # and will enter the final model similar as assignment rules
                 model_SBML.compartments[assign_id].formula = formula
                 model_SBML.compartments[assign_id].initial_value = formula
@@ -77,8 +78,8 @@ function parse_SBML_initial_assignments!(model_SBML::ModelSBML,
                                                       model_SBML.species[assign_id].compartment
     end
 
-    # Adjusting for unit, sometimes species might have their initial value multiplied by a 
-    # compartment, that might be given by an assignment rule. This insert the rule-formula 
+    # Adjusting for unit, sometimes species might have their initial value multiplied by a
+    # compartment, that might be given by an assignment rule. This insert the rule-formula
     # to ensure correct mapping for simulations
     for (specie_id, specie) in model_SBML.species
         for (compartment_id, compartment) in model_SBML.compartments

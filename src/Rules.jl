@@ -11,7 +11,7 @@ function parse_SBML_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::No
         end
 
         if rule isa SBML.AlgebraicRule
-            parse_algebraic_rule!(model_SBML, rule)
+            parse_algebraic_rule!(model_SBML, rule, libsbml_model)
         end
     end
     return nothing
@@ -20,32 +20,32 @@ end
 function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule,
                                 libsbml_model::SBML.Model)::Nothing
     rule_variable = rule.variable
-    rule_formula, _ = parse_SBML_math(rule.math)
-    rule_formula = replace_variable(rule_formula, "time", "t")
+    math_expression = parse_math(rule.math, libsbml_model)
+    rule_formula = replace_variable(math_expression.formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
     if isempty(rule_formula)
         rule_formula = "0.0"
     end
 
-    # If piecewise occurs in the rule we need to unnest, rewrite to ifelse, special 
-    # case handled separately 
+    # If piecewise occurs in the rule we need to unnest, rewrite to ifelse, special
+    # case handled separately
     if occursin("piecewise(", rule_formula)
         rule_formula = piecewise_to_ifelse(rule_formula, model_SBML, libsbml_model)
         push!(model_SBML.variables_with_piecewise, rule_variable)
     end
 
-    # Handle reaction ids, and unnest potential SBML functions 
+    # Handle reaction ids, and unnest potential SBML functions
     rule_formula = replace_reactionid_formula(rule_formula, libsbml_model)
     rule_formula = process_SBML_str_formula(rule_formula, model_SBML, libsbml_model;
                                             check_scaling = true, rate_rule = false)
 
-    # Check if variable affects a specie, parameter or compartment. In case of specie the assignment rule takes 
+    # Check if variable affects a specie, parameter or compartment. In case of specie the assignment rule takes
     # priority over any potential reactions later.
     if haskey(model_SBML.species, rule_variable)
         model_SBML.species[rule_variable].assignment_rule = true
-        # If specie is given in amount account for the fact the that equation is given 
-        # in conc. per SBML standard 
+        # If specie is given in amount account for the fact the that equation is given
+        # in conc. per SBML standard
         _specie = model_SBML.species[rule_variable]
         if _specie.unit == :Amount && _specie.only_substance_units == false
             rule_formula = "(" * rule_formula * ")*" * _specie.compartment
@@ -68,14 +68,14 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
         return nothing
     end
 
-    # At this point the assignment rule create a new specie or it is a speciesreference, 
-    # to be used in stochiometry. If it has the name generatedId... it is related to 
+    # At this point the assignment rule create a new specie or it is a speciesreference,
+    # to be used in stochiometry. If it has the name generatedId... it is related to
     # StoichometryMath.
     if length(rule_variable) ≥ 11 && rule_variable[1:11] == "generatedId"
         model_SBML.generated_ids[rule_variable] = rule_formula
         return nothing
     end
-    # Case with new specie 
+    # Case with new specie
     model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false,
                                                    rule_formula,
                                                    rule_formula,
@@ -89,8 +89,8 @@ end
 function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
                           libsbml_model::SBML.Model)::Nothing
     rule_variable = rule.variable
-    rule_formula, _ = parse_SBML_math(rule.math)
-    rule_formula = replace_variable(rule_formula, "time", "t")
+    math_expression = parse_math(rule.math, libsbml_model)
+    rule_formula = replace_variable(math_expression.formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
 
     # Rewrite rule to function if there are not any piecewise, eles rewrite to formula with ifelse
@@ -114,8 +114,8 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
 
     if haskey(model_SBML.species, rule_variable)
         model_SBML.species[rule_variable].rate_rule = true
-        # Must multiply with compartment if specie is given in amount as 
-        # SBML formulas are given in conc. 
+        # Must multiply with compartment if specie is given in amount as
+        # SBML formulas are given in conc.
         _specie = model_SBML.species[rule_variable]
         if _specie.unit == :Amount && _specie.only_substance_units == false
             _specie.formula = "(" * rule_formula * ") * " * _specie.compartment
@@ -138,8 +138,8 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
         return nothing
     end
 
-    # At this specie we introduce a new specie for said rule, this for example happens when we a 
-    # special stoichometry        
+    # At this specie we introduce a new specie for said rule, this for example happens when we a
+    # special stoichometry
     model_SBML.species[rule_variable] = SpecieSBML(rule_variable, false, false, "1.0",
                                                    rule_formula,
                                                    collect(keys(libsbml_model.compartments))[1],
@@ -148,22 +148,23 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
     return nothing
 end
 
-function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule)::Nothing
-    rule_formula, _ = parse_SBML_math(rule.math)
+function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_model::SBML.Model)::Nothing
+    math_expression = parse_math(rule.math, libsbml_model)
+    rule_formula = math_expression.formula
     if occursin("piecewise(", rule_formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end
     rule_formula = replace_variable(rule_formula, "time", "t")
     rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
     rule_name = isempty(model_SBML.algebraic_rules) ? "1" :
-                maximum(keys(model_SBML.algebraic_rules)) * "1" # Need placeholder key 
+                maximum(keys(model_SBML.algebraic_rules)) * "1" # Need placeholder key
     model_SBML.algebraic_rules[rule_name] = "0 ~ " * rule_formula
     return nothing
 end
 
 function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
 
-    # In case the model has algebraic rules some of the formulas (up to this point) are zero. To figure out 
+    # In case the model has algebraic rules some of the formulas (up to this point) are zero. To figure out
     # which variable check which might be applicable
     if isempty(model_SBML.algebraic_rules)
         return nothing
@@ -193,9 +194,9 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
 
         push!(candidates, specie_id)
     end
-    # To be set as algebraic rule variable a specie must not appear in reactions, 
-    # or be a boundary condition. Sometimes several species can fulfill this for 
-    # a single rule, in this case we choose the first valid 
+    # To be set as algebraic rule variable a specie must not appear in reactions,
+    # or be a boundary condition. Sometimes several species can fulfill this for
+    # a single rule, in this case we choose the first valid
     if !isempty(candidates)
         model_SBML.species[candidates[1]].algebraic_rule = true
         push!(model_SBML.algebraic_rule_variables, candidates[1])

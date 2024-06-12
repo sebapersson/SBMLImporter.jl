@@ -113,3 +113,10 @@ end
 struct SBMLSupport <: Exception
     var::String
 end
+
+mutable struct MathSBML
+    formula::String
+    math_idents::Vector{String}
+    tmp_arg::String
+    args::Vector{String}
+end

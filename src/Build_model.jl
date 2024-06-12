@@ -17,7 +17,7 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
             throw(SBMLSupport("$path_SBML is not the path to a SBML file"))
         end
         f = open(path_SBML, "r")
-        model_str = read(f, String)
+            model_str = read(f, String)
         close(f)
     else
         model_str = path_SBML

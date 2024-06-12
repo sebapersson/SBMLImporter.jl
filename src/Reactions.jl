@@ -1,7 +1,8 @@
 function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for (id, reaction) in libsbml_model.reactions
         # Process kinetic math into Julia syntax
-        _formula, math_idents = parse_SBML_math(reaction.kinetic_math)
+        math_expression = parse_math(reaction.kinetic_math, libsbml_model)
+        @unpack formula, math_idents = math_expression
 
         # Check if reactionId or assignment-rule variable appear in the kinetic math,
         # if they do they are a part of the math_idents, and need to be replaced
@@ -19,16 +20,16 @@ function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)
 
         # Add values for potential kinetic parameters (where-statements)
         for (parameter_id, parameter) in reaction.kinetic_parameters
-            _formula = replace_variable(_formula, parameter_id, string(parameter.value))
+            formula = replace_variable(formula, parameter_id, string(parameter.value))
         end
 
         # Capture potential piecewise
-        if occursin("piecewise(", _formula)
-            _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
+        if occursin("piecewise(", formula)
+            formula = piecewise_to_ifelse(formula, model_SBML, libsbml_model)
         end
 
         # Replace SBML functions, rescale species properly etc...
-        formula = process_SBML_str_formula(_formula, model_SBML, libsbml_model,
+        formula = process_SBML_str_formula(formula, model_SBML, libsbml_model,
                                            check_scaling = true)
         reactants = Vector{String}(undef, length(reaction.reactants))
         reactants_stoichiometry = similar(reactants)

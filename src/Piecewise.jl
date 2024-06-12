@@ -140,7 +140,7 @@ end
 function parse_piecewise_bool_condition(condition::String, value_active::String,
                                         value_inactive::String)::String
 
-    # Special case when a number is provided - here only return false when number 
+    # Special case when a number is provided - here only return false when number
     # is equal to zero
     if is_number(condition)
         _condition = "0.0 != " * condition
@@ -214,14 +214,10 @@ function _parse_piecewise_gate_condition(condition::String)::String
         elseif isempty(condition_parts) && condition[1:3] == "xor"
             return "0.0"
         end
-        # Handle special case for and, or and xor with single argument, then they should 
+        # Handle special case for and, or and xor with single argument, then they should
         # return said argument
         if length(split_between(condition_parts, ',')) == 1
             return condition_parts
-        end
-
-        if length(split_between(condition_parts, ',')) > 2
-            throw(SBMLSupport("and or xor gates with three conditions in piecewise are not supported"))
         end
 
         left_part, rigth_part = split_between(condition_parts, ',')
