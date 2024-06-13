@@ -2,61 +2,72 @@
     Functionality for parsing, and handling SBML species (e.g conversion factor etc...)
 =#
 
-function parse_SBML_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
-                             mass_action::Bool)::Nothing
+function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
+                        mass_action::Bool)::Nothing
     for (specie_id, specie) in libsbml_model.species
-        if specie_id ∈ ["true", "false", "time", "pi", "Inf", "NaN"]
-            throw(SBMLSupport("Parameter name cannot be true, false, time, pi, Inf, NaN"))
+        if specie_id in FORBIDDEN_IDS
+            throw(SBMLSupport("Specie name $(specie_id) is not allowed."))
         end
+        @assert !isempty(specie.compartment) "Specie $specie_id does not have a compartment"
 
-        # If both initial amount and conc are empty use concentration as unit per
-        # SBML standard
-        if isnothing(specie.initial_amount) && isnothing(specie.initial_concentration)
-            initial_value = ""
-            unit = specie.substance_units == "substance" ? :Amount : :Concentration
-        elseif !isnothing(specie.initial_concentration)
-            initial_value = string(specie.initial_concentration)
-            unit = :Concentration
-        else
-            initial_value = string(specie.initial_amount)
-            unit = :Amount
-        end
+        # If mass_action=true the user enforces only_substance_units=true
+        only_substance_units = _get_only_substance_units(specie, mass_action)
+        unit = _get_unit(specie, mass_action)
+        initial_value = _get_initial_value(specie, unit)
+        conversion_factor = _get_str(specie.conversion_factor)
+        constant = _get_bool(specie.constant)
+        boundary_condition = _get_bool(specie.boundary_condition)
+        compartment = specie.compartment
 
-        # Specie data. In case mass_action=true the user has enforced that the model
-        # should be a mass-action model, and therefore only_substance_units is set to
-        # true
-        _substance_units = specie.only_substance_units
-        only_substance_units = isnothing(_substance_units) ? false : _substance_units
-        only_substance_units = mass_action ? true : only_substance_units
-        boundary_condition = specie.boundary_condition
-        @unpack compartment, conversion_factor, constant = specie
-        conversion_factor = isnothing(conversion_factor) ? "" : conversion_factor
-        constant = isnothing(constant) ? false : constant
-
-        # In case being a boundary condition the specie can only be changed events, or rate-rules so set
-        # derivative to zero, likewise for constant the formula should be zero (no rate of change)
+        # In case we have a constant or boundary condition the formula (derivative) is
+        # guaranteed zero. TODO: I think this should be moved where formula parsing occurs
         if boundary_condition == true || constant == true
             formula = "0.0"
         else
             formula = ""
         end
 
-        # In case the initial value is given in conc, but the specie should be given in amounts, adjust
-        if unit == :Concentration && only_substance_units == true
-            unit = :Amount
-            initial_value *= " * " * compartment
-        end
-
-        model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant,
-                                                   initial_value, formula, compartment,
-                                                   conversion_factor, unit,
-                                                   only_substance_units, false, false,
-                                                   false)
+        model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant, initial_value, formula, compartment, conversion_factor, unit, only_substance_units, false, false, false)
     end
     return nothing
 end
 
-# Adjust specie equation if compartment is dynamic
+function _get_only_substance_units(specie::SBML.Species, mass_action::Bool)::Bool
+    mass_action == true && return true
+    return _get_bool(specie.only_substance_units)
+end
+
+function _get_unit(specie::SBML.Species, only_substance_units::Bool)::Symbol
+    @unpack initial_amount, initial_concentration, substance_units = specie
+    # Per SBML standard if initial_concentration is set the unit is conc, otherwise, is is
+    # given by substance_units. only_substance_units overrides unit
+    if only_substance_units == true
+        unit = :Amount
+    elseif !isnothing(initial_concentration)
+        unit = :Concentration
+    else
+        unit = substance_units == "substance" ? :Amount : :Concentration
+    end
+    return unit
+end
+
+function _get_initial_value(specie::SBML.Species, unit::Symbol)::String
+    @unpack initial_concentration, only_substance_units, initial_amount = specie
+    given_in_conc = !isnothing(initial_concentration)
+    if given_in_conc && unit == :Amount
+        initial_value = initial_concentration * "*" * specie.compartment
+    elseif given_in_conc && unit == :Concentration
+        initial_value = initial_concentration
+    elseif !given_in_conc && unit == :Concentration
+        @assert !isnothing(initial_amount) "initial_amount empty with unit conc."
+        initial_value = initial_amount * "/" * specie.compartment
+    elseif !given_in_conc && unit == :Amount
+        initial_value = _get_str(initial_amount)
+    end
+    return initial_value
+end
+
+# TODO: This does not fit here. Dynamic compartments is its own thing
 function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
 
     #=
@@ -178,7 +189,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-# Adjust specie via conversion factor
+# TODO : Should be in general equation parsing files
 function adjust_conversion_factor!(model_SBML::ModelSBML,
                                    libsbml_model::SBML.Model)::Nothing
     for (specie_id, specie) in model_SBML.species

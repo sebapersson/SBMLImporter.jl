@@ -351,6 +351,16 @@ function is_number(x::Union{AbstractString, SubString{String}})::Bool
     return (occursin(re1, x) || occursin(re2, x))
 end
 
+function _get_bool(x::Union{Nothing, Bool})::Bool
+    isnothing(x) && return false
+    return x
+end
+
+function _get_str(x::Union{Nothing, String, Real})::String
+    isnothing(x) && return ""
+    return string(x)
+end
+
 function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
     specie_reference_ids = String[]
     for r in values(libsbml_model.reactions)

@@ -73,7 +73,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     model_SBML = ModelSBML(model_name; specie_reference_ids = specie_reference_ids,
                            conversion_factor = conversion_factor)
 
-    parse_SBML_species!(model_SBML, libsbml_model, mass_action)
+    parse_species!(model_SBML, libsbml_model, mass_action)
 
     parse_SBML_parameters!(model_SBML, libsbml_model)
 

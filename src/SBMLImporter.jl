@@ -14,6 +14,7 @@ using SpecialFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
 const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst, SBML.MathAvogadro}
+const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
 
 include("Structs.jl")
 include("Build_model.jl")
@@ -27,7 +28,7 @@ include("Rules.jl")
 include("Common.jl")
 include("Piecewise.jl")
 include("Events.jl")
-include("supported_sbml_functions.jl")
+include("sbml_functions.jl")
 include("math.jl")
 include("Initial_assignments.jl")
 include("Reactions.jl")
