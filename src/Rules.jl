@@ -22,7 +22,7 @@ function parse_assignment_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule
     rule_variable = rule.variable
     math_expression = parse_math(rule.math, libsbml_model)
     rule_formula = replace_variable(math_expression.formula, "time", "t")
-    rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
+    rule_formula = insert_functions(rule_formula, model_SBML.functions)
 
     if isempty(rule_formula)
         rule_formula = "0.0"
@@ -91,7 +91,7 @@ function parse_rate_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
     rule_variable = rule.variable
     math_expression = parse_math(rule.math, libsbml_model)
     rule_formula = replace_variable(math_expression.formula, "time", "t")
-    rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
+    rule_formula = insert_functions(rule_formula, model_SBML.functions)
 
     # Rewrite rule to function if there are not any piecewise, eles rewrite to formula with ifelse
     if occursin("piecewise(", rule_formula)
@@ -155,7 +155,7 @@ function parse_algebraic_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, 
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end
     rule_formula = replace_variable(rule_formula, "time", "t")
-    rule_formula = SBML_function_to_math(rule_formula, model_SBML.functions)
+    rule_formula = insert_functions(rule_formula, model_SBML.functions)
     rule_name = isempty(model_SBML.algebraic_rules) ? "1" :
                 maximum(keys(model_SBML.algebraic_rules)) * "1" # Need placeholder key
     model_SBML.algebraic_rules[rule_name] = "0 ~ " * rule_formula

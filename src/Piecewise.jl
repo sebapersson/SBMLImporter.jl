@@ -52,8 +52,10 @@ function piecewise_to_ifelse(rule_formula::String, model_SBML::ModelSBML,
         # How to formula the ifelse depends on the condition. The condition can be direct (gt, lt...), a gate
         # (and, if, or...) or a nested piecewise. Each case is handled separately
         condition = conditions[1]
-        if condition[1] == '(' && condition[end] == ')'
-            condition = condition[2:(end - 1)]
+        if !any(occursin.(['<', '>', "≤", "≥", "==", "!="], condition))
+            if condition[1] == '(' && condition[end] == ')'
+                condition = condition[2:(end - 1)]
+            end
         end
 
         if is_number(condition) || condition[1:2] ∈ ["lt", "gt", "eq"] ||

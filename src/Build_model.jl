@@ -75,11 +75,11 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_species!(model_SBML, libsbml_model, mass_action)
 
-    parse_SBML_parameters!(model_SBML, libsbml_model)
+    parse_parameters!(model_SBML, libsbml_model)
 
-    parse_SBML_compartments!(model_SBML, libsbml_model)
+    parse_compartments!(model_SBML, libsbml_model)
 
-    parse_SBML_functions!(model_SBML, libsbml_model)
+    parse_functions!(model_SBML, libsbml_model)
 
     parse_SBML_rules!(model_SBML, libsbml_model)
 

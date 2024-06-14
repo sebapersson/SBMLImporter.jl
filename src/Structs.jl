@@ -33,6 +33,11 @@ mutable struct CompartmentSBML
     algebraic_rule::Bool
 end
 
+struct FunctionSBML
+    args::Vector{String}
+    body::String
+end
+
 mutable struct EventSBML
     const name::String
     trigger::String
@@ -59,7 +64,7 @@ struct ModelSBML
     compartments::Dict{String, CompartmentSBML}
     events::Dict{String, EventSBML}
     reactions::Dict{String, ReactionSBML}
-    functions::Dict{String, Vector{String}}
+    functions::Dict{String, FunctionSBML}
     algebraic_rules::Dict{String, String}
     generated_ids::Dict{String, String}
     piecewise_expressions::Dict{String, String}
@@ -82,7 +87,7 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
                            Dict{String, CompartmentSBML}(),
                            Dict{String, EventSBML}(),
                            Dict{String, ReactionSBML}(),
-                           Dict{String, Vector{String}}(), # SBML reactions
+                           Dict{String, FunctionSBML}(), # SBML reactions
                            Dict{String, String}(), # Algebraic rules
                            Dict{String, String}(), # Generated id:s
                            Dict{String, String}(), # Piecewise to ifelse_expressions

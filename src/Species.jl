@@ -12,13 +12,12 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
 
         # If mass_action=true the user enforces only_substance_units=true
         only_substance_units = _get_only_substance_units(specie, mass_action)
-        unit = _get_unit(specie, mass_action)
+        unit = _get_unit(specie, only_substance_units)
         initial_value = _get_initial_value(specie, unit)
-        conversion_factor = _get_str(specie.conversion_factor)
-        constant = _get_bool(specie.constant)
-        boundary_condition = _get_bool(specie.boundary_condition)
+        conversion_factor = _parse_variable(specie.conversion_factor)
+        constant = _parse_bool(specie.constant)
+        boundary_condition = _parse_bool(specie.boundary_condition)
         compartment = specie.compartment
-
         # In case we have a constant or boundary condition the formula (derivative) is
         # guaranteed zero. TODO: I think this should be moved where formula parsing occurs
         if boundary_condition == true || constant == true
@@ -26,7 +25,6 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
         else
             formula = ""
         end
-
         model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant, initial_value, formula, compartment, conversion_factor, unit, only_substance_units, false, false, false)
     end
     return nothing
@@ -34,17 +32,19 @@ end
 
 function _get_only_substance_units(specie::SBML.Species, mass_action::Bool)::Bool
     mass_action == true && return true
-    return _get_bool(specie.only_substance_units)
+    return _parse_bool(specie.only_substance_units)
 end
 
 function _get_unit(specie::SBML.Species, only_substance_units::Bool)::Symbol
     @unpack initial_amount, initial_concentration, substance_units = specie
-    # Per SBML standard if initial_concentration is set the unit is conc, otherwise, is is
-    # given by substance_units. only_substance_units overrides unit
+    # Per SBML standard if initial_concentration or initial_amount set the unit that is
+    # the specie unit, otherwise, it is given by substance_units.
     if only_substance_units == true
         unit = :Amount
     elseif !isnothing(initial_concentration)
         unit = :Concentration
+    elseif !isnothing(initial_amount)
+        unit = :Amount
     else
         unit = substance_units == "substance" ? :Amount : :Concentration
     end
@@ -54,17 +54,20 @@ end
 function _get_initial_value(specie::SBML.Species, unit::Symbol)::String
     @unpack initial_concentration, only_substance_units, initial_amount = specie
     given_in_conc = !isnothing(initial_concentration)
+    given_in_amount = !isnothing(initial_amount)
     if given_in_conc && unit == :Amount
-        initial_value = initial_concentration * "*" * specie.compartment
+        initial_value = string(initial_concentration) * "*" * specie.compartment
     elseif given_in_conc && unit == :Concentration
         initial_value = initial_concentration
-    elseif !given_in_conc && unit == :Concentration
-        @assert !isnothing(initial_amount) "initial_amount empty with unit conc."
-        initial_value = initial_amount * "/" * specie.compartment
-    elseif !given_in_conc && unit == :Amount
-        initial_value = _get_str(initial_amount)
+    elseif given_in_amount && unit == :Concentration
+        initial_value = string(initial_amount) * "/" * specie.compartment
+    elseif given_in_amount && unit == :Amount
+        initial_value = _parse_variable(initial_amount)
+    # Defaults to zero
+    else
+        initial_value = "0.0"
     end
-    return initial_value
+    return string(initial_value)
 end
 
 # TODO: This does not fit here. Dynamic compartments is its own thing

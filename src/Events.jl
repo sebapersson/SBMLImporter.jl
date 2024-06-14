@@ -5,7 +5,7 @@ function parse_SBML_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::N
         # Parse the event trigger into proper Julia syntax
         math_expression = parse_math(event.trigger.math, libsbml_model)
         formula_trigger = math_expression.formula
-        formula_trigger = SBML_function_to_math(formula_trigger, model_SBML.functions)
+        formula_trigger = insert_functions(formula_trigger, model_SBML.functions)
         if isempty(formula_trigger)
             continue
         end
@@ -179,11 +179,6 @@ function parse_event_trigger(formula_trigger::T, model_SBML::ModelSBML,
                               compartment.name
         formula_trigger = replace_variable(formula_trigger, specie_id,
                                            specie_id * '/' * compartment_formula)
-    end
-
-    # For making downstream processing easier remove starting and ending paranthesis
-    if formula_trigger[1] == '(' && formula_trigger[end] == ')'
-        formula_trigger = formula_trigger[2:(end - 1)]
     end
 
     # TODO: Need to refactor, ad hoc (triggered due to how functions rewrite, functions

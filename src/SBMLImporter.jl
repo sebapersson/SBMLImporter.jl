@@ -19,6 +19,7 @@ const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
 include("Structs.jl")
 include("Build_model.jl")
 include("Callbacks.jl")
+include("compartments.jl")
 include("Check_support.jl")
 include("SBML_to_ReactionSystem.jl")
 include("Parameters.jl")

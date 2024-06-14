@@ -1,28 +1,17 @@
 #=
-    Functionality for parsing, and handling SBML parameters and compartments 
+    Functionality for parsing, and handling SBML parameters and compartments
 =#
 
-function parse_SBML_parameters!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+function parse_parameters!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for (parameter_id, parameter) in libsbml_model.parameters
-        if parameter_id ∈ ["true", "false", "pi", "Inf", "NaN", "time"]
-            throw(SBMLSupport("Parameter name cannot be true, false, time, pi, Inf, NaN"))
+        if parameter_id in FORBIDDEN_IDS
+            throw(SBMLSupport("Parameter name $(parameter_id) is not allowed."))
         end
 
-        formula = isnothing(parameter.value) ? "0.0" : string(parameter.value)
-        model_SBML.parameters[parameter_id] = ParameterSBML(parameter_id,
-                                                            parameter.constant, formula, "",
-                                                            false, false, false)
-    end
-    return nothing
-end
-
-function parse_SBML_compartments!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-    for (compartment_id, compartment) in libsbml_model.compartments
-        size = isnothing(compartment.size) ? "1.0" : string(compartment.size)
-        model_SBML.compartments[compartment_id] = CompartmentSBML(compartment_id,
-                                                                  compartment.constant,
-                                                                  size, "", false, false,
-                                                                  false)
+        formula = _parse_variable(parameter.value; default="0.0")
+        constant = _parse_bool(parameter.constant)
+        initial_value = ""
+        model_SBML.parameters[parameter_id] = ParameterSBML(parameter_id, constant, formula, initial_value, false, false, false)
     end
     return nothing
 end
@@ -30,7 +19,7 @@ end
 function include_event_parameters_in_model!(model_SBML::ModelSBML)::Nothing
 
     # Sometimes parameter can be non-constant, but still have a constant rhs and they change value
-    # because of event assignments. This must be captured by setting the parameter to have a zero 
+    # because of event assignments. This must be captured by setting the parameter to have a zero
     # derivative so it is not simplified away later with structurally_simplify
     for (parameter_id, parameter) in model_SBML.parameters
         if parameter.algebraic_rule == true || parameter.rate_rule == true ||
@@ -50,7 +39,7 @@ function include_event_parameters_in_model!(model_SBML::ModelSBML)::Nothing
         parameter.formula = "0.0"
         push!(model_SBML.rate_rule_variables, parameter_id)
     end
-    # Similar holds for compartments 
+    # Similar holds for compartments
     for (compartment_id, compartment) in model_SBML.compartments
         if compartment.algebraic_rule == true || compartment.rate_rule == true ||
            compartment.constant == true

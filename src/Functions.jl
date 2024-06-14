@@ -1,86 +1,44 @@
-function parse_SBML_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-    for (function_name, SBML_function) in libsbml_model.function_definitions
-        if isnothing(SBML_function.body)
+function parse_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+    for (function_name, _function) in libsbml_model.function_definitions
+        # Per SBML standard a function can be empty, in practice should be user misstake
+        if isnothing(_function.body)
+            @warn "Function $(function_name) does not have a function body and is ignored"
             continue
         end
-
-        args = get_SBML_function_args(SBML_function)
-        math_expression = parse_math(SBML_function.body.body, libsbml_model)
-        model_SBML.functions[function_name] = [args, math_expression.formula]
+        args = _get_function_args(_function)
+        function_body = parse_math(_function.body.body, libsbml_model)
+        model_SBML.functions[function_name] = FunctionSBML(args, function_body.formula)
     end
-    # To handle when Boolean conditions appear in functions. They are just another function
-    # so are parsed via recursion
-    model_SBML.functions["gt"] = ["x, y", "x > y"]
-    model_SBML.functions["geq"] = ["x, y", "x >= y"]
-    model_SBML.functions["lt"] = ["x, y", "x < y"]
-    model_SBML.functions["leq"] = ["x, y", "x <= y"]
+
+    # In SBML inequalities are provided as lt, gt, ..., they are basically SBML functions,
+    # and are treated as such
+    _add_inequality_functions!(model_SBML)
     return nothing
 end
 
-function get_SBML_function_args(SBML_function::SBML.FunctionDefinition)::String
-    if isempty(SBML_function.body.args)
-        return ""
-    end
-    args = prod([arg * ", " for arg in SBML_function.body.args])[1:(end - 2)]
-    return args
+function _get_function_args(_function::SBML.FunctionDefinition)::Vector{String}
+    isempty(_function.body.args) && return String[]
+    return _function.body.args
 end
 
-# TODO: This is not a good solution. But we shall fix this when refactoring this
-# part of the code. Similar funcitons are used to parse picewise
-function split_by_comma_outer(str::AbstractString)
-    out = Vector{String}(undef, 0)
-    level_paranthesis = 0
-    istart = 1
-    for (i, char) in pairs(str)
-        if char == '('
-            level_paranthesis += 1
-        end
-        if char == ')'
-            level_paranthesis -= 1
-        end
-        if char == ',' && level_paranthesis == 0
-            push!(out, str[istart:(i-1)])
-            istart = i + 1
-            continue
-        end
-        if i == length(str)
-            push!(out, str[istart:end])
-        end
-    end
-    return out
+function _add_inequality_functions!(model_SBML::ModelSBML)::Nothing
+    # __x__ and __y__ to not end up using model ids
+    model_SBML.functions["gt"] = FunctionSBML(["__x__", "__y__"], "__x__ > __y__")
+    model_SBML.functions["lt"] = FunctionSBML(["__x__", "__y__"], "__x__ < __y__")
+    model_SBML.functions["geq"] = FunctionSBML(["__x__", "__y__"], "__x__ >= __y__")
+    model_SBML.functions["leq"] = FunctionSBML(["__x__", "__y__"], "__x__ <= __y__")
+    return nothing
 end
 
-"""
-    SBML_function_to_math(formula::T, model_functions::Dict)::T where T<:AbstractString
-
-Substitutes any potential SBML functions recursively with math expressions. Does so by
-inserting the function arguments into the function.
-
-# Example
-
-```
-formula = fun1(fun2(a,b),fun3(c,d))
-model_functions = Dict("fun1" => ["a,b","a^b"],
-                       "fun2" => ["a,b","a*b"],
-                       "fun3" => ["a,b","a+b"])
-println(SBML_function_to_math(formula, model_functions))
-```
-```
-"((a*b)^(c+d))"
-```
-"""
-function SBML_function_to_math(formula::T,
-                               model_functions::Dict)::T where {T <: AbstractString}
-    _formula = formula
-    outside_comma_regex = Regex(",(?![^()]*\\))")
-    match_parentheses_regex = Regex("\\((?:[^)(]*(?R)?)*+\\)")
-
-    # In case no functions occur in the formula
-    # TODO: Add-hoc, math.jl file can also track SBML functions
-    if !any(occursin.(keys(model_functions) .* '(', formula))
+function insert_functions(formula::T, _functions::Dict)::T where {T <: AbstractString}
+    # TODO: For early exit formula should track functions, can be done via math.jl,
+    # and will make this function faster for larger models, as the haskey function
+    # can be used here
+    if !any(occursin.(keys(_functions) .* '(', formula))
         return formula
     end
 
+    # TODO: As above, can be tracked with math.jl for faster early exit
     if replace_variable(formula, "and", "") != formula
         throw(SBMLSupport("and is not supported in SBML functions"))
     end
@@ -88,52 +46,53 @@ function SBML_function_to_math(formula::T,
         throw(SBMLSupport("or is not supported in SBML functions"))
     end
 
-    for (key, value) in model_functions
-        # Find commas not surrounded by parentheses.
-        # Used to split function arguments
-        # If input argument are "pow(a,b),c" the list becomes ["pow(a,b)","c"]
-        # Finds the old input arguments, removes spaces and puts them in a list
-        replace_from = split(replace(value[1], " " => ""), outside_comma_regex)
-        # Finds all functions on the form "funName("
-        n_functions = Regex("\\b" * key * "\\(")
-        # Finds the offset after the parenthesis in "funName("
-        function_start_regex = Regex("\\b" * key * "\\(\\K")
-        # Matches parentheses pairs to grab the arguments of the "funName(" function
-        while !isnothing(match(n_functions, _formula))
-            # The string we wish to insert when the correct
-            # replacement has been made.
-            # Must be resetted after each pass.
-            replace_str = value[2]
-            # Extracts the function arguments
-            function_start = match(function_start_regex, _formula)
-            function_start_position = function_start.offset
-            inside_function = match(match_parentheses_regex,
-                                    _formula[(function_start_position - 1):end]).match
-            inside_function = inside_function[2:(end - 1)]
-            replace_to = split_by_comma_outer(replace(inside_function, ", " => ","))
-            # Replace each variable used in the formula with the
-            # variable name used as input for the function.
-            replace_dict = Dict()
-            for ind in eachindex(replace_to)
-                replace_from_regex = Regex("(\\b" * replace_from[ind] * "\\b)")
-                if !isempty(replace_from[ind])
-                    replace_dict[replace_from_regex] = '(' * replace_to[ind] * ')'
-                else
-                    replace_dict[replace_from_regex] = ""
-                end
-            end
-            replace_str = replace(replace_str, replace_dict...)
+    for (function_name, _function) in _functions
+        # TODO: Early exit, to make more efficient as above let math.jl track
+        # (will not need later as will loop over know functions in the expression)
+        if !occursin(function_name * '(', formula)
+            continue
+        end
 
-            # Replace function(input) with formula where each variable in formula has the correct name.
-            _formula = replace(_formula,
-                               key * "(" * inside_function * ")" => "(" * replace_str * ")")
+        nfunction_occurrences = _get_times_appear(function_name, formula)
+        for _ in 1:nfunction_occurrences
+            function_call = _extract_function_call(function_name, formula)
+            function_insert = _get_expression_insert(function_call, _function)
+            formula = replace(formula, function_call => function_insert; count=1)
         end
     end
 
-    # In case of nested function recursively processes nested functions
-    if any(occursin.(keys(model_functions), _formula))
-        _formula = SBML_function_to_math(_formula, model_functions)
+    # Functions can be nested, handled via recursion
+    if any(occursin.(keys(_functions), formula))
+        formula = insert_functions(formula, _functions)
     end
 
-    return _formula
+    return formula
+end
+
+function _extract_function_call(name, formula)
+    iname = findfirst(Regex("\\b" * name * "\\("), formula)
+    iend = _find_indices_outside_paranthesis(')', formula[iname[1]:end])
+    return formula[iname[1]:(iname[1]+iend[1]-1)]
+end
+
+function _get_expression_insert(function_call::String, _function::FunctionSBML)::String
+    args_insert = _extract_args_insert(function_call)
+    @unpack args, body = _function
+    @assert length(args) == length(args_insert) "Number of arguments to insert does not match SBML function"
+    function_inserted = deepcopy(body)
+    for i in eachindex(args_insert)
+        function_inserted = replace_variable(function_inserted, args[i], args_insert[i])
+    end
+    return function_inserted
+end
+
+function _extract_args_insert(function_call::String)::Vector{String}
+    # Args are , separated, on form f(arg1, arg2, ..., argn), which is used for extracting
+    icomma = _find_indices_outside_paranthesis(',', function_call; start_depth=-1)
+    istart_args = findfirst('(', function_call) + 1
+    args_insert = _split_by_indicies(function_call, icomma; istart=istart_args, iend=1)
+    # To ensure correct function evaluation order as args can be expression, paranthesis is
+    # added around each arg. E.g. test case 1770
+    args_insert = '(' .* replace.(args_insert, " " => "") .* ')'
+    return args_insert
 end

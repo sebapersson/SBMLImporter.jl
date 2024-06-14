@@ -67,6 +67,7 @@ function _parse_fn(math_sbml::SBML.MathApply, sbml_functions::Dict)::String
         return math_sbml.fn
     end
 
+    @assert haskey(SBML_FN_INFO, math_sbml.fn) "$(math_sbml.fn) not among importable functions"
     fn, nallowed_args = SBML_FN_INFO[math_sbml.fn]
     nargs = length(math_sbml.args)
     if fn in ["delay", "rem", "implies"]

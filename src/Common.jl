@@ -24,7 +24,7 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
                                   libsbml_model::SBML.Model;
                                   check_scaling::Bool = false,
                                   rate_rule::Bool = false)::T where {T <: AbstractString}
-    _formula = SBML_function_to_math(formula, model_SBML.functions)
+    _formula = insert_functions(formula, model_SBML.functions)
     if occursin("piecewise(", _formula)
         _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
     end
@@ -351,14 +351,49 @@ function is_number(x::Union{AbstractString, SubString{String}})::Bool
     return (occursin(re1, x) || occursin(re2, x))
 end
 
-function _get_bool(x::Union{Nothing, Bool})::Bool
+function _parse_bool(x::Union{Nothing, Bool})::Bool
     isnothing(x) && return false
     return x
 end
 
-function _get_str(x::Union{Nothing, String, Real})::String
-    isnothing(x) && return ""
+function _parse_variable(x::Union{Nothing, String, Real}; default::String="")::String
+    isnothing(x) && return default
     return string(x)
+end
+
+function _get_times_appear(id::String, formula::AbstractString; isfunction::Bool=true)::Integer
+    pattern = isfunction ? Regex("\\b" * id * "\\(") : Regex("\\b" * id)
+    return count(pattern, formula)
+end
+
+function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; start_depth=0)::Vector{Integer}
+    out = Vector{Int64}(undef, 0)
+    paranthesis_depth = start_depth
+    for (i, char) in pairs(formula)
+        if char == '('
+            paranthesis_depth += 1
+        end
+        if char == ')'
+            paranthesis_depth -= 1
+        end
+        if paranthesis_depth == 0 && char == x
+            push!(out, i)
+        end
+    end
+    return out
+end
+
+function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart=1, iend=0)::Vector{String}
+    isempty(str[istart:end-iend]) && return String[]
+    length(indices) == 0 && return [str[istart:end-iend]]
+
+    out = Vector{String}(undef, length(indices)+1)
+    for (j, index) in pairs(indices)
+        out[j] = str[istart:index-1]
+        istart = index + 1
+    end
+    out[end] = str[(indices[end]+1):end-iend]
+    return out
 end
 
 function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
