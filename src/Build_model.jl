@@ -81,7 +81,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_functions!(model_SBML, libsbml_model)
 
-    parse_SBML_rules!(model_SBML, libsbml_model)
+    parse_rules!(model_SBML, libsbml_model)
 
     parse_SBML_events!(model_SBML, libsbml_model)
 

@@ -23,10 +23,19 @@ Processes a string formula by inserting SBML functions, rewriting piecewise to i
 function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
                                   libsbml_model::SBML.Model;
                                   check_scaling::Bool = false,
-                                  rate_rule::Bool = false)::T where {T <: AbstractString}
+                                  rate_rule::Bool = false,
+                                  assignment_rule::Bool = false,
+                                  algebraic_rule::Bool = false,
+                                  variable = "")::T where {T <: AbstractString}
     _formula = insert_functions(formula, model_SBML.functions)
+    if occursin("piecewise(", _formula) && algebraic_rule
+        throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
+    end
     if occursin("piecewise(", _formula)
         _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
+        if assignment_rule || rate_rule
+            !isempty(variable) && push!(model_SBML.variables_with_piecewise, variable)
+        end
     end
     _formula = replace_variable(_formula, "time", "t") # Sometimes t is decoded as time
 

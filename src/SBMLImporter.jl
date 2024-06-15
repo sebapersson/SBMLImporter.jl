@@ -14,6 +14,7 @@ using SpecialFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
 const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst, SBML.MathAvogadro}
+const SBMLRule = Union{SBML.AssignmentRule, SBML.RateRule, SBML.AlgebraicRule}
 const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
 
 include("Structs.jl")
