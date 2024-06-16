@@ -26,6 +26,7 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
                                   rate_rule::Bool = false,
                                   assignment_rule::Bool = false,
                                   algebraic_rule::Bool = false,
+                                  scale_rateof::Bool = true,
                                   variable = "")::T where {T <: AbstractString}
     _formula = insert_functions(formula, model_SBML.functions)
     if occursin("piecewise(", _formula) && algebraic_rule
@@ -49,6 +50,10 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
             continue
         end
         if specie.unit == :Concentration || specie.only_substance_units == true
+            continue
+        end
+        # TODO: Remember for rateOf parsing
+        if scale_rateof == false && occursin("rateOf", _formula)
             continue
         end
 
@@ -373,6 +378,20 @@ end
 function _get_times_appear(id::String, formula::AbstractString; isfunction::Bool=true)::Integer
     pattern = isfunction ? Regex("\\b" * id * "\\(") : Regex("\\b" * id)
     return count(pattern, formula)
+end
+
+function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
+    if specie.unit == :Amount && specie.only_substance_units == false
+        formula = '(' * formula * ") * " * specie.compartment
+    end
+    return formula
+end
+
+function _is_model_variable(variable::String, model_SBML::ModelSBML)::Bool
+    haskey(model_SBML.species, variable) && return true
+    haskey(model_SBML.compartments, variable) && return true
+    haskey(model_SBML.parameters, variable) && return true
+    return false
 end
 
 function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; start_depth=0)::Vector{Integer}

@@ -25,8 +25,8 @@ function _add_inequality_functions!(model_SBML::ModelSBML)::Nothing
     # __x__ and __y__ to not end up using model ids
     model_SBML.functions["gt"] = FunctionSBML(["__x__", "__y__"], "__x__ > __y__")
     model_SBML.functions["lt"] = FunctionSBML(["__x__", "__y__"], "__x__ < __y__")
-    model_SBML.functions["geq"] = FunctionSBML(["__x__", "__y__"], "__x__ >= __y__")
-    model_SBML.functions["leq"] = FunctionSBML(["__x__", "__y__"], "__x__ <= __y__")
+    model_SBML.functions["geq"] = FunctionSBML(["__x__", "__y__"], "__x__ ≥ __y__")
+    model_SBML.functions["leq"] = FunctionSBML(["__x__", "__y__"], "__x__ ≤ __y__")
     return nothing
 end
 

@@ -54,7 +54,7 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model:
     end
 
     # Per the standard, a rate rule can create a new specie. Not recomended.
-    @warn "Assignment rate rule creates new specie $(variable). Happens when $(variable) does " *
+    @warn "Rate rate rule creates new specie $(variable). Happens when $(variable) does " *
           "not correspond to any model specie, parameter, or compartment."
     c = first(keys(libsbml_model.compartments))
     model_SBML.species[variable] = SpecieSBML(variable, false, false, "1.0", formula, c, "", :Amount, false, false, true, false)
@@ -94,9 +94,7 @@ function _add_rule_info!(specie::SpecieSBML, formula::String; assignment_rule::B
         specie.initial_value = formula
     end
     # If unit amount adjust for SBML equations per standard being given in conc.
-    if specie.unit == :Amount && specie.only_substance_units == false
-        formula = "(" * formula * ")*" * specie.compartment
-    end
+    formula = _adjust_for_unit(formula, specie)
     specie.formula = formula
     return nothing
 end
