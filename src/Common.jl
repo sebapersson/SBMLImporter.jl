@@ -27,10 +27,14 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
                                   assignment_rule::Bool = false,
                                   algebraic_rule::Bool = false,
                                   scale_rateof::Bool = true,
+                                  initial_assignment::Bool = false,
                                   variable = "")::T where {T <: AbstractString}
     _formula = insert_functions(formula, model_SBML.functions)
-    if occursin("piecewise(", _formula) && algebraic_rule
+    if algebraic_rule && occursin("piecewise(", _formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
+    end
+    if initial_assignment && haskey(model_SBML.species, variable) && occursin("piecewise(", _formula)
+        throw(SBMLSupport("Piecewise in initial assignment is not supported"))
     end
     if occursin("piecewise(", _formula)
         _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
@@ -389,9 +393,28 @@ end
 
 function _is_model_variable(variable::String, model_SBML::ModelSBML)::Bool
     haskey(model_SBML.species, variable) && return true
-    haskey(model_SBML.compartments, variable) && return true
     haskey(model_SBML.parameters, variable) && return true
+    haskey(model_SBML.compartments, variable) && return true
     return false
+end
+
+function _get_model_variable(variable::String, model_SBML::ModelSBML)
+    @assert _is_model_variable(variable, model_SBML) "$variable not a SBML id"
+    haskey(model_SBML.species, variable) && return model_SBML.species[variable]
+    haskey(model_SBML.parameters, variable) && return model_SBML.parameters[variable]
+    haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
+end
+
+function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML; initial_assignment::Bool=false)::String
+    for variables in [model_SBML.compartments, model_SBML.parameters]
+        for (variable_id, variable) in variables
+            if variable.assignment_rule == false
+                continue
+            end
+            formula = replace_variable(formula, variable_id, variable.formula)
+        end
+    end
+    return formula
 end
 
 function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; start_depth=0)::Vector{Integer}

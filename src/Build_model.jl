@@ -85,8 +85,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_events!(model_SBML, libsbml_model)
 
-    # Positioned after rules since some assignments may include functions
-    parse_SBML_initial_assignments!(model_SBML, libsbml_model)
+    parse_initial_assignments!(model_SBML, libsbml_model)
 
     parse_SBML_reactions!(model_SBML, libsbml_model)
 

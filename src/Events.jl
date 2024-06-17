@@ -36,7 +36,7 @@ function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::
     # If the compartment is an assignment rule it will be simplified away when calling
     # structurally_simplified, and thus cannot be found by the callback in ODE models.
     # Therefore, for these occurances rul formula is inserted
-    trigger = _adjust_assignment_rule_compartments(trigger, model_SBML)
+    trigger = _adjust_assignment_rule_variables(trigger, model_SBML)
 
     # TODO: This should not be needed, must fix when arrive at Callbacks.jl
     if occursin(r"<|>", trigger)
@@ -80,7 +80,7 @@ function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, mod
 
     # See comment in _parse_trigger for why needed
     for i in eachindex(formulas)
-        formulas[i] = _adjust_assignment_rule_compartments(formulas[i], model_SBML)
+        formulas[i] = _adjust_assignment_rule_variables(formulas[i], model_SBML)
     end
 
     return assigned_to .* " = " .* formulas
@@ -115,14 +115,4 @@ function _adjust_event_compartment!!(formulas::Vector{String}, assigned_to::Vect
         end
     end
     return nothing
-end
-
-function _adjust_assignment_rule_compartments(formula::String, model_SBML::ModelSBML)::String
-    for (compartment_id, compartment) in model_SBML.compartments
-        if compartment.assignment_rule == false
-            continue
-        end
-        formula = replace_variable(formula, compartment_id, compartment.formula)
-    end
-    return formula
 end
