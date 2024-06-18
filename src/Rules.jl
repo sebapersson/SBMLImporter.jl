@@ -6,58 +6,47 @@ function parse_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
 end
 
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
-    variable, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
+    id, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
 
-    if haskey(model_SBML.species, variable)
-        _add_rule_info!(model_SBML.species[variable], formula; assignment_rule=true)
-        return nothing
-    end
-    if haskey(model_SBML.parameters, variable)
-        _add_rule_info!(model_SBML.parameters[variable], formula; assignment_rule=true)
-        return nothing
-    end
-    if haskey(model_SBML.compartments, variable)
-        _add_rule_info!(model_SBML.compartments[variable], formula; assignment_rule=true)
+    if _is_model_variable(id, model_SBML)
+        variable = _get_model_variable(id, model_SBML)
+        _add_rule_info!(variable, formula; assignment_rule=true)
         return nothing
     end
 
     # For StoichometryMath, assignment rules with variables names generatedId... are
     # created. These variables are only used in setting stoichometry for a reaction,
     # and do not correspond to specie, parameter and compartment.
-    if occursin("generatedId", variable)
-        model_SBML.generated_ids[variable] = formula
+    if occursin("generatedId", id)
+        model_SBML.generated_ids[id] = formula
         # TODO : Can probably remove from list of assignment rules already here
         return nothing
     end
 
     # Per the standard, an assignment rule can create a new specie. Not recomended.
-    @warn "Assignment rule creates new specie $(variable). Happens when $(variable) does " *
+    @warn "Assignment rule creates new specie $(id). Happens when $(id) does " *
           "not correspond to any model specie, parameter, or compartment."
     c = first(keys(libsbml_model.compartments))
-    model_SBML.species[variable] = SpecieSBML(variable, false, false, formula, formula, c, "", :Amount, false, true, false, false)
+    model_SBML.species[id] = SpecieSBML(id, false, false, formula, formula, c, "", :Amount, false, true, false, false)
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
-    variable, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
+    id, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
 
-    if haskey(model_SBML.species, variable)
-        _add_rule_info!(model_SBML.species[variable], formula; rate_rule=true)
-        return nothing
-    end
-    if haskey(model_SBML.parameters, variable)
-        _add_rule_info!(model_SBML.parameters[variable], formula; rate_rule=true)
-        return nothing
-    end
-    if haskey(model_SBML.compartments, variable)
-        _add_rule_info!(model_SBML.compartments[variable], formula; rate_rule=true)
+    if _is_model_variable(id, model_SBML)
+        variable = _get_model_variable(id, model_SBML)
+        _add_rule_info!(variable, formula; rate_rule=true)
         return nothing
     end
 
-    # Per the standard, a rate rule can create a new specie. Not recomended.
-    @warn "Rate rate rule creates new specie $(variable). Happens when $(variable) does " *
+    # Per the standard, a rate rule can create a new specie. Not recomended. If the rate
+    # rule corresponds to a SpecieReference, the reference sets the initial value
+    # TODO: Fix warning for SpecieReference (next round)
+    @warn "Rate rate rule creates new specie $(id). Happens when $(id) does " *
           "not correspond to any model specie, parameter, or compartment."
     c = first(keys(libsbml_model.compartments))
-    model_SBML.species[variable] = SpecieSBML(variable, false, false, "1.0", formula, c, "", :Amount, false, false, true, false)
+    initial_value = _get_specieref_initial_value(id, libsbml_model)
+    model_SBML.species[id] = SpecieSBML(id, false, false, initial_value, formula, c, "", :Amount, false, false, true, false)
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_model::SBML.Model)::Nothing
@@ -109,6 +98,15 @@ function _add_rule_info!(variable::Union{ParameterSBML, CompartmentSBML}, formul
     end
     variable.formula = formula
     return nothing
+end
+
+function _get_specieref_initial_value(id::String, libsbml_model::SBML.Model)::String
+    specieref = _which_specieref(id, libsbml_model)
+    if isnothing(specieref)
+        return "1.0"
+    else
+        return _parse_variable(specieref.stoichiometry; default="1")
+    end
 end
 
 # TODO: This is a different beast, and comes later

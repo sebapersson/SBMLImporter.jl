@@ -1,216 +1,195 @@
-function parse_SBML_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for (id, reaction) in libsbml_model.reactions
-        # Process kinetic math into Julia syntax
-        math_expression = parse_math(reaction.kinetic_math, libsbml_model)
-        @unpack formula, math_idents = math_expression
+        propensity, idents = _parse_reaction_formula(reaction, model_SBML, libsbml_model)
 
-        # Check if reactionId or assignment-rule variable appear in the kinetic math,
-        # if they do they are a part of the math_idents, and need to be replaced
-        # in later processing steps
-        has_assignment_rule_variable::Bool = false
-        has_reaction_id::Bool = false
-        for math_ident in math_idents
-            if haskey(libsbml_model.reactions, math_ident)
-                has_reaction_id = true
-            end
-            if math_ident ∈ model_SBML.assignment_rule_variables
-                has_assignment_rule_variable = true
-            end
+        reactants = _get_reaction_species(reaction, model_SBML, :reactants)
+        reactants_cs = _get_compartment_scalings(reactants, propensity, model_SBML)
+        reactants_s, reactants_massaction = _get_stoichiometries(reaction, reactants, model_SBML, :reactants)
+        for (i, reactant) in pairs(reactants)
+            reactant == "nothing" && continue
+            _update_ode!(model_SBML.species[reactant], reactants_s[i], reactants_cs[i], propensity, :reactant)
+            reactants_s[i] = _template_stoichiometry(reactants_s[i], reactants_cs[i])
         end
 
-        # Add values for potential kinetic parameters (where-statements)
-        for (parameter_id, parameter) in reaction.kinetic_parameters
-            formula = replace_variable(formula, parameter_id, string(parameter.value))
+        products = _get_reaction_species(reaction, model_SBML, :products)
+        products_cs = _get_compartment_scalings(products, propensity, model_SBML)
+        products_s, products_massaction = _get_stoichiometries(reaction, products, model_SBML, :products)
+        for (i, product) in pairs(products)
+            product == "nothing" && continue
+            _update_ode!(model_SBML.species[product], products_s[i], products_cs[i], propensity, :product)
+            products_s[i] = _template_stoichiometry(products_s[i], products_cs[i])
         end
 
-        # Capture potential piecewise
-        if occursin("piecewise(", formula)
-            formula = piecewise_to_ifelse(formula, model_SBML, libsbml_model)
+        # Storing whether kinetic_math has assignment rules and reaction-ids is important
+        # for faster downstream processes, as these can be replaced
+        assignment_rules = _has_assignment_rule_ident(idents, model_SBML)
+        reactionids = _has_reactionid_ident(idents, libsbml_model)
+        stoichiometry_massaction = all([reactants_massaction, products_massaction])
+        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, reactionids)
+        for specie in Iterators.flatten((reactants, products))
+            push!(model_SBML.species_in_reactions, specie)
         end
-
-        # Replace SBML functions, rescale species properly etc...
-        formula = process_SBML_str_formula(formula, model_SBML, libsbml_model,
-                                           check_scaling = true)
-        reactants = Vector{String}(undef, length(reaction.reactants))
-        reactants_stoichiometry = similar(reactants)
-        products = Vector{String}(undef, length(reaction.products))
-        products_stoichiometry = similar(products)
-
-        stoichiometry_mass_action::Bool = true
-        for (i, reactant) in pairs(reaction.reactants)
-            push!(model_SBML.species_in_reactions, reactant.species)
-            if model_SBML.species[reactant.species].boundary_condition == true
-                reactants_stoichiometry[i] = "nothing"
-                reactants[i] = "nothing"
-                continue
-            end
-            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(reactant,
-                                                                            model_SBML)
-            reactants[i] = reactant.species
-            stoichiometry_mass_action = stoichiometry_mass_action == true &&
-                                        _stoichiometry_mass_action == false ? false :
-                                        stoichiometry_mass_action
-            compartment_scaling = get_compartment_scaling(reactant.species, formula,
-                                                          model_SBML)
-            model_SBML.species[reactant.species].formula *= " - " * stoichiometry *
-                                                            compartment_scaling * "(" *
-                                                            formula * ")"
-
-            # In case a specie is given in unit concentration we must scale the stoichiometry
-            reactants_stoichiometry[i] = stoichiometry *
-                                         get_compartment_scaling(reactant.species, formula,
-                                                                 model_SBML;
-                                                                 stoichiometry = true)
-        end
-
-        for (i, product) in pairs(reaction.products)
-            push!(model_SBML.species_in_reactions, product.species)
-            if model_SBML.species[product.species].boundary_condition == true
-                products_stoichiometry[i] = "nothing"
-                products[i] = "nothing"
-                continue
-            end
-            stoichiometry, _stoichiometry_mass_action = parse_stoichiometry(product,
-                                                                            model_SBML)
-            stoichiometry_mass_action = stoichiometry_mass_action == true &&
-                                        _stoichiometry_mass_action == false ? false :
-                                        stoichiometry_mass_action
-            compartment_scaling = get_compartment_scaling(product.species, formula,
-                                                          model_SBML)
-            model_SBML.species[product.species].formula *= " + " * stoichiometry *
-                                                           compartment_scaling * "(" *
-                                                           formula * ")"
-
-            products[i] = product.species
-            # See comment above regarding scaling for species given in concentration
-            products_stoichiometry[i] = stoichiometry *
-                                        get_compartment_scaling(product.species, formula,
-                                                                model_SBML;
-                                                                stoichiometry = true)
-        end
-
-        model_SBML.reactions[id] = ReactionSBML(id, formula, products,
-                                                products_stoichiometry, reactants,
-                                                reactants_stoichiometry,
-                                                stoichiometry_mass_action,
-                                                has_assignment_rule_variable,
-                                                has_reaction_id)
     end
 
-    # Species given via assignment rules, or initial assignments which only affect stoichiometry
-    # are species that should not be included down the line in the model, hence they are
-    # here removed from the model
-    remove_stoichiometry_math_from_species!(model_SBML, libsbml_model)
+    # If a ModelSBML specie appears in a SpeciesReference.id this is because of a
+    # StoichiometryMath. In libsbml parsing the StoichiometryMath is promoted to an
+    # assignment rule. As this rule variable does not correspond to any model variable,
+    # followning the standard a new specie is created. However, this is just an artifact,
+    # and the user never meant to create a specie. Hence, this step removes the
+    # StoichiometryMath species from the model
+    _remove_stoichiometry_math!(model_SBML, libsbml_model)
+    return nothing
 end
 
-function get_compartment_scaling(specie::String, formula::String, model_SBML::ModelSBML;
-                                 stoichiometry::Bool = false)::String
+function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, Vector{String}}
+    math_expression = parse_math(reaction.kinetic_math, libsbml_model)
+    @unpack formula, math_idents = math_expression
 
-    # The case of the specie likelly being given via an algebraic rule
-    if isempty(formula)
-        return stoichiometry == false ? "*" : ""
+    # SBML where statements, that can occur in reaction
+    for (parameter_id, parameter) in reaction.kinetic_parameters
+        formula = replace_variable(formula, parameter_id, string(parameter.value))
     end
-
-    if model_SBML.species[specie].only_substance_units == true
-        return stoichiometry == false ? "*" : ""
-    end
-
-    if model_SBML.species[specie].unit == :Amount
-        return stoichiometry == false ? "*" : ""
-    end
-
-    if model_SBML.species[specie].unit == :Concentration
-        if stoichiometry == false
-            return "/" * model_SBML.species[specie].compartment * "*"
-        else
-            return "/" * model_SBML.species[specie].compartment
-        end
-    end
+    formula = process_SBML_str_formula(formula, model_SBML, libsbml_model, check_scaling = true)
+    return formula, math_idents
 end
 
-function parse_stoichiometry(specie_reference::SBML.SpeciesReference,
-                             model_SBML::ModelSBML)::Tuple{String, Bool}
-    mass_action_stoichiometry = isnothing(specie_reference.id)
-    if !isnothing(specie_reference.id)
-        if haskey(model_SBML.generated_ids, specie_reference.id)
-            stoichiometry = model_SBML.generated_ids[specie_reference.id]
-            return stoichiometry, mass_action_stoichiometry
+function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML, which_side::Symbol)::Vector{String}
+    @assert which_side in [:reactants, :products] "$(which_side) is an invalid reaction side"
+    species = which_side == :reactants ? reaction.reactants : reaction.products
 
-            # Two following special cases where the stoichiometry is given by another variable in the model
-        elseif specie_reference.id ∈ model_SBML.rate_rule_variables
-            return specie_reference.id, mass_action_stoichiometry
-
-        elseif !isempty(model_SBML.events) && any(occursin.(specie_reference.id,
-                             reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
-            return specie_reference.id, mass_action_stoichiometry
+    reaction_species = Vector{String}(undef, length(species))
+    for (i, specie) in pairs(species)
+        id = specie.species
+        if model_SBML.species[id].boundary_condition == true
+            reaction_species[i] = "nothing"
+            continue
         end
-
-        stoichiometry = specie_reference.id
-        # Here the stoichiometry is given as an assignment rule which has been interpreted as an additional model specie,
-        # so the value is taken from the initial value
-        if haskey(model_SBML.species, stoichiometry)
-            stoichiometry = model_SBML.species[stoichiometry].initial_value
-            if is_number(stoichiometry)
-                stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ?
-                                "1" : stoichiometry
-            end
-            # Can be nested 1 level
-            if haskey(model_SBML.species, stoichiometry) &&
-               model_SBML.species[stoichiometry].assignment_rule == true
-                stoichiometry = model_SBML.species[stoichiometry].initial_value
-            end
-
-            return stoichiometry, mass_action_stoichiometry
-        end
-
-        # Last case where stoichiometry is not referenced anywhere in the model assignments, rules etc..., assign
-        # to default value
-        stoichiometry = string(specie_reference.stoichiometry)
-
-    else
-        stoichiometry = isnothing(specie_reference.stoichiometry) ? "1" :
-                        string(specie_reference.stoichiometry)
-        stoichiometry = stoichiometry[1] == '-' ? "(" * stoichiometry * ")" : stoichiometry
+        reaction_species[i] = id
     end
-
-    _stoichiometry = isnothing(stoichiometry) || stoichiometry == "nothing" ? "1" :
-                     stoichiometry
-    return _stoichiometry, mass_action_stoichiometry
+    return reaction_species
 end
 
-function remove_stoichiometry_math_from_species!(model_SBML::ModelSBML,
-                                                 libsbml_model::SBML.Model)::Nothing
-    for (id, reaction) in libsbml_model.reactions
-        specie_references = vcat([reactant for reactant in reaction.reactants],
-                                 [product for product in reaction.products])
-        for specie_reference in specie_references
-            if haskey(model_SBML.generated_ids, specie_reference.id) ||
-               isnothing(specie_reference.id)
+function _get_stoichiometries(reaction::SBML.Reaction, species_id::Vector{String}, model_SBML::ModelSBML, which_side::Symbol)::Tuple{Vector{String}, Bool}
+    @assert which_side in [:reactants, :products] "$(which_side) is an invalid reaction side"
+    species = which_side == :reactants ? reaction.reactants : reaction.products
+
+    massaction::Bool = true
+    stoichiometries = similar(species_id)
+    for (i, specie) in pairs(species)
+        if species_id[i] == "nothing"
+            stoichiometries[i] = "nothing"
+            continue
+        end
+        stoichiometries[i], massaction = _parse_stoichiometry(specie, model_SBML)
+    end
+    return stoichiometries, massaction
+end
+
+function _get_compartment_scalings(species::Vector{String}, propensity::String, model_SBML::ModelSBML)::Vector{String}
+    compartment_scalings = similar(species)
+    for (i, specie) in pairs(species)
+        if isempty(propensity)
+            # Likelly specie is given by algebraic rule
+            compartment_scalings[i] = ""
+            continue
+        end
+        if specie == "nothing"
+            compartment_scalings[i] = ""
+            continue
+        end
+        if model_SBML.species[specie].only_substance_units == true
+            compartment_scalings[i] = ""
+            continue
+        end
+        if model_SBML.species[specie].unit == :Amount
+            compartment_scalings[i] = ""
+            continue
+        end
+        @assert model_SBML.species[specie].unit == :Concentration "Problem parsing compartment for reactions"
+        compartment_scalings[i] = "/" * model_SBML.species[specie].compartment
+    end
+    return compartment_scalings
+end
+
+function _parse_stoichiometry(specie::SBML.SpeciesReference, model_SBML::ModelSBML)::Tuple{String, Bool}
+    # specie.id (that can be a SBML variable) has priority over specie.stoichiometry.
+    if isnothing(specie.id)
+        s = _parse_variable(specie.stoichiometry; default="1")
+        s = s[1] == '-' ? "(" * s * ")" : s
+        return s, true
+    end
+
+    # Stoichiometry can be given by other model variables that already have a formula,
+    # such as rate rules.
+    massaction = false
+    if haskey(model_SBML.generated_ids, specie.id)
+        s = model_SBML.generated_ids[specie.id]
+        return s, massaction
+    end
+    if specie.id in model_SBML.rate_rule_variables
+        return specie.id, massaction
+    end
+    if _is_event_variable(specie.id, model_SBML) == true
+        return specie.id, massaction
+    end
+    # Here the stoichiometry is given as an assignment rule, that has been added as a
+    # model specie during rule parsing
+    if haskey(model_SBML.species, specie.id)
+        s = model_SBML.species[specie.id].initial_value
+        # 1 level of nesting allowed
+        if haskey(model_SBML.species, s) && model_SBML.species[s].assignment_rule == true
+            s = model_SBML.species[s].initial_value
+        end
+        return s, massaction
+    end
+
+    # At this point the model has a SpeciesReference.id that does not correspond to any
+    # model variables. For example happens with rules that have no math-child, in this case
+    # the specie.stoichiometry should be used
+    s = _parse_variable(specie.stoichiometry; default="1")
+    return s, massaction
+end
+
+function _update_ode!(specie::SpecieSBML, s::String, c_scaling::String, propensity::String, which_side::Symbol)::Nothing
+    specie.formula *= _template_ode_reaction(s, c_scaling, propensity, which_side)
+    return nothing
+end
+
+function _template_stoichiometry(s::String, c_scaling::String)::String
+    s == "nothing" && return "nothing"
+    return s * c_scaling
+end
+
+function _template_ode_reaction(s::String, c_scaling::String, propensity::String, which_side::Symbol)::String
+    s == "nothing" && return ""
+    @assert which_side in [:reactant, :product] "$(which_side) is an invalid reaction side"
+    sign = which_side == :product ? '+' : '-'
+    # c_scaling either "" or "/...", hence the 1
+    return sign * s * "*1" * c_scaling * "*(" * propensity * ")"
+end
+
+function _remove_stoichiometry_math!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+    for reaction in values(libsbml_model.reactions)
+        species_ref = vcat([r for r in reaction.reactants], [p for p in reaction.products])
+        for specie_ref in species_ref
+            if isnothing(specie_ref.id)
+                continue
+            end
+            if haskey(model_SBML.generated_ids, specie_ref.id)
+                continue
+            end
+            if specie_ref.id in model_SBML.rate_rule_variables
+                continue
+            end
+            if _is_event_variable(specie_ref.id, model_SBML)
                 continue
             end
 
-            if specie_reference.id ∈ model_SBML.rate_rule_variables
-                if haskey(libsbml_model.initial_assignments, specie_reference.id)
-                    continue
-                end
-                stoichiometry_t0 = isnothing(specie_reference.stoichiometry) ? "1.0" :
-                                   string(specie_reference.stoichiometry)
-                model_SBML.species[specie_reference.id].initial_value = stoichiometry_t0
-                continue
+            if haskey(model_SBML.species, specie_ref.id)
+                delete!(model_SBML.species, specie_ref.id)
             end
-
-            if !isempty(model_SBML.events) && any(occursin.(specie_reference.id,
-                             reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
-                continue
-            end
-
-            # An artifact from how the stoichiometry is procssed as assignment rule
-            # or initial assignment
-            if haskey(model_SBML.species, specie_reference.id)
-                delete!(model_SBML.species, specie_reference.id)
-            end
-            if specie_reference.id ∈ model_SBML.assignment_rule_variables
-                filter!(x -> x != specie_reference.id, model_SBML.assignment_rule_variables)
+            if specie_ref.id in model_SBML.assignment_rule_variables
+                filter!(x -> x != specie_ref.id, model_SBML.assignment_rule_variables)
             end
         end
     end

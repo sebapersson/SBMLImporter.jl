@@ -391,6 +391,29 @@ function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
     return formula
 end
 
+# TODO: What is assigned to should be its own field
+function _is_event_variable(variable::Union{Nothing, String}, model_SBML::ModelSBML)::Bool
+    isnothing(variable) && return false
+    for e in values(model_SBML.events)
+        for formula in e.formulas
+            occursin(variable, formula) && return true
+        end
+    end
+    return false
+end
+
+function _which_specieref(variable::String, libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
+    for reactions in values(libsbml_model.reactions)
+        for reactant in reactions.reactants
+            reactant.id == variable && return reactant
+        end
+        for product in reactions.products
+            product.id == variable && return product
+        end
+    end
+    return nothing
+end
+
 function _is_model_variable(variable::String, model_SBML::ModelSBML)::Bool
     haskey(model_SBML.species, variable) && return true
     haskey(model_SBML.parameters, variable) && return true
@@ -403,6 +426,20 @@ function _get_model_variable(variable::String, model_SBML::ModelSBML)
     haskey(model_SBML.species, variable) && return model_SBML.species[variable]
     haskey(model_SBML.parameters, variable) && return model_SBML.parameters[variable]
     haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
+end
+
+function _has_assignment_rule_ident(idents::Vector{String}, model_SBML::ModelSBML)::Bool
+    for ident in idents
+        ident in model_SBML.assignment_rule_variables && return true
+    end
+    return false
+end
+
+function _has_reactionid_ident(idents::Vector{String}, libsbml_model::SBML.Model)::Bool
+    for ident in idents
+        haskey(libsbml_model.reactions, ident) && return true
+    end
+    return false
 end
 
 function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML; initial_assignment::Bool=false)::String

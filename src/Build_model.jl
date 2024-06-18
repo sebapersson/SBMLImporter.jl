@@ -87,7 +87,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_initial_assignments!(model_SBML, libsbml_model)
 
-    parse_SBML_reactions!(model_SBML, libsbml_model)
+    parse_reactions!(model_SBML, libsbml_model)
 
     # Given the SBML standard reaction id can sometimes appear in the reaction
     # formulas, here the correpsonding id is overwritten with a math expression
