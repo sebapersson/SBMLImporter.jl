@@ -164,7 +164,7 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML;
         (isempty(model_SBML.compartments) ||
          sum([c.rate_rule for c in values(model_SBML.compartments)]) == 0))
         model_SBML.species["foo"] = SpecieSBML("foo", false, false, "1.0", "0.0", "1.0", "",
-                                               :Amount, false, false, false, false)
+                                               :Amount, false, false, false, false, false)
     end
 
     # Setup Catalyst ReactionNetwork

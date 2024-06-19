@@ -23,9 +23,9 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
         # Storing whether kinetic_math has assignment rules and reaction-ids is important
         # for faster downstream processes, as these can be replaced
         assignment_rules = _has_assignment_rule_ident(idents, model_SBML)
-        reactionids = _has_reactionid_ident(idents, libsbml_model)
+        have_ridents = _has_reactionid_ident(idents, libsbml_model)
         stoichiometry_massaction = all([reactants_massaction, products_massaction])
-        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, reactionids)
+        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, have_ridents)
         for specie in Iterators.flatten((reactants, products))
             push!(model_SBML.species_in_reactions, specie)
         end
@@ -194,4 +194,39 @@ function _remove_stoichiometry_math!(model_SBML::ModelSBML, libsbml_model::SBML.
         end
     end
     return nothing
+end
+
+function replace_reactionid!(model_SBML::ModelSBML)::Nothing
+    variables = Iterators.flatten((model_SBML.parameters, model_SBML.compartments, model_SBML.species))
+    for (_, variable) in variables
+        variable.has_reaction_ids == false && continue
+        variable.formula = _replace_reactionid(variable.formula, model_SBML)
+        variable.initial_value = _replace_reactionid(variable.initial_value, model_SBML)
+    end
+
+    for event in values(model_SBML.events)
+        if event.has_reaction_ids_trigger
+            event.trigger = _replace_reactionid(event.trigger, model_SBML)
+        end
+        event.has_reaction_ids_assignments == false && continue
+        for (i, formula) in pairs(event.formulas)
+            event.formulas[i] = _replace_reactionid(formula, model_SBML)
+        end
+    end
+
+    for reaction in values(model_SBML.reactions)
+        reaction.has_reaction_ids == false && continue
+        reaction.kinetic_math = _replace_reactionid(reaction.kinetic_math, model_SBML)
+    end
+    return nothing
+end
+
+function _replace_reactionid(formula::String, model_SBML::ModelSBML)::String
+    if !any(occursin.(keys(model_SBML.reactions), formula))
+        return formula
+    end
+    for (reaction_id, reaction) in model_SBML.reactions
+        formula = replace_variable(formula, reaction_id, reaction.kinetic_math)
+    end
+    return formula
 end

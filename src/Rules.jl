@@ -6,11 +6,11 @@ function parse_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
 end
 
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
-    id, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
+    id, formula, have_ridents = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
 
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
-        _add_rule_info!(variable, formula; assignment_rule=true)
+        _add_rule_info!(variable, formula, have_ridents; assignment_rule=true)
         return nothing
     end
 
@@ -27,15 +27,15 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_
     @warn "Assignment rule creates new specie $(id). Happens when $(id) does " *
           "not correspond to any model specie, parameter, or compartment."
     c = first(keys(libsbml_model.compartments))
-    model_SBML.species[id] = SpecieSBML(id, false, false, formula, formula, c, "", :Amount, false, true, false, false)
+    model_SBML.species[id] = SpecieSBML(id, false, false, formula, formula, c, "", :Amount, false, true, false, false, have_ridents)
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
-    id, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
+    id, formula, have_ridents = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
 
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
-        _add_rule_info!(variable, formula; rate_rule=true)
+        _add_rule_info!(variable, formula, have_ridents; rate_rule=true)
         return nothing
     end
 
@@ -46,11 +46,11 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model:
           "not correspond to any model specie, parameter, or compartment."
     c = first(keys(libsbml_model.compartments))
     initial_value = _get_specieref_initial_value(id, libsbml_model)
-    model_SBML.species[id] = SpecieSBML(id, false, false, initial_value, formula, c, "", :Amount, false, false, true, false)
+    model_SBML.species[id] = SpecieSBML(id, false, false, initial_value, formula, c, "", :Amount, false, false, true, false, have_ridents)
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_model::SBML.Model)::Nothing
-    _, formula = _parse_rule_formula(rule, model_SBML, libsbml_model; algebraic_rule=true)
+    _, formula, _ = _parse_rule_formula(rule, model_SBML, libsbml_model; algebraic_rule=true)
     # As an algebraic rule gives the equation for a specie/parameter/compartment variable
     # is just a place-holder name
     if isempty(model_SBML.algebraic_rules)
@@ -62,7 +62,7 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_m
     return nothing
 end
 
-function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_model::SBML.Model; assignment_rule::Bool=false, rate_rule::Bool=false, algebraic_rule::Bool=false)::Tuple{String, String}
+function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_model::SBML.Model; assignment_rule::Bool=false, rate_rule::Bool=false, algebraic_rule::Bool=false)::Tuple{String, String, Bool}
     @assert any([assignment_rule, algebraic_rule, rate_rule]) "No rule set to be parsed"
 
     variable = algebraic_rule ? "" : rule.variable
@@ -70,13 +70,14 @@ function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_mode
     assignment_rule == true && push!(model_SBML.assignment_rule_variables, variable)
 
     math_expression = parse_math(rule.math, libsbml_model)
-    formula = replace_reactionid_formula(math_expression.formula, libsbml_model)
-    formula = process_SBML_str_formula(formula, model_SBML, libsbml_model; check_scaling=true, assignment_rule=assignment_rule, rate_rule=rate_rule, algebraic_rule=algebraic_rule, variable=variable)
+    have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
+
+    formula = process_SBML_str_formula(math_expression.formula, model_SBML, libsbml_model; check_scaling=true, assignment_rule=assignment_rule, rate_rule=rate_rule, algebraic_rule=algebraic_rule, variable=variable)
     formula = isempty(formula) ? "0.0" : formula
-    return variable, formula
+    return variable, formula, have_ridents
 end
 
-function _add_rule_info!(specie::SpecieSBML, formula::String; assignment_rule::Bool=false, rate_rule::Bool=false)::Nothing
+function _add_rule_info!(specie::SpecieSBML, formula::String, have_ridents::Bool; assignment_rule::Bool=false, rate_rule::Bool=false)::Nothing
     specie.assignment_rule = assignment_rule
     specie.rate_rule = rate_rule
     if isempty(specie.initial_value) && !rate_rule
@@ -85,9 +86,10 @@ function _add_rule_info!(specie::SpecieSBML, formula::String; assignment_rule::B
     # If unit amount adjust for SBML equations per standard being given in conc.
     formula = _adjust_for_unit(formula, specie)
     specie.formula = formula
+    specie.has_reaction_ids = have_ridents
     return nothing
 end
-function _add_rule_info!(variable::Union{ParameterSBML, CompartmentSBML}, formula::String; assignment_rule::Bool=false, rate_rule::Bool=false)::Nothing
+function _add_rule_info!(variable::Union{ParameterSBML, CompartmentSBML}, formula::String, have_ridents::Bool; assignment_rule::Bool=false, rate_rule::Bool=false)::Nothing
     variable.assignment_rule = assignment_rule
     variable.rate_rule = rate_rule
     # For a rate-rule, the initial value is given by the old formula/value
@@ -97,6 +99,7 @@ function _add_rule_info!(variable::Union{ParameterSBML, CompartmentSBML}, formul
         variable.initial_value = formula
     end
     variable.formula = formula
+    variable.has_reaction_ids = have_ridents
     return nothing
 end
 

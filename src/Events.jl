@@ -1,12 +1,12 @@
 function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     event_index = 1
     for (event_id, event) in libsbml_model.events
-        trigger = _parse_trigger(event.trigger, model_SBML, libsbml_model)
+        trigger, have_ridents1 = _parse_trigger(event.trigger, model_SBML, libsbml_model)
         if isempty(trigger)
             continue
         end
 
-        assignments = _parse_assignments(event.event_assignments, model_SBML, libsbml_model)
+        assignments, have_ridents2 = _parse_assignments(event.event_assignments, model_SBML, libsbml_model)
 
         if !isnothing(event_id)
             name = event_id
@@ -14,21 +14,21 @@ function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothin
             name = "event" * string(event_index)
             event_index += 1
         end
-        model_SBML.events[name] = EventSBML(name, trigger, assignments, event.trigger.initial_value)
+        model_SBML.events[name] = EventSBML(name, trigger, assignments, event.trigger.initial_value, have_ridents1, have_ridents2)
     end
     return nothing
 end
 
 # Rewrites triggers in events to the correct Julia syntax
-function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::ModelSBML, libsbml_model::SBML.Model)::String
+function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, Bool}
     math_expression = parse_math(trigger_sbml.math, libsbml_model)
+    have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
     trigger = process_SBML_str_formula(math_expression.formula, model_SBML, libsbml_model; check_scaling=true, scale_rateof=false)
-    trigger = replace_reactionid_formula(trigger, libsbml_model)
 
     # TODO : This info should live in math_expression for early exit
     # If trigger is a number event is triggered when value is not equal to zero
-    is_number(trigger) && return trigger * " != 0"
-    isempty(trigger) && return ""
+    is_number(trigger) && return (trigger * " != 0", false)
+    isempty(trigger) && return ("", false)
     if trigger[1:2] == "if" || trigger[1:3] in ["and", "xor"]
         throw(SBMLSupport("Events with gated triggers (if, and, xor) are not supported"))
     end
@@ -43,18 +43,19 @@ function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::
         trigger = replace(trigger, "<" => "≤")
         trigger = replace(trigger, ">" => "≥")
     end
-    return trigger
+    return trigger, have_ridents
 end
 
-function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Vector{String}
-    formulas, assigned_to = String[], String[]
+function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{Vector{String}, Bool}
+    formulas, assigned_to, have_ridents = String[], String[], false
     for event_assignment in event_assignments
         math_expression = parse_math(event_assignment.math, libsbml_model)
+        _have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
+        have_ridents = _have_ridents ? true : have_ridents
         isempty(math_expression.formula) && continue
 
         # For events t is accessed via the integrator interface
         formula = process_SBML_str_formula(math_expression.formula, model_SBML, libsbml_model; check_scaling=true)
-        formula = replace_reactionid_formula(formula, libsbml_model)
         formula = replace_variable(formula, "t", "integrator.t")
 
         assign_to = event_assignment.variable
@@ -67,7 +68,7 @@ function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, mod
             @warn "Event creates new specie $(assign_to). Happens when $(assign_to) does " *
                   "not correspond to any model specie, parameter, or compartment."
             c = first(keys(libsbml_model.compartments))
-            model_SBML.species[assign_to] = SpecieSBML(assign_to, false, false, "1.0", "", c, "", :Amount, false, false, false, false)
+            model_SBML.species[assign_to] = SpecieSBML(assign_to, false, false, "1.0", "", c, "", :Amount, false, false, false, false, _have_ridents)
         end
 
         push!(assigned_to, assign_to)
@@ -83,7 +84,7 @@ function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, mod
         formulas[i] = _adjust_assignment_rule_variables(formulas[i], model_SBML)
     end
 
-    return assigned_to .* " = " .* formulas
+    return assigned_to .* " = " .* formulas, have_ridents
 end
 
 function _adjust_event_compartment!!(formulas::Vector{String}, assigned_to::Vector{String}, model_SBML::ModelSBML)::Nothing

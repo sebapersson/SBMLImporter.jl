@@ -25,7 +25,7 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
         else
             formula = ""
         end
-        model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant, initial_value, formula, compartment, conversion_factor, unit, only_substance_units, false, false, false)
+        model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant, initial_value, formula, compartment, conversion_factor, unit, only_substance_units, false, false, false, false)
     end
     return nothing
 end
@@ -114,7 +114,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
                                                         formula_conc, compartment.name,
                                                         specie.conversion_factor,
                                                         :Concentration, false, false, true,
-                                                        false)
+                                                        false, specie.has_reaction_ids)
         push!(model_SBML.rate_rule_variables, specie_conc_id)
     end
 
@@ -173,7 +173,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
                                                           formula_amount, compartment_name,
                                                           specie.conversion_factor,
                                                           :Amount, false, false, false,
-                                                          false)
+                                                          false, specie.has_reaction_ids)
         for (r_id, r) in model_SBML.reactions
             for i in eachindex(r.products)
                 if r.products[i] == specie.name

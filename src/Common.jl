@@ -133,20 +133,6 @@ function time_in_formula(formula::String)::Bool
     return formula != _formula
 end
 
-function replace_reactionid_formula(formula::T,
-                                    libsbml_model::SBML.Model)::T where {T <:
-                                                                         AbstractString}
-    if !any(occursin.(keys(libsbml_model.reactions), formula))
-        return formula
-    end
-
-    for (reaction_id, reaction) in libsbml_model.reactions
-        math_expression = parse_math(reaction.kinetic_math, libsbml_model)
-        formula = replace_variable(formula, reaction_id, math_expression.formula)
-    end
-    return formula
-end
-
 function replace_rateOf!(model_SBML::ModelSBML)::Nothing
     for (parameter_id, parameter) in model_SBML.parameters
         parameter.formula = replace_rateOf(parameter.formula, model_SBML)
@@ -253,39 +239,7 @@ function replace_rateOf(_formula::T,
     return formula
 end
 
-function replace_reactionid!(model_SBML::ModelSBML)::Nothing
-    reaction_ids::Vector{String} = collect(keys(model_SBML.reactions))
-    for (specie_id, specie) in model_SBML.species
-        if specie.rate_rule == false && specie.assignment_rule == false
-            continue
-        end
 
-        if !any(occursin.(reaction_ids, specie.formula))
-            continue
-        end
-        for reaction_id in reaction_ids[iids]
-            reaction = model_SBML.reactions[reaction_id]
-            specie.formula = replace_variable(specie.formula, reaction_id,
-                                              reaction.kinetic_math)
-        end
-    end
-
-    for (reaction_id, reaction) in model_SBML.reactions
-        if reaction.has_reaction_id == false
-            continue
-        end
-
-        for (_reaction_id, _reaction) in model_SBML.reactions
-            if reaction_id == _reaction_id
-                continue
-            end
-            reaction.kinetic_math = replace_variable(reaction.kinetic_math, _reaction_id,
-                                                     _reaction.kinetic_math)
-        end
-    end
-
-    return nothing
-end
 
 function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
     for (reaction_id, reaction) in model_SBML.reactions

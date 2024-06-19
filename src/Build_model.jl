@@ -89,8 +89,8 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_reactions!(model_SBML, libsbml_model)
 
-    # Given the SBML standard reaction id can sometimes appear in the reaction
-    # formulas, here the correpsonding id is overwritten with a math expression
+    # Following the SBML standard reaction ids can appear in formulas, where they correspond
+    # to the reaction kinetic_math expression
     replace_reactionid!(model_SBML)
 
     # Rewrite any time-dependent ifelse to boolean statements such that we can express these as events.
