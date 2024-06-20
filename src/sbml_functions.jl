@@ -3,6 +3,7 @@
 # rateOf is a SBML function. This expression is replaced later, as reactions rates
 # have to be parsed for this stage.
 # nallowed_args=Int64[] is any number of args
+# TODO: Set n of piecewise args
 const SBML_FN_INFO = Dict("*" => (fn="*", nallowed_args=[0, 1, 2]),
                           "+" => (fn="+", nallowed_args=[0, 1, 2]),
                           "-" => (fn="-", nallowed_args=[1, 2]),
@@ -10,7 +11,7 @@ const SBML_FN_INFO = Dict("*" => (fn="*", nallowed_args=[0, 1, 2]),
                           "power" => (fn="^", nallowed_args=[2]),
                           "quotient" => (fn="div", nallowed_args=[2]),
                           "root" => (fn="sqrt", nallowed_args=[2]),
-                          "piecewise" => (fn="piecewise", nallowed_args=Int64[]),
+                          "piecewise" => (fn="piecewise", nallowed_args=[2, 3, 4]),
                           "lt" => (fn="lt", nallowed_args=[2]),
                           "gt" => (fn="gt", nallowed_args=[2]),
                           "leq" => (fn="leq", nallowed_args=[2]),
@@ -61,3 +62,32 @@ const SBML_FN_INFO = Dict("*" => (fn="*", nallowed_args=[0, 1, 2]),
                           "factorial" => (fn="SpecialFunctions.gamma", nallowed_args=[1]),
                           "delay" => (fn="delay", nallowed_args=Int64[]),
                           "implies" => (fn="implies", nallowed_args=Int64[]))
+
+const _F1 = FunctionSBML(["__x__", "__cond__", "__y__"],  "ifelse(__cond__, __x__, __y__)")
+const _F2 = FunctionSBML(["__x__", "__cond__"],  "ifelse(__cond__, __x__, 0)")
+const _F3 = FunctionSBML(["__x__", "__cond__", "__y__", "__z__"],  "ifelse(__cond__, __x__, __y__)")
+const _F4 = FunctionSBML(["__x__", "__y__"],  "ifelse(__x__, 1, 0) + ifelse(__y__, 1, 0)")
+const _G1 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0)*ifelse(__y__, 1, 0) == 1")
+const _G2 = FunctionSBML(["__x__", "__y__"], "sign(__BSUM__(__x__, __y__)) == 1")
+const _G3 = FunctionSBML(["__x__", "__y__"], "-(__BSUM__(__x__, __y__))^2 + 2*(__BSUM__(__x__, __y__)) == 1")
+const PIECEWISE_FN = Dict("gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y__"),
+                          "lt" => FunctionSBML(["__x__", "__y__"], "__x__ < __y__"),
+                          "geq" => FunctionSBML(["__x__", "__y__"], "__x__ >= __y__"),
+                          "leq" => FunctionSBML(["__x__", "__y__"], "__x__ <= __y__"),
+                          "eq" => FunctionSBML(["__x__", "__y__"], "__x__ == __y__"),
+                          "neq" => FunctionSBML(["__x__", "__y__"], "__x__ != __y__"),
+                          "not" => FunctionSBML(["__x__"], "!__x__"),
+                          "and" => _G1,
+                          "or" => _G2,
+                          "if" => _G2,
+                          "xor" => _G3,
+                          "and0" => FunctionSBML(String[], "true"),
+                          "or0" => FunctionSBML(String[], "false"),
+                          "xor0" => FunctionSBML(String[], "false"),
+                          "and1" => FunctionSBML(["__x__"], "__x__"),
+                          "or1" => FunctionSBML(["__x__"], "__x__"),
+                          "xor1" => FunctionSBML(["__x__"], "__x__"),
+                          "piecewise" => _F1,
+                          "piecewise2" => _F2,
+                          "piecewise4" => _F3,
+                          "__BSUM__" => _F4)

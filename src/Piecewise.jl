@@ -1,426 +1,125 @@
-#=
-    Functionality for correctly handling SBML piecewise statements and if
-    possible, rewrite to discrete callbacks
-=#
-
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
-function piecewise_to_ifelse(rule_formula::String, model_SBML::ModelSBML,
-                             libsbml_model::SBML.Model)::String
-
-    # To avoid invalid string errors
-    rule_formula = replace(rule_formula, "≤" => "<=")
-    rule_formula = replace(rule_formula, "≥" => ">=")
-
-    piecewise_eqs = extract_x(rule_formula, "piecewise")
-    ifelse_eqs = Vector{String}(undef, length(piecewise_eqs))
-
-    for (i, piecewise_eq) in pairs(piecewise_eqs)
-
-        # Do not re-processes piecewise if already has been done
-        if haskey(model_SBML.piecewise_expressions, piecewise_eq)
-            ifelse_eqs[i] = model_SBML.piecewise_expressions[piecewise_eq]
-            continue
-        end
-
-        # Extract components
-        _piecewise_eq = piecewise_eq[11:(end - 1)] # Everything inside paranthesis
-        _args = split_between(_piecewise_eq, ',')
-        values = _args[1:2:end]
-        conditions = _args[2:2:end]
-
-        if length(conditions) > 1
-            @warn "Potentially breaking example with multiple conditions"
-        end
-
-        # Process inactive and active value, apply recursion if nested
-        if occursin("piecewise(", values[1])
-            value_active = piecewise_to_ifelse(values[1], model_SBML, libsbml_model)
-            value_active = process_SBML_str_formula(value_active, model_SBML, libsbml_model)
-        else
-            value_active = process_SBML_str_formula(values[1], model_SBML, libsbml_model)
-        end
-        if occursin("piecewise(", values[end])
-            value_inactive = piecewise_to_ifelse(values[end], model_SBML, libsbml_model)
-            value_inactive = process_SBML_str_formula(value_inactive, model_SBML,
-                                                      libsbml_model)
-        else
-            value_inactive = process_SBML_str_formula(values[end], model_SBML,
-                                                      libsbml_model)
-        end
-
-        # How to formula the ifelse depends on the condition. The condition can be direct (gt, lt...), a gate
-        # (and, if, or...) or a nested piecewise. Each case is handled separately
-        condition = conditions[1]
-        if !any(occursin.(['<', '>', "≤", "≥", "==", "!="], condition))
-            if condition[1] == '(' && condition[end] == ')'
-                condition = condition[2:(end - 1)]
-            end
-        end
-
-        if is_number(condition) || condition[1:2] ∈ ["lt", "gt", "eq"] ||
-           condition[1:3] ∈ ["neq", "geq", "leq"] || condition[1:4] == "true" ||
-           ((length(condition) > 4) && condition[1:5] == "false")
-            ifelse_eqs[i] = parse_piecewise_bool_condition(condition, value_active,
-                                                           value_inactive)
-
-        elseif condition[1:2] ∈ ["if", "or"] || condition[1:3] ∈ ["and", "xor", "not"]
-            ifelse_eqs[i] = parse_piecewise_gate_condition(condition, value_active,
-                                                           value_inactive)
-
-            # Condition can be nested, in this case apply recursion
-        elseif length(condition) ≥ 9 && condition[1:9] == "piecewise"
-            _condition = piecewise_to_ifelse(condition, model_SBML, libsbml_model)
-            _condition = process_SBML_str_formula(_condition, model_SBML, libsbml_model)
-            ifelse_eqs[i] = parse_piecewise_bool_condition(_condition, value_active,
-                                                           value_inactive)
-
-            # This can happen in case piecewise appears in a function
-        elseif any(occursin.(['<', '>', "≤", "≥", "==", "!="], condition))
-            ifelse_eqs[i] = "ifelse(" * condition * ", " * value_active * ", " *
-                            value_inactive * ")"
-
-        else
-            @error "We cannot process the piecewise expression, condition = $condition"
-        end
-
-        model_SBML.piecewise_expressions[piecewise_eq] = ifelse_eqs[i]
+function piecewise_to_ifelse(formula::String)::String
+    if !tmp_has_piecewise(formula)
+        return formula
     end
-
-    # Finally replace piecewise with ifelese
-    formula_ret = deepcopy(rule_formula)
-    for i in eachindex(piecewise_eqs)
-        formula_ret = replace(formula_ret, piecewise_eqs[i] => ifelse_eqs[i])
-    end
-    return formula_ret
+    return insert_functions(formula, PIECEWISE_FN; piecewise=true)
 end
 
-function extract_x(formula::String, x::String;
-                   retindex::Bool = false)::Union{Vector{String}, Vector{UnitRange}}
-
-    # Find number of piecewise expressions, and where they start
-    index_piecewise_start = findall(x * "(", formula)
-    n_x = length(index_piecewise_start)
-    xs::Vector{String} = String[]
-    ixs::Vector{UnitRange} = UnitRange[]
-
-    # Extract entire piecewise expression while handling inner paranthesis, e.g
-    # when we have "2*piecewise(0, lt(t - insulin_time_1, 0), 1)" it extracts
-    # the full expression piecewise(0, lt(t - insulin_time_1, 0), 1) while coutning
-    # the inner (but ignoring it as it is handled via recursion)
-    i, k = 1, 1
-    while i ≤ n_x
-        n_inner_paranthesis = 0
-        i_end = index_piecewise_start[i][end]
-        while true
-            i_end += 1
-            if n_inner_paranthesis == 0 && formula[i_end] == ')'
-                break
-            end
-
-            n_inner_paranthesis = formula[i_end] == '(' ? n_inner_paranthesis + 1 :
-                                  n_inner_paranthesis
-            n_inner_paranthesis = formula[i_end] == ')' ? n_inner_paranthesis - 1 :
-                                  n_inner_paranthesis
-        end
-
-        push!(xs, formula[index_piecewise_start[i][1]:i_end])
-        push!(ixs, index_piecewise_start[i][1]:i_end)
-
-        # Check how many picewise have been processed
-        i += length(findall(x * "(", xs[k]))
-        k += 1
+function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
+    variables = Iterators.flatten((model_SBML.species, model_SBML.parameters))
+    for (_, variable) in variables
+        !occursin("ifelse", variable.formula) && continue
+        variable.formula = _time_dependent_ifelse_to_bool(variable.formula, model_SBML)
     end
-
-    if retindex == false
-        return xs
-    else
-        return ixs
-    end
+    return nothing
 end
 
-function parse_piecewise_bool_condition(condition::String, value_active::String,
-                                        value_inactive::String)::String
-
-    # Special case when a number is provided - here only return false when number
-    # is equal to zero
-    if is_number(condition)
-        _condition = "0.0 != " * condition
-        return "ifelse(" * _condition * ", " * value_active * ", " * value_inactive * ")"
-    end
-
-    nested_condition::Bool = false
-    if "leq" == condition[1:3]
-        condition_components = condition[5:(end - 1)]
-        comparison_operator = " <= "
-    elseif "lt" == condition[1:2]
-        condition_components = condition[4:(end - 1)]
-        comparison_operator = " < "
-    elseif "geq" == condition[1:3]
-        condition_components = condition[5:(end - 1)]
-        comparison_operator = " >= "
-    elseif "gt" == condition[1:2]
-        condition_components = condition[4:(end - 1)]
-        comparison_operator = " > "
-    elseif "eq" == condition[1:2]
-        condition_components = condition[4:(end - 1)]
-        comparison_operator = " == "
-    elseif "neq" == condition[1:3]
-        condition_components = condition[5:(end - 1)]
-        comparison_operator = " != "
-        # Edge case, but condition is allowed to simply be true (albeit stupied)
-    elseif condition[1:4] == "true"
-        return value_active
-        # As above
-    elseif condition[1:5] == "false"
-        return value_inactive
-        # Can happen in more complex piecewise
-    elseif "ifelse" == condition[1:6]
-        nested_condition = true
-    else
-        @error "Cannot recognize inequality condition = $condition in piecewise"
-    end
-
-    if nested_condition == true
-        return "ifelse(" * condition * ", " * value_active * ", " * value_inactive * ")"
-    end
-
-    parts = split_between(condition_components, ',')
-    return "ifelse(" * parts[1] * comparison_operator * parts[2] * ", " * value_active *
-           ", " * value_inactive * ")"
-end
-
-function parse_piecewise_gate_condition(condition, value_active, value_inactive)
-    event_str = _parse_piecewise_gate_condition(condition)
-
-    return event_str * " * (" * value_active * ") + (1 - " * event_str * ") * (" *
-           value_inactive * ")"
-end
-
-function _parse_piecewise_gate_condition(condition::String)::String
-    if condition[1:2] ∈ ["if", "or"] || condition[1:3] ∈ ["and", "xor"]
-        if condition[1:2] ∈ ["if", "or"]
-            condition_parts = condition[4:(end - 1)]
-        elseif condition[1:3] ∈ ["and", "xor"]
-            condition_parts = condition[5:(end - 1)]
-        end
-
-        # Handle special case for and, or and xor with empty arguments:
-        # *and:   true
-        # *or:    false
-        # *xor:   false
-        if isempty(condition_parts) && condition[1:2] == "or"
-            return "0.0"
-        elseif isempty(condition_parts) && condition[1:3] == "and"
-            return "1.0"
-        elseif isempty(condition_parts) && condition[1:3] == "xor"
-            return "0.0"
-        end
-        # Handle special case for and, or and xor with single argument, then they should
-        # return said argument
-        if length(split_between(condition_parts, ',')) == 1
-            return condition_parts
-        end
-
-        left_part, rigth_part = split_between(condition_parts, ',')
-        left_ifelse = _parse_piecewise_gate_condition(left_part)
-        right_ifelse = _parse_piecewise_gate_condition(rigth_part)
-
-        # Here cont. representations of the different gates are used, this in order
-        # to allow modellingtoolkit to work (as it will not appreciate something like
-        # && or || in its equations)
-        # To emulate an or condition for the two Bool tanh is used
-        if condition[1:2] ∈ ["if", "or"]
-            return "tanh(10 * (" * left_ifelse * "+" * right_ifelse * "))"
-            # To emulate an and gate multiplication between the two conditions is used
-        elseif condition[1:3] == "and"
-            return "(" * left_ifelse * ") * (" * right_ifelse * ")"
-            # xor for two boolean variables can be replicated with a second degree polynominal
-            # which is zero at 0 and 2, but 1 at x=1
-        elseif condition[1:3] == "xor"
-            return "(-(" * left_ifelse * "+" * right_ifelse * ")^2 + 2*(" * left_ifelse *
-                   "+" * right_ifelse * "))"
-        end
-    end
-
-    # Simply invert condition with 1 - condition
-    if condition[1:3] == "not"
-        condition_parts = condition[5:(end - 1)]
-        condition = _parse_piecewise_gate_condition(condition_parts)
-        return "(1 - " * condition * ")"
-    end
-
-    # End of recursion arriving at a simple bool condition
-    return parse_piecewise_bool_condition(condition, "1.0", "0.0")
-end
-
-# Splits strings by a given delimiter, but only if the delimiter is not inside a function / parenthesis.
-function split_between(formula::String, delimiter::Char)::Vector{String}
-    parts::Vector{String} = Vector{String}(undef, 0)
-
-    in_parenthesis, istart, iend = 0, 1, 1
-    for (i, char) in pairs(formula)
-        if char == '('
-            in_parenthesis += 1
-        elseif char == ')'
-            in_parenthesis -= 1
-        end
-
-        if char == delimiter && in_parenthesis == 0
-            iend = i - 1
-            push!(parts, string(strip(formula[istart:iend])))
-            istart = i + 1
-        end
-    end
-    # Add ending part of str
-    push!(parts, string(strip(formula[istart:end])))
-
-    return parts
-end
-
-#=
-    Functionality for rewriting piecewise equations to Boolean event representation
-=#
-
-function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)
-
-    # Rewrite piecewise using Boolean variables. Handles nested piecewise (or rather in this case ifelse)
-    # via recursion
-    for (specie_id, specie) in model_SBML.species
-        if !occursin("ifelse", specie.formula)
-            continue
-        end
-        specie.formula = _time_dependent_ifelse_to_bool(specie.formula, model_SBML,
-                                                        specie_id)
-    end
-    for (parameter_id, parameter) in model_SBML.parameters
-        if !occursin("ifelse", parameter.formula)
-            continue
-        end
-        parameter.formula = _time_dependent_ifelse_to_bool(parameter.formula, model_SBML,
-                                                           parameter_id)
-    end
-end
-
-function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML,
-                                        key::String)::String
+function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML)::String
     if !occursin("ifelse", formula)
         return formula
     end
-    formula_ret = deepcopy(formula)
+    ifelse_with_time::Bool = false
+    nifelse = _get_times_appear("ifelse", formula)
+    ifelse_calls = _extract_function_calls("ifelse", formula)
+    @assert length(ifelse_calls) == nifelse "Error in ifelse to bool parsing"
 
-    indices_ifelse = extract_x(formula, "ifelse"; retindex = true)
-    for i in eachindex(indices_ifelse)
-        ifelse_eq = formula[indices_ifelse[i]]
-        if haskey(model_SBML.ifelse_bool_expressions, ifelse_eq)
-            formula_ret = replace(formula_ret,
-                                  ifelse_eq => model_SBML.ifelse_bool_expressions[ifelse_eq])
+    for ifelse_call in ifelse_calls
+        # In some cases the same ifelse-call can appear in several equations
+        if haskey(model_SBML.ifelse_bool_expressions, ifelse_call)
+            ifelse_with_time = true
+            formula_bool = model_SBML.ifelse_bool_expressions[ifelse_call]
+            formula = replace(formula, ifelse_call => formula_bool)
+            break
         end
 
-        rewrite_ifelse = true
-        _args = ifelse_eq[8:(end - 1)]
-        condition, left_side, right_side = split_between(_args, ',')
-
-        # Find direction of piecewise inequality to figure out whether left
-        # or right side is activated with increasing time
-        i_lt = findfirst(x -> x == '<', condition)
-        i_gt = findfirst(x -> x == '>', condition)
-        if isnothing(i_gt) && !isnothing(i_lt)
-            sign_used = "lt"
-            split_by = condition[i_lt:(i_lt + 1)] == "<=" ? "<=" : "<"
-
-        elseif !isnothing(i_gt) && isnothing(i_lt)
-            sign_used = "gt"
-            split_by = condition[i_gt:(i_gt + 1)] == ">=" ? ">=" : ">"
-
-        elseif occursin("!=", condition) || occursin("==", condition)
-            rewrite_ifelse = false
-            continue
-        else
-            @error "Error : Did not find criteria to split ifelse on"
-        end
-        # Figure out which side of piecewise is activated when time increases -
-        # do we go from false -> true or from true -> false
-        lhs_condition, rhs_condition = string.(split(condition, split_by))
-        time_right = time_in_formula(rhs_condition)
-        time_left = time_in_formula(lhs_condition)
-        if time_left == false && time_left == false
-            @info "Have ifelse statements which does not contain time. Hence we do not rewrite as event, but rather keep it as an ifelse." maxlog=1
-            rewrite_ifelse = false
-            continue
-
-        elseif time_left == true
-            sign_time = check_sign_time(lhs_condition)
-            if (sign_time == 1 && sign_used == "lt") ||
-               (sign_time == -1 && sign_used == "gt")
-                side_activated_with_time = "right"
-            elseif (sign_time == 1 && sign_used == "gt") ||
-                   (sign_time == -1 && sign_used == "lt")
-                side_activated_with_time = "left"
-            end
-
-        elseif time_right == true
-            sign_time = check_sign_time(rhs_condition)
-            if (sign_time == 1 && sign_used == "lt") ||
-               (sign_time == -1 && sign_used == "gt")
-                side_activated_with_time = "left"
-            elseif (sign_time == 1 && sign_used == "gt") ||
-                   (sign_time == -1 && sign_used == "lt")
-                side_activated_with_time = "right"
-            end
-        end
-
-        # In case of nested ifelse rewrite left-hand and right-hand side of ifelse
-        left_side = _time_dependent_ifelse_to_bool(left_side, model_SBML, key)
-        right_side = _time_dependent_ifelse_to_bool(right_side, model_SBML, key)
-
-        if rewrite_ifelse == false
+        # If !=, ==, false, true, ifelse is in condition rewriting to event is not possible.
+        # This rarely happens outside SBML test-suite
+        condition, arg1, arg2 = _extract_args_insert(ifelse_call, true)
+        if any(occursin.(["!=", "==", "false", "true", "ifelse"], condition))
             continue
         end
 
-        # Set the name of the piecewise variable
-        local j = 1
-        while true
-            parameter_name = "__parameter_ifelse" * string(j)
-            if !haskey(model_SBML.ifelse_parameters, parameter_name)
-                break
-            end
-            j += 1
-        end
-        parameter_name = "__parameter_ifelse" * string(j)
+        lhs_condition, rhs_condition, operator = _split_condition(condition)
+        time_in_rhs = _has_time(rhs_condition)
+        time_in_lhs = _has_time(lhs_condition)
+        time_in_lhs == false && time_in_rhs == false && continue
+        @assert time_in_rhs != time_in_lhs "Error with time in both condition sides"
+        side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition, operator, time_in_rhs)
 
-        # Rewrite the ifelse to contain Bool variables
-        activated_with_time = side_activated_with_time == "left" ? left_side : right_side
-        deactivated_with_time = side_activated_with_time == "left" ? right_side : left_side
-        _formula = "((1 - " * parameter_name * ")*" * "(" * deactivated_with_time * ") + " *
-                   parameter_name * "*(" * activated_with_time * "))"
-        model_SBML.parameters[parameter_name] = ParameterSBML(parameter_name, true, "0.0",
-                                                              "", false, false, false)
-        formula_ret = replace(formula_ret, formula[indices_ifelse[i]] => _formula)
+        bool_name = _get_name_bool_piecewise(model_SBML)
+        formula_bool = _template_bool_picewise(bool_name, arg1, arg2, side_activated)
+        formula = replace(formula, ifelse_call => formula_bool; count=1)
 
-        # Store ifelse parameters to later handle them correctly in model Callbacks
-        model_SBML.ifelse_parameters[parameter_name] = [condition, side_activated_with_time]
-
-        # Store ifelse syntax to avoid recomputing it
-        model_SBML.ifelse_bool_expressions[ifelse_eq] = _formula
+        model_SBML.ifelse_parameters[bool_name] = [condition, side_activated]
+        model_SBML.ifelse_bool_expressions[ifelse_call] = formula_bool
+        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false, false, false, false)
+        ifelse_with_time = true
+        break
     end
 
-    return formula_ret
+    if ifelse_with_time == true
+        formula = _time_dependent_ifelse_to_bool(formula, model_SBML)
+    end
+    return formula
 end
 
-# In piecewise condition cond > cond_limit, check whether cond is increasing or decreasing
-# with time. Important to later rewrite piecewise to an event
-function check_sign_time(formula::String)
-    formula = replace(formula, " " => "")
-    _formula = find_term_with_t(formula)
-
-    if _formula == ""
-        str_write = "In $formula for condition in piecewise cannot identify which term time appears in."
-        throw(SBMLSupport(str_write))
+function _get_side_activated_with_time(lhs_condition::String, rhs_condition::String, operator::String, time_in_rhs::Bool)::String
+    sign_time = time_in_rhs ? _get_sign_time(rhs_condition) : _get_sign_time(lhs_condition)
+    # Example : if we have -t > -1 then sign_time = -1, and when time increases from
+    # t0=0 we have with time a transition from true -> false, which means that in the
+    # ifelse the right side is activated with time
+    if operator in ["<", "≤", "<="]
+        side_if_rhs = sign_time == 1 ? "left" : "right"
     end
+    if operator in [">", "≥", ">="]
+        side_if_rhs = sign_time == 1 ? "right" : "left"
+    end
+    side_if_lhs = side_if_rhs == "left" ? "right" : "left"
+    if time_in_rhs
+        return side_if_rhs
+    else
+        return side_if_lhs
+    end
+end
 
-    _formula = replace(_formula, "(" => "")
-    _formula = replace(_formula, ")" => "")
+function _split_condition(formula::String)::Tuple{String, String, String}
+    gt_operators = [">", "≥", ">="]
+    lt_operators = ["<", "≤", "<="]
+    igt = findfirst(x -> occursin(x, formula), gt_operators)
+    ilt = findfirst(x -> occursin(x, formula), lt_operators)
+    @assert !all(isnothing.([igt, ilt])) "Error splitting ifelse condition"
+    operator = isnothing(igt) ? lt_operators[ilt] : gt_operators[igt]
+    lhs, rhs = string.(split(formula, operator))
+    return lhs, rhs, operator
+end
+
+function _get_name_bool_piecewise(model_SBML::ModelSBML)::String
+    j = 1
+    while true
+        parameter_name = "__parameter_ifelse" * string(j)
+        !haskey(model_SBML.ifelse_parameters, parameter_name) && break
+        j += 1
+    end
+    return "__parameter_ifelse" * string(j)
+end
+
+function _template_bool_picewise(bool_name::String, ifelse_arg1::String, ifelse_arg2::String, side_activated::String)::String
+    activated = side_activated == "left" ? ifelse_arg1 : ifelse_arg2
+    deactivated = side_activated == "left" ? ifelse_arg2 : ifelse_arg1
+    formula = "((1 - 1" * bool_name * ") * (" * deactivated * ") + " *
+              bool_name * "*(" * activated * "))"
+    return formula
+end
+
+function _get_sign_time(formula::String)::Int64
+    formula = replace(formula, " " => "")
+    formula = _trim_paranthesis(formula)
+    _formula = _find_term_with_t(formula)
+    @assert !isempty(_formula) "In $formula for condition in piecewise cannot identify which term time appears in."
+
+    _formula = replace(_formula, "(" => "", ")" => "")
     if _formula == "t"
         return 1
     elseif length(_formula) ≥ 2 && _formula[1:2] == "-t"
@@ -434,44 +133,31 @@ function check_sign_time(formula::String)
     # If '-' appears anywhere after the cases above we might be able to infer direction,
     # but infering in this situation is hard! - so throw an error as the user should
     # be able to write condition in a more easy manner (avoid several sign changing minus signs)
-    if !occursin('-', _formula)
-        return 1
-    else
-        str_write = "For piecewise with time in condition we cannot infer direction for $formula, that is if the condition value increases or decreases with time. This happens if the formula contains a minus sign in the term where t appears."
-        throw(SBMLSupport(str_write))
-    end
+    !occursin('-', _formula) && return 1
+    str_write = "For piecewise with time in condition we cannot infer direction for $formula, that is if the condition value increases or decreases with time. This happens if the formula contains a minus sign in the term where t appears."
+    throw(SBMLSupport(str_write))
 end
 
-# Often we have condition t - parameter, here identify the term which t occurs
-# in order to satisfy the check_sign_time function
-function find_term_with_t(formula::String)::String
-
-    # Simple edge case
-    if length(formula) == 1 && formula == "t"
-        return formula
-    end
-
-    istart, parenthesis_level = 1, 0
-    local term = ""
+function _find_term_with_t(formula::String)::String
+    formula == "t" && return formula
+    istart, parenthesis_level, term = 1, 0, ""
     for (i, char) in pairs(formula)
-        if i == 1 && char ∈ ['+', '-']
+        if i == 1 && char in ['+', '-']
             continue
         end
-
         parenthesis_level = char == '(' ? parenthesis_level + 1 : parenthesis_level
         parenthesis_level = char == ')' ? parenthesis_level - 1 : parenthesis_level
-
-        if parenthesis_level == 0 && (char ∈ ['+', '-'] || i == length(formula))
-            if formula[i - 1] ∈ ['+', '-'] && i != length(formula)
-                continue
-            end
-
-            term = formula[istart:i]
-            if time_in_formula(term) == true || (i == length(formula) && char == 't')
-                return term[end] ∈ ['+', '-'] ? term[1:(end - 1)] : term
-            end
-            istart = i
+        if !(parenthesis_level == 0 && (char in ['+', '-'] || i == length(formula)))
+            continue
         end
+        if formula[i - 1] in ['+', '-'] && i != length(formula)
+            continue
+        end
+        term = formula[istart:i]
+        if _has_time(term) == true || (i == length(formula) && char == 't')
+            return term[end] in ['+', '-'] ? term[1:(end - 1)] : term
+        end
+        istart = i
     end
     return ""
 end

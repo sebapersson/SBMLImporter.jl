@@ -56,7 +56,15 @@ function _parse_math!(math_expression::MathSBML, math_sbml::SBML.MathApply, libs
     if fn == "SpecialFunctions.gamma"
         args[1] *= " + 1"
     end
-
+    # For gated logical funcitons 0 and 1 arguments are allowed. As these cases correspond
+    # to different functions than the normal gated logicals, these are renamed
+    if fn in ["and", "or", "if", "xor"] && nargs != 2
+        fn *= string(nargs)
+    end
+    if fn == "piecewise" && nargs in [2, 4]
+        @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended."
+        fn *= string(nargs)
+    end
     _formula = fn * "(" * prod(args .* ", ")[1:end-2] * ")"
     _update_formula!(math_expression, _formula, parse_fn_arg)
     return nothing
@@ -70,7 +78,7 @@ function _parse_fn(math_sbml::SBML.MathApply, sbml_functions::Dict)::String
     @assert haskey(SBML_FN_INFO, math_sbml.fn) "$(math_sbml.fn) not among importable functions"
     fn, nallowed_args = SBML_FN_INFO[math_sbml.fn]
     nargs = length(math_sbml.args)
-    if fn in ["delay", "rem", "implies"]
+    if fn in ["delay", "rem", "implies", "div"]
         throw(SBMLSupport("SBML models with function $fn are not supported"))
     end
     if fn in ["and", "xor", "or", "lt", "leq", "gt", "geq", "eq"] && nargs > 2

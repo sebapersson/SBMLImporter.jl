@@ -12,33 +12,11 @@ For testing path_SBML can be the model as a string if model_as_string=true.
 function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
                           model_as_string = true, inline_assignment_rules::Bool = true,
                           mass_action::Bool = false)::ModelSBML
-    if model_as_string == false
-        if !isfile(path_SBML)
-            throw(SBMLSupport("$path_SBML is not the path to a SBML file"))
-        end
-        f = open(path_SBML, "r")
-            model_str = read(f, String)
-        close(f)
-    else
-        model_str = path_SBML
-    end
+    model_str = _get_model_as_str(path_SBML, model_as_string)
+    check_support(path_SBML, model_as_string)
 
-    if has_event_with_delay(model_str) == true
-        throw(SBMLSupport("Events with delay are not supported"))
-    end
-    if has_event_with_priority(model_str) == true
-        throw(SBMLSupport("Events with priority are not supported"))
-    end
-    if has_fast_reaction(model_str) == true
-        throw(SBMLSupport("Fast reactions are not supported"))
-    end
-    if is_hierarchical(model_str) == true
-        throw(SBMLSupport("Hierarchical models are not supported"))
-    end
-    if is_fba(model_str) == true
-        throw(SBMLSupport("FBA models are not supported. Checkout COBREXA.jl"))
-    end
-
+    # stoichiometryMath only occurs in SBML level 2. If stoichiometryMath occur in the
+    # model it is converted to a level three model via SBML.jl libsbml functionality
     if occursin("stoichiometryMath", model_str) == false
         libsbml_model = readSBMLFromString(model_str)
     else
@@ -55,23 +33,7 @@ end
 
 function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
                            inline_assignment_rules::Bool, mass_action::Bool)::ModelSBML
-    conversion_factor = isnothing(libsbml_model.conversion_factor) ? "" :
-                        libsbml_model.conversion_factor
-
-    # Convert model name to a valid Julia string
-    model_name = isnothing(libsbml_model.name) ? "SBML_model" : libsbml_model.name
-    model_name = replace(model_name, " " => "_")
-
-    # Specie reference ids can sometimes appear in math expressions, then they should be replaced
-    # by the stoichometry for corresponding reference id, searching for specie reference ids
-    # can be computationally demanding if the list of such ids is rebuilt, thus here the
-    # list is built only once in the beginning
-    specie_reference_ids = get_specie_reference_ids(libsbml_model)
-
-    # An intermedidate struct storing relevant model informaiton needed for
-    # formulating a ReactionSystem and callback functions
-    model_SBML = ModelSBML(model_name; specie_reference_ids = specie_reference_ids,
-                           conversion_factor = conversion_factor)
+    model_SBML = ModelSBML(libsbml_model)
 
     parse_species!(model_SBML, libsbml_model, mass_action)
 
@@ -93,8 +55,8 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # to the reaction kinetic_math expression
     replace_reactionid!(model_SBML)
 
-    # Rewrite any time-dependent ifelse to boolean statements such that we can express these as events.
-    # This is recomended, as it often increases the stabillity when solving the ODE, and decreases run-time
+    # Rewrite any time-dependent ifelse to boolean statements so that these can be expressed
+    # as efficient DiscreteCallbacks later
     if ifelse_to_callback == true
         time_dependent_ifelse_to_bool!(model_SBML)
     end
@@ -116,7 +78,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     # Up to this point for models parameter the SBML rem or div function might appear in the model dynamics,
     # these are non differentialble, discrete and not allowed
-    has_rem_or_div(model_SBML)
+    #has_rem_or_div(model_SBML)
 
     # Inlining assignment rule variables makes the model less readable, however, if not done for
     # larger models Catalyst might crash due to a stack-overflow error

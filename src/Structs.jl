@@ -108,6 +108,17 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
                            Vector{String}(undef, 0)) # Variables with piecewise
     return model_SBML
 end
+function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
+    conversion_factor = _parse_variable(libsbml_model.conversion_factor)
+    name = _parse_variable(libsbml_model.name; default="SBML_model")
+    name = replace(name, " " => "_")
+
+    # Specie reference ids can sometimes appear in math expressions, where they should
+    # be replaced. Precomputing the ids save computational time.
+    # TODO: This info should be in math-idents
+    specie_reference_ids = get_specie_reference_ids(libsbml_model)
+    return ModelSBML(name, specie_reference_ids=specie_reference_ids, conversion_factor=conversion_factor)
+end
 
 struct ModelSBMLString
     species::String

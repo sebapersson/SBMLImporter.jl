@@ -6,7 +6,8 @@ function parse_rules!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
 end
 
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_model::SBML.Model)::Nothing
-    id, formula, have_ridents = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
+    id, formula, idents = _parse_rule_formula(rule, model_SBML, libsbml_model; assignment_rule=true)
+    have_ridents = _has_reactionid_ident(idents, libsbml_model)
 
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
@@ -31,7 +32,8 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model::SBML.Model)::Nothing
-    id, formula, have_ridents = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
+    id, formula, idents = _parse_rule_formula(rule, model_SBML, libsbml_model; rate_rule=true)
+    have_ridents = _has_reactionid_ident(idents, libsbml_model)
 
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
@@ -50,7 +52,7 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule, libsbml_model:
     return nothing
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_model::SBML.Model)::Nothing
-    _, formula, _ = _parse_rule_formula(rule, model_SBML, libsbml_model; algebraic_rule=true)
+    _, formula, idents = _parse_rule_formula(rule, model_SBML, libsbml_model; algebraic_rule=true)
     # As an algebraic rule gives the equation for a specie/parameter/compartment variable
     # is just a place-holder name
     if isempty(model_SBML.algebraic_rules)
@@ -62,7 +64,7 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_m
     return nothing
 end
 
-function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_model::SBML.Model; assignment_rule::Bool=false, rate_rule::Bool=false, algebraic_rule::Bool=false)::Tuple{String, String, Bool}
+function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_model::SBML.Model; assignment_rule::Bool=false, rate_rule::Bool=false, algebraic_rule::Bool=false)::Tuple{String, String, Vector{String}}
     @assert any([assignment_rule, algebraic_rule, rate_rule]) "No rule set to be parsed"
 
     variable = algebraic_rule ? "" : rule.variable
@@ -70,11 +72,10 @@ function _parse_rule_formula(rule::SBMLRule, model_SBML::ModelSBML, libsbml_mode
     assignment_rule == true && push!(model_SBML.assignment_rule_variables, variable)
 
     math_expression = parse_math(rule.math, libsbml_model)
-    have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
 
     formula = process_SBML_str_formula(math_expression.formula, model_SBML, libsbml_model; check_scaling=true, assignment_rule=assignment_rule, rate_rule=rate_rule, algebraic_rule=algebraic_rule, variable=variable)
     formula = isempty(formula) ? "0.0" : formula
-    return variable, formula, have_ridents
+    return variable, formula, math_expression.math_idents
 end
 
 function _add_rule_info!(specie::SpecieSBML, formula::String, have_ridents::Bool; assignment_rule::Bool=false, rate_rule::Bool=false)::Nothing
@@ -113,6 +114,11 @@ function _get_specieref_initial_value(id::String, libsbml_model::SBML.Model)::St
 end
 
 # TODO: This is a different beast, and comes later
+#=
+    Approach:
+    With idents we already know the identifiers. Then simply loop until the first
+    suitable is found.
+=#
 function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
     # In case the model has algebraic rules some of the formulas (up to this point) are zero. To figure out
     # which variable check which might be applicable

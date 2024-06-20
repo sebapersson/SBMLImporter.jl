@@ -1,66 +1,50 @@
-function has_event_with_delay(file_text::String)::Bool
+function check_support(model_str::String, model_as_string::Bool)::Nothing
+    if _has_event_with_delay(model_str) == true
+        throw(SBMLSupport("Events with delay are not supported"))
+    end
+    if _has_event_with_priority(model_str) == true
+        throw(SBMLSupport("Events with priority are not supported"))
+    end
+    if _has_fast_reaction(model_str) == true
+        throw(SBMLSupport("Fast reactions are not supported"))
+    end
+    if _is_hierarchical(model_str) == true
+        throw(SBMLSupport("Hierarchical models are not supported"))
+    end
+    if _is_fba(model_str) == true
+        throw(SBMLSupport("FBA models are not supported. Checkout COBREXA.jl"))
+    end
+
+    return nothing
+end
+
+function _has_event_with_delay(file_text::String)::Bool
     istart = findall("<listOfEvents>", file_text)
     iend = findall("</listOfEvents>", file_text)
     if isnothing(istart) || isempty(istart)
         return false
     end
 
-    @assert length(istart) == 1 && length(iend) == 1
-
-    if occursin("delay", file_text[istart[1][1]:iend[1][end]])
-        return true
-    else
-        return false
-    end
+    return occursin("delay", file_text[istart[1][1]:iend[1][end]])
 end
 
-function has_event_with_priority(file_text::String)::Bool
+function _has_event_with_priority(file_text::String)::Bool
     istart = findall("<listOfEvents>", file_text)
     iend = findall("</listOfEvents>", file_text)
     if isnothing(istart) || isempty(istart)
         return false
     end
-
-    @assert length(istart) == 1 && length(iend) == 1
-
-    if occursin("priority", file_text[istart[1][1]:iend[1][end]])
-        return true
-    else
-        return false
-    end
+    return occursin("priority", file_text[istart[1][1]:iend[1][end]])
 end
 
-function is_hierarchical(file_text::String)::Bool
-    if occursin("comp:", file_text)
-        return true
-    else
-        return false
-    end
+function _has_fast_reaction(file_text::String)::Bool
+    return occursin(r"fast=\"true\"", file_text)
 end
 
-function is_fba(file_text::String)::Bool
-    if occursin("fbc:", file_text)
-        return true
-    else
-        return false
-    end
+function _is_hierarchical(file_text::String)::Bool
+    return occursin("comp:", file_text)
 end
 
-function has_fast_reaction(file_text::String)::Bool
-    if occursin(r"fast=\"true\"", file_text)
-        return true
-    end
-    return false
-end
-
-function has_rem_or_div(model_SBML::ModelSBML)::Bool
-    for (parameter_id, parameter) in model_SBML.parameters
-        if occursin("div", parameter.formula)
-            throw(SBMLSupport("quotient function in SBML model is not supported"))
-        end
-        if occursin("div", parameter.formula)
-            throw(SBMLSupport("quotient function in SBML model is not supported"))
-        end
-    end
-    return false
+function _is_fba(file_text::String)::Bool
+    return occursin("fbc:", file_text)
 end

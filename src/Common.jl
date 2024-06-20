@@ -30,14 +30,14 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
                                   initial_assignment::Bool = false,
                                   variable = "")::T where {T <: AbstractString}
     _formula = insert_functions(formula, model_SBML.functions)
-    if algebraic_rule && occursin("piecewise(", _formula)
+    if algebraic_rule && tmp_has_piecewise(formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end
-    if initial_assignment && haskey(model_SBML.species, variable) && occursin("piecewise(", _formula)
+    if initial_assignment && haskey(model_SBML.species, variable) && tmp_has_piecewise(formula)
         throw(SBMLSupport("Piecewise in initial assignment is not supported"))
     end
-    if occursin("piecewise(", _formula)
-        _formula = piecewise_to_ifelse(_formula, model_SBML, libsbml_model)
+    if tmp_has_piecewise(_formula)
+        _formula = piecewise_to_ifelse(_formula)
         if assignment_rule || rate_rule
             !isempty(variable) && push!(model_SBML.variables_with_piecewise, variable)
         end
@@ -128,9 +128,44 @@ function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
     return _formula
 end
 
-function time_in_formula(formula::String)::Bool
+# TODO: Not needed when start tracking fn
+function tmp_has_piecewise(formula)::Bool
+    occursin("piecewise(", formula) && return true
+    occursin("piecewise2(", formula) && return true
+    occursin("piecewise4(", formula) && return true
+    return false
+end
+
+function _get_model_as_str(path_SBML::String, model_as_string::Bool)::String
+    if model_as_string == false
+        if !isfile(path_SBML)
+            throw(SBMLSupport("$path_SBML is not the path to a SBML file"))
+        end
+        f = open(path_SBML, "r")
+        model_str = read(f, String)
+        close(f)
+        return model_str
+    else
+        return path_SBML
+    end
+end
+
+function _has_time(formula::String)::Bool
     _formula = replace_variable(formula, "t", "")
     return formula != _formula
+end
+
+function _trim_paranthesis(formula::String)::String
+    length(formula) == 1 && return formula
+    for _ in 1:100
+        if (formula[1] == '(' && formula[end] == ')') &&
+           (formula[2] == '(' && formula[end-1] == ')')
+            formula = formula[2:end-1]
+        else
+            return formula
+        end
+    end
+    return formula
 end
 
 function replace_rateOf!(model_SBML::ModelSBML)::Nothing
@@ -238,8 +273,6 @@ function replace_rateOf(_formula::T,
 
     return formula
 end
-
-
 
 function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
     for (reaction_id, reaction) in model_SBML.reactions
