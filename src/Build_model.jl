@@ -76,10 +76,6 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # Per level3 rateOf can appear in any formula, and should be replaced with corresponding rate
     replace_rateOf!(model_SBML)
 
-    # Up to this point for models parameter the SBML rem or div function might appear in the model dynamics,
-    # these are non differentialble, discrete and not allowed
-    #has_rem_or_div(model_SBML)
-
     # Inlining assignment rule variables makes the model less readable, however, if not done for
     # larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true

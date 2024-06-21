@@ -60,7 +60,7 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule, libsbml_m
     else
         variable = maximum(keys(model_SBML.algebraic_rules)) * "1"
     end
-    model_SBML.algebraic_rules[variable] = "0 ~ " * formula
+    model_SBML.algebraic_rules[variable] = AlgebraicRuleSBML("0 ~ " * formula, idents)
     return nothing
 end
 
@@ -113,88 +113,65 @@ function _get_specieref_initial_value(id::String, libsbml_model::SBML.Model)::St
     end
 end
 
-# TODO: This is a different beast, and comes later
-#=
-    Approach:
-    With idents we already know the identifiers. Then simply loop until the first
-    suitable is found.
-=#
 function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
-    # In case the model has algebraic rules some of the formulas (up to this point) are zero. To figure out
-    # which variable check which might be applicable
-    if isempty(model_SBML.algebraic_rules)
-        return nothing
-    end
-
-    candidates = String[]
-    for (specie_id, specie) in model_SBML.species
-        if specie.rate_rule == true || specie.assignment_rule == true ||
-           specie.constant == true
-            continue
-        end
-        if specie_id ∈ model_SBML.species_in_reactions && specie.boundary_condition == false
-            continue
-        end
-        if !(specie.formula == "0.0" || isempty(specie.formula))
+    isempty(model_SBML.algebraic_rules) && return nothing
+    for rule in values(model_SBML.algebraic_rules)
+        # First species are checked, as due to edge cases several species can be valid,
+        # in this case they must be compared between each other, for finding the most
+        # "constant" specie, see test case 1787
+        algebraic_specie = _get_algebraic_species(rule.idents, model_SBML)
+        if !isnothing(algebraic_specie)
+            algebraic_specie.algebraic_rule = true
+            push!(model_SBML.algebraic_rule_variables, algebraic_specie.name)
             continue
         end
 
-        # Check if specie-id actually occurs in any algebraic rule
-        should_continue::Bool = false
-        for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, specie_id, "") != rule
-                should_continue = false
-            end
-        end
-        should_continue == true && continue
+        for ident in rule.idents
+            variable = _get_model_variable(ident, model_SBML)
+            variable isa SpecieSBML && continue
+            _isassigned(variable) == true && continue
 
-        push!(candidates, specie_id)
+            variable.algebraic_rule = true
+            push!(model_SBML.algebraic_rule_variables, variable.name)
+            break
+        end
     end
-    # To be set as algebraic rule variable a specie must not appear in reactions,
-    # or be a boundary condition. Sometimes several species can fulfill this for
-    # a single rule, in this case we choose the first valid
-    if !isempty(candidates)
-        model_SBML.species[candidates[1]].algebraic_rule = true
-        push!(model_SBML.algebraic_rule_variables, candidates[1])
-    end
-
-    for (parameter_id, parameter) in model_SBML.parameters
-        if parameter.rate_rule == true || parameter.assignment_rule == true ||
-           parameter.constant == true
-            continue
-        end
-
-        # Check if specie-id actually occurs in any algebraic rule
-        should_continue::Bool = false
-        for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, parameter_id, "") != rule
-                should_continue = false
-            end
-        end
-        should_continue == true && continue
-
-        parameter.algebraic_rule = true
-        push!(model_SBML.algebraic_rule_variables, parameter.name)
-    end
-
-    for (compartment_id, compartment) in model_SBML.compartments
-        if compartment.rate_rule == true || compartment.assignment_rule == true ||
-           compartment.constant == true
-            continue
-        end
-
-        # Check if specie-id actually occurs in any algebraic rule
-        should_continue::Bool = false
-        for (rule_id, rule) in model_SBML.algebraic_rules
-            if replace_variable(rule, compartment_id, "") != rule
-                should_continue = false
-            end
-        end
-        should_continue == true && continue
-
-        compartment.algebraic_rule = true
-        push!(model_SBML.algebraic_rule_variables, compartment.name)
-    end
-
     return nothing
+end
+
+function _get_algebraic_species(idents, model_SBML)::Union{SpecieSBML, Nothing}
+    valid_species = SpecieSBML[]
+    for ident in idents
+        variable = _get_model_variable(ident, model_SBML)
+        !(variable isa SpecieSBML) && continue
+        _isassigned(variable) == true && continue
+
+        in_reactions = variable.name in model_SBML.species_in_reactions
+        boundary_condition = variable.boundary_condition
+        if !(in_reactions == false || boundary_condition)
+            continue
+        end
+        push!(valid_species, variable)
+    end
+    length(valid_species) == 0 && return nothing
+    length(valid_species) == 1 && return valid_species[1]
+    # A rare edge case can happen where two species are in a sense valid. Here the rule
+    # variable becomes the one not involved in a reaction, and if both are not involved
+    # reactions, the one with a boundary condition is rule variable. Just SBML stuff...
+    not_in_reactions = [s.name ∉ model_SBML.species_in_reactions for s in valid_species]
+    if !all(not_in_reactions)
+        return valid_species[findfirst(not_in_reactions)]
+    end
+    boundary_cond = [s.boundary_condition == false for s in valid_species]
+    if !all(boundary_cond)
+        return valid_species[findfirst(boundary_cond)]
+    end
+    throw(SBMLSupport("Cannot process algebraic rule, two species are equally valid"))
+end
+
+function _isassigned(variable::Union{SpecieSBML, ParameterSBML, CompartmentSBML})::Bool
+    variable.constant && return true
+    variable.rate_rule && return true
+    variable.assignment_rule && return true
+    return false
 end

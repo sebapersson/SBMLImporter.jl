@@ -184,7 +184,7 @@ function replace_rateOf!(model_SBML::ModelSBML)::Nothing
         event.trigger = replace_rateOf(event.trigger, model_SBML)
     end
     for (rule_id, rule) in model_SBML.algebraic_rules
-        model_SBML.algebraic_rules[rule_id] = replace_rateOf(rule, model_SBML)
+        rule.formula = replace_rateOf(rule.formula, model_SBML)
     end
     for (reaction_id, reaction) in model_SBML.reactions
         reaction.kinetic_math = replace_rateOf(reaction.kinetic_math, model_SBML)

@@ -246,8 +246,8 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML;
         end
     end
     # Algebriac rules are already encoded as 0 ~ formula
-    for formula in values(model_SBML.algebraic_rules)
-        _reactions *= "\t\t" * formula * ",\n"
+    for rule in values(model_SBML.algebraic_rules)
+        _reactions *= "\t\t" * rule.formula * ",\n"
     end
     _reactions *= "\t]\n"
 

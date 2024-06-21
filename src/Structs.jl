@@ -62,6 +62,11 @@ mutable struct ReactionSBML
     const has_reaction_ids::Bool
 end
 
+mutable struct AlgebraicRuleSBML
+    formula::String
+    const idents::Vector{String}
+end
+
 struct ModelSBML
     name::String
     species::Dict{String, SpecieSBML}
@@ -70,7 +75,7 @@ struct ModelSBML
     events::Dict{String, EventSBML}
     reactions::Dict{String, ReactionSBML}
     functions::Dict{String, FunctionSBML}
-    algebraic_rules::Dict{String, String}
+    algebraic_rules::Dict{String, AlgebraicRuleSBML}
     generated_ids::Dict{String, String}
     piecewise_expressions::Dict{String, String}
     ifelse_bool_expressions::Dict{String, String}
