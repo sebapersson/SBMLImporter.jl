@@ -117,8 +117,7 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
     isempty(model_SBML.algebraic_rules) && return nothing
     for rule in values(model_SBML.algebraic_rules)
         # First species are checked, as due to edge cases several species can be valid,
-        # in this case they must be compared between each other, for finding the most
-        # "constant" specie, see test case 1787
+        # in this case they must be compared between each other, see below
         algebraic_specie = _get_algebraic_species(rule.idents, model_SBML)
         if !isnothing(algebraic_specie)
             algebraic_specie.algebraic_rule = true
@@ -130,7 +129,6 @@ function identify_algebraic_rule_variables!(model_SBML::ModelSBML)::Nothing
             variable = _get_model_variable(ident, model_SBML)
             variable isa SpecieSBML && continue
             _isassigned(variable) == true && continue
-
             variable.algebraic_rule = true
             push!(model_SBML.algebraic_rule_variables, variable.name)
             break
@@ -157,7 +155,7 @@ function _get_algebraic_species(idents, model_SBML)::Union{SpecieSBML, Nothing}
     length(valid_species) == 1 && return valid_species[1]
     # A rare edge case can happen where two species are in a sense valid. Here the rule
     # variable becomes the one not involved in a reaction, and if both are not involved
-    # reactions, the one with a boundary condition is rule variable. Just SBML stuff...
+    # reactions, the one without a boundary condition is rule variable. Just SBML stuff...
     not_in_reactions = [s.name ∉ model_SBML.species_in_reactions for s in valid_species]
     if !all(not_in_reactions)
         return valid_species[findfirst(not_in_reactions)]

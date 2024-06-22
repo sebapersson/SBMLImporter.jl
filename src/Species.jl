@@ -192,44 +192,26 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-# TODO : Should be in general equation parsing files
-function adjust_conversion_factor!(model_SBML::ModelSBML,
-                                   libsbml_model::SBML.Model)::Nothing
+# TODO : should be able to parse cv here for stoichometires, and avod to have to do it
+# later. But check when arrive at said point
+function add_conversion_factor_ode!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+    # Conversion factor only apply to species changed via recations, not rules or
+    # boundary conditions per SBML standard
     for (specie_id, specie) in model_SBML.species
-        if specie.assignment_rule == true
-            continue
-        end
-
-        if !haskey(libsbml_model.species, specie_id)
-            continue
-        end
-
-        # Conversion factors only affect species whose values are changed via reactions,
-        # but not rate-rules
-        if specie.rate_rule == true
-            continue
-        end
-
-        # Boundary value species are not affected
-        if specie.boundary_condition == true
-            continue
-        end
-
-        # Zero change of rate for specie
-        if isempty(specie.formula)
-            continue
-        end
+        !haskey(libsbml_model.species, specie_id) && continue
+        specie.assignment_rule == true && continue
+        specie.rate_rule == true && continue
+        specie.boundary_condition == true && continue
+        isempty(specie.formula) && continue
 
         if !isempty(specie.conversion_factor)
             conversion_factor = specie.conversion_factor
-        elseif !isnothing(libsbml_model.conversion_factor)
-            conversion_factor = libsbml_model.conversion_factor
+        elseif !isempty(model_SBML.conversion_factor)
+            conversion_factor = model_SBML.conversion_factor
         else
-            return nothing
+            continue
         end
-
         specie.formula = "(" * specie.formula * ") * " * conversion_factor
     end
-
     return nothing
 end

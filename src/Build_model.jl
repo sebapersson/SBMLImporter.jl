@@ -63,7 +63,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     identify_algebraic_rule_variables!(model_SBML)
 
-    adjust_conversion_factor!(model_SBML, libsbml_model)
+    add_conversion_factor_ode!(model_SBML, libsbml_model)
 
     # SBML allows inconstant compartment size, this must be adjusted if a specie is given in concentration
     # Must be after conversion factor, as the latter must be correctly handled in the transformation
