@@ -65,13 +65,13 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     add_conversion_factor_ode!(model_SBML, libsbml_model)
 
+    # Ensure that event participating parameters and compartments are not simplfied away
+    # with structurally_simplify
+    force_include_event_variables!(model_SBML)
+
     # SBML allows inconstant compartment size, this must be adjusted if a specie is given in concentration
     # Must be after conversion factor, as the latter must be correctly handled in the transformation
     adjust_for_dynamic_compartment!(model_SBML)
-
-    # Ensure that event participating parameters and compartments are not simplfied away when calling
-    # structurally_simplify
-    include_event_parameters_in_model!(model_SBML)
 
     # Per level3 rateOf can appear in any formula, and should be replaced with corresponding rate
     replace_rateOf!(model_SBML)

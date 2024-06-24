@@ -155,6 +155,11 @@ function _has_time(formula::String)::Bool
     return formula != _formula
 end
 
+function _contains_time_or_species(formula::String, model_SBML)::Bool
+    _has_time(formula) == true && return true
+    return any(occursin.(keys(model_SBML.species), formula))
+end
+
 function _trim_paranthesis(formula::String)::String
     length(formula) == 1 && return formula
     for _ in 1:100
@@ -193,6 +198,15 @@ function replace_rateOf!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
+# We are looking at a recursion, where rateOf can be handled just as a SBML function.
+# Now, for efficient parsing, rateOf should be caught already by math-expression.
+# Approach:
+# 1 : Store fn in math-expression (allows us to store SBML functions later)
+# 2 : When parsing rules, reactions, events and initial conditions, compute has rateOf
+# 3 : If has_rateOf == true only then replace
+# 4 : For replacing, use recursion with formula parsed until there are no more rateOf
+# can identify calls, just need proper arg handling. As rateOf cannot nest, I do not
+# actually need the recursion here
 function replace_rateOf(_formula::T,
                         model_SBML::ModelSBML)::String where {
                                                               T <: Union{<:AbstractString,
@@ -429,7 +443,7 @@ function _has_reactionid_ident(idents::Vector{String}, libsbml_model::SBML.Model
     return false
 end
 
-function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML; initial_assignment::Bool=false)::String
+function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML)::String
     for variables in [model_SBML.compartments, model_SBML.parameters]
         for (variable_id, variable) in variables
             if variable.assignment_rule == false

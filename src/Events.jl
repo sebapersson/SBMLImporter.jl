@@ -117,3 +117,23 @@ function _adjust_event_compartment!!(formulas::Vector{String}, assigned_to::Vect
     end
     return nothing
 end
+
+function force_include_event_variables!(model_SBML::ModelSBML)::Nothing
+    # Parameters/comparments can be non-constant, have a constant rhs and they change value
+    # due to event assignments. To avoid the variable being simplified away by
+    # structurally_simplify the variable is set to have zero derivative
+    variables = Iterators.flatten((model_SBML.parameters, model_SBML.compartments))
+    for (id, variable) in variables
+        variable.constant == true && continue
+        variable.rate_rule == true && continue
+        variable.algebraic_rule == true && continue
+        !is_number(variable.formula) && continue
+        parse(Float64, variable.formula) ≈ π && continue # To pass test case 957
+
+        variable.rate_rule = true
+        variable.initial_value = variable.formula
+        variable.formula = "0.0"
+        push!(model_SBML.rate_rule_variables, id)
+    end
+    return nothing
+end

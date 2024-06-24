@@ -70,129 +70,103 @@ function _get_initial_value(specie::SBML.Species, unit::Symbol)::String
     return string(initial_value)
 end
 
-# TODO: This does not fit here. Dynamic compartments is its own thing
 function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
-
-    #=
-    The volume might change over time but the amount should stay constant, as we have a boundary condition
-    for a specie given by a rate-rule. In this case it follows that amount n (amount), V (compartment) and conc.
-    are related via the chain rule by:
-    dn/dt = d(n/V)/dt*V + n*dV/dt/V
-    =#
+    # For species with boundary condition given by a rate-rule amount should stay constant
+    # even if the compartment changes. It follows that amount n (amount), V (compartment)
+    # and concentration (n/V) are related via:
+    # dn/dt = d(n/V)/dt*V + n*(dV/dt)/V
+    # Practically, this is handled by adding an additional model specie that describes the
+    # concentration change, where the formula d(n/V)/dt is given by the rate-rule
+    # divided by compartment
     for (specie_id, specie) in model_SBML.species
+        compartment = model_SBML.compartments[specie.compartment]
+        compartment.rate_rule == false && continue
+        compartment.constant == true && continue
+        specie.boundary_condition == false && continue
+        specie.rate_rule == false && continue
+        specie.only_substance_units == true && continue
+        specie.unit != :Amount && continue
 
-        # Specie with amount where amount should stay constant
-        compartment = model_SBML.compartments[model_SBML.species[specie_id].compartment]
-        if !(specie.unit == :Amount &&
-             specie.rate_rule == true &&
-             specie.boundary_condition == true &&
-             specie.only_substance_units == false &&
-             compartment.rate_rule == true)
-            continue
-        end
+        conc_id = "__" * specie_id * "__conc__"
+        conc_initial_value = specie.initial_value * "/" * compartment.name
+        dcdt = specie.formula * "/" * compartment.name
+        push!(model_SBML.rate_rule_variables, conc_id)
+        model_SBML.species[conc_id] = SpecieSBML(conc_id, false, false, conc_initial_value, dcdt, compartment.name, specie.conversion_factor, :Concentration, false, false, true, false, specie.has_reaction_ids)
 
-        if compartment.constant == true
-            continue
-        end
-
-        # In this case must add additional variable for the specie concentration, to properly get the amount equation
-        specie_conc_id = "__" * specie_id * "__conc__"
-        initial_value_conc = model_SBML.species[specie_id].initial_value * "/" *
-                             compartment.name
-        formula_conc = model_SBML.species[specie_id].formula * "/" * compartment.name
-
-        # Formula for amount specie. Treated as rate-rule as this is a feature we do not support
-        # for mass-action models
-        model_SBML.species[specie_id].formula = formula_conc * "*" * compartment.name *
-                                                " + " * specie_id * "*" *
-                                                compartment.formula * " / " *
-                                                compartment.name
-
-        # Add new conc. specie to model. See comment on rate-rule above
-        model_SBML.species[specie_conc_id] = SpecieSBML(specie_conc_id, false, false,
-                                                        initial_value_conc,
-                                                        formula_conc, compartment.name,
-                                                        specie.conversion_factor,
-                                                        :Concentration, false, false, true,
-                                                        false, specie.has_reaction_ids)
-        push!(model_SBML.rate_rule_variables, specie_conc_id)
+        V, dVdt = compartment.name, compartment.formula
+        specie.formula = dcdt * "*" * V * " + " * specie_id * "*" * dVdt * " / " * V
     end
 
-    # When a specie is given in concentration, but the compartment concentration changes
+    # When a specie is given in concentration but compartment changes, the concentration (c)
+    # is given by:
+    # dc/dt = (dn/dt - n*(dV/dt)/V)/V
+    # Practically this is handled by adding an additional model specie that describes the
+    # amount change, where the formula dn/dt is given by the Catalyst reactions, and the
+    # conc. formula is given by the above ODE
     for (specie_id, specie) in model_SBML.species
+        # To avoid that cases like above are parsed again
+        occursin("__conc__", specie_id) && continue
 
-        # To avoid that concentration species given as above are processed again
-        if length(specie_id) ≥ 2 && specie_id[1:2] == "__"
-            continue
+        # Assignment rule can nest to rate-rules, in this case, the actual compartment
+        # is the rate rule. If compartment.formula
+        compartment = model_SBML.compartments[specie.compartment]
+        if compartment.assignment_rule == true
+            if compartment.formula in model_SBML.rate_rule_variables
+                compartment = model_SBML.parameters[compartment.formula]
+            elseif _contains_time_or_species(compartment.formula, model_SBML) == false
+                continue
+            end
+        end
+        compartment.constant == true && continue
+        specie.unit != :Concentration && continue
+        specie.rate_rule == true && continue
+        specie.only_substance_units == true && continue
+        # If a compartment is inconstant due to an event, it is (see events.jl) promoted
+        # to rate-rule to not be simplified away by structurally_simplify. In this case
+        # the formula = 0.0 and compartment changes are handled by the event parsing.
+        if compartment.rate_rule == true
+            compartment.formula == "0.0" && continue
         end
 
-        compartment = model_SBML.compartments[model_SBML.species[specie_id].compartment]
-        compartment_name = compartment.name
-        if compartment.assignment_rule == true &&
-           compartment.formula ∈ model_SBML.rate_rule_variables
-            compartment = model_SBML.parameters[compartment.formula]
-        end
+        V, dVdt = compartment.name, compartment.formula
+        n_id = "__" * specie_id * "__amount__"
+        n_initial_amount = specie.initial_value * "*" * V
+        dndt = _get_amount_formula(specie, V)
+        model_SBML.species[n_id] = SpecieSBML(n_id, false, false, n_initial_amount, dndt, V, specie.conversion_factor, :Amount, false, false, false, false, specie.has_reaction_ids)
 
-        if !(specie.unit == :Concentration &&
-             specie.only_substance_units == false &&
-             compartment.constant == false)
-            continue
-        end
-        # Rate rule has priority
-        if specie_id ∈ model_SBML.rate_rule_variables
-            continue
-        end
-        if !any(occursin.(keys(model_SBML.species), compartment.formula)) &&
-           compartment.rate_rule == false
-            continue
-        end
-
-        # Derivative and inital values newly introduced amount specie
-        specie_amount_id = "__" * specie_id * "__amount__"
-        initial_value_amount = specie.initial_value * "*" * compartment.name
-
-        # If boundary condition is true only amount, not concentration should stay constant with
-        # compartment size
-        if specie.boundary_condition == true
-            formula_amount = "0.0"
-        else
-            formula_amount = isempty(specie.formula) ? "0.0" :
-                             "(" * specie.formula * ")" * compartment_name
-        end
-
-        # New formula for conc. specie
-        specie.formula = formula_amount * "/(" * compartment_name * ") - " *
-                         specie_amount_id * "/(" * compartment_name * ")^2*" *
-                         compartment.formula
+        # To enforce that dcdt is given by the ODE specie is promoted to rate-rule. Further
+        # to obtain correct dn/dt formula, replace specie with n_id in reactions
+        #V, dVdt = compartment.name, compartment.formula
+        #dVdt = compartment.formula
+        specie.formula = dndt * "/(" * V * ") - " * n_id * "/(" * V * ")^2*" * dVdt
         specie.rate_rule = true
         push!(model_SBML.rate_rule_variables, specie.name)
-
-        # Add new conc. specie to model
-        model_SBML.species[specie_amount_id] = SpecieSBML(specie_amount_id, false, false,
-                                                          initial_value_amount,
-                                                          formula_amount, compartment_name,
-                                                          specie.conversion_factor,
-                                                          :Amount, false, false, false,
-                                                          false, specie.has_reaction_ids)
-        for (r_id, r) in model_SBML.reactions
-            for i in eachindex(r.products)
-                if r.products[i] == specie.name
-                    r.products[i] = specie_amount_id
-                    r.products_stoichiometry[i] *= "*" * compartment_name
-                end
+        for reaction in values(model_SBML.reactions)
+            for (i, product) in pairs(reaction.products)
+                product != specie.name && continue
+                reaction.products[i] = n_id
+                reaction.products_stoichiometry[i] *= "*" * V
             end
-            for i in eachindex(r.reactants)
-                if r.reactants[i] == specie.name
-                    r.reactants[i] = specie_amount_id
-                    r.reactants_stoichiometry[i] *= "*" * compartment_name
-                end
+            for (i, reactant) in pairs(reaction.reactants)
+                reactant != specie.name && continue
+                reaction.reactants[i] = n_id
+                reaction.reactants_stoichiometry[i] *= "*" * V
             end
         end
     end
     return nothing
 end
 
-# TODO : should be able to parse cv here for stoichometires, and avod to have to do it
+function _get_amount_formula(specie::SpecieSBML, V::String)::String
+    # If boundary condition is true; amount, not concentration should stay constant with
+    # time
+    if specie.boundary_condition == true
+        return "0.0"
+    end
+    return isempty(specie.formula) ? "0.0" : "(" * specie.formula * ")" * V
+end
+
+# TODO : should be able to parse cv here for stoichometires, and avoid to have to do it
 # later. But check when arrive at said point
 function add_conversion_factor_ode!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     # Conversion factor only apply to species changed via recations, not rules or
