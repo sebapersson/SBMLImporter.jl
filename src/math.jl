@@ -12,23 +12,26 @@ this struct tracks math IDs.
 - A `MathSBML` struct with the following relevant fields:
   - `formula::String`: The equations parsed from the SBML math.
   - `math_ids::Vector{String}`: Stores the math IDs.
+  - `fns::Vector{String}`: Stores the functions applied to the expression
 """
 function parse_math(math_sbml::SBML.MathApply, libsbml_model::SBML.Model)::MathSBML
-    math_expression = MathSBML("", String[], "", String[])
+    math_expression = MathSBML("", String[], "", String[], String[])
     _parse_math!(math_expression, math_sbml, libsbml_model)
     unique!(math_expression.math_idents)
+    unique!(math_expression.fns)
     return math_expression
 end
 function parse_math(math_sbml::SBMLMathVariables, libsbml_model::SBML.Model)::MathSBML
     formula = _parse_arg(math_sbml)
-    return MathSBML(formula, String[formula], "", String[])
+    return MathSBML(formula, String[formula], "", String[], String[])
 end
 function parse_math(math_sbml::Nothing, libsbml_model::SBML.Model)::MathSBML
-    return MathSBML("", String[], "", String[])
+    return MathSBML("", String[], "", String[], String[])
 end
 
 function _parse_math!(math_expression::MathSBML, math_sbml::SBML.MathApply, libsbml_model::SBML.Model; parse_fn_arg::Bool=false)::Nothing
     fn = _parse_fn(math_sbml, libsbml_model.function_definitions)
+    push!(math_expression.fns, fn)
     _parse_args!(math_expression, math_sbml.args, libsbml_model)
     args = math_expression.args
     nargs = length(args)

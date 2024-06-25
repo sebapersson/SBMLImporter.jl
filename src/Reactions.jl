@@ -1,6 +1,6 @@
 function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for (id, reaction) in libsbml_model.reactions
-        propensity, idents = _parse_reaction_formula(reaction, model_SBML, libsbml_model)
+        propensity, math_expression = _parse_reaction_formula(reaction, model_SBML, libsbml_model)
 
         reactants = _get_reaction_species(reaction, model_SBML, :reactants)
         reactants_cs = _get_compartment_scalings(reactants, propensity, model_SBML)
@@ -22,10 +22,11 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
 
         # Storing whether kinetic_math has assignment rules and reaction-ids is important
         # for faster downstream processes, as these can be replaced
-        assignment_rules = _has_assignment_rule_ident(idents, model_SBML)
-        have_ridents = _has_reactionid_ident(idents, libsbml_model)
+        assignment_rules = _has_assignment_rule_ident(math_expression.math_idents, model_SBML)
+        have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
+        have_rateOf = "rateOf" in math_expression.fns
         stoichiometry_massaction = all([reactants_massaction, products_massaction])
-        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, have_ridents)
+        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, have_ridents, have_rateOf)
         for specie in Iterators.flatten((reactants, products))
             push!(model_SBML.species_in_reactions, specie)
         end
@@ -41,16 +42,16 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
     return nothing
 end
 
-function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, Vector{String}}
+function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, MathSBML}
     math_expression = parse_math(reaction.kinetic_math, libsbml_model)
-    @unpack formula, math_idents = math_expression
+    formula = math_expression.formula
 
     # SBML where statements, that can occur in reaction
     for (parameter_id, parameter) in reaction.kinetic_parameters
         formula = replace_variable(formula, parameter_id, string(parameter.value))
     end
     formula = process_SBML_str_formula(formula, model_SBML, libsbml_model, check_scaling = true)
-    return formula, math_idents
+    return formula, math_expression
 end
 
 function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML, which_side::Symbol)::Vector{String}

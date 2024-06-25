@@ -12,6 +12,7 @@ mutable struct SpecieSBML
     rate_rule::Bool
     algebraic_rule::Bool
     has_reaction_ids::Bool
+    has_rateOf::Bool
 end
 
 mutable struct ParameterSBML
@@ -23,6 +24,7 @@ mutable struct ParameterSBML
     rate_rule::Bool
     algebraic_rule::Bool
     has_reaction_ids::Bool
+    has_rateOf::Bool
 end
 
 mutable struct CompartmentSBML
@@ -34,6 +36,7 @@ mutable struct CompartmentSBML
     rate_rule::Bool
     algebraic_rule::Bool
     has_reaction_ids::Bool
+    has_rateOf::Bool
 end
 
 struct FunctionSBML
@@ -46,8 +49,10 @@ mutable struct EventSBML
     trigger::String
     const formulas::Vector{String}
     const trigger_initial_value::Bool
-    has_reaction_ids_trigger::Bool
-    has_reaction_ids_assignments::Bool
+    const has_reaction_ids_trigger::Bool
+    const has_reaction_ids_assignments::Bool
+    const has_rateOf_trigger::Bool
+    const has_rateOf_assignments::Bool
 end
 
 mutable struct ReactionSBML
@@ -60,11 +65,13 @@ mutable struct ReactionSBML
     const stoichiometry_mass_action::Bool
     const has_assignment_rule_variable::Bool
     const has_reaction_ids::Bool
+    const has_rateOf::Bool
 end
 
 mutable struct AlgebraicRuleSBML
     formula::String
     const idents::Vector{String}
+    const has_rateOf::Bool
 end
 
 struct ModelSBML
@@ -145,4 +152,5 @@ mutable struct MathSBML
     math_idents::Vector{String}
     tmp_arg::String
     args::Vector{String}
+    fns::Vector{String}
 end

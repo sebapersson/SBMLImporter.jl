@@ -34,6 +34,7 @@ function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::
     # TODO: For early exit formula should track functions, can be done via math.jl,
     # and will make this function faster for larger models, as the haskey function
     # can be used here
+    println("formula in = ", formula)
     if !any(occursin.(keys(_functions) .* '(', formula))
         return formula
     end
@@ -59,8 +60,9 @@ function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::
             function_insert = _get_expression_insert(function_call, _function, piecewise)
             formula = replace(formula, function_call => function_insert; count=1)
         end
+        println("formula = ", formula)
     end
-
+    println("formula out = ", formula)
     # Functions can be nested, handled via recursion
     if any(occursin.(keys(_functions), formula))
         formula = insert_functions(formula, _functions; piecewise=piecewise)
