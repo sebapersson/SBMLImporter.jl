@@ -35,7 +35,7 @@ function _replace_rateOf(formula::String, model_SBML::ModelSBML)::String
     return formula
 end
 
-function _get_rateOf_insert(function_call, model_SBML::ModelSBML)
+function _get_rateOf_insert(function_call::String, model_SBML::ModelSBML)::String
     arg = _extract_args_insert(function_call, true)[1]
 
     is_number(arg) && return "0.0"
@@ -49,7 +49,6 @@ function _get_rateOf_insert(function_call, model_SBML::ModelSBML)
     # corresponding kinetic_math is inserted.
     # If specie unit is amount, as SBML formulas are given in conc., a scaling is performed
     specie = _get_specie_rateOf(arg, model_SBML)
-    #specie.rate_rule == true && return specie.formula
     if specie.unit == :Amount && specie.only_substance_units == false
         return "(" * specie.formula * ") / " * specie.compartment
     else
@@ -57,7 +56,7 @@ function _get_rateOf_insert(function_call, model_SBML::ModelSBML)
     end
 end
 
-function _get_specie_rateOf(arg::String, model_SBML)::SpecieSBML
+function _get_specie_rateOf(arg::String, model_SBML::ModelSBML)::SpecieSBML
     if haskey(model_SBML.species, arg)
         return model_SBML.species[arg]
     end

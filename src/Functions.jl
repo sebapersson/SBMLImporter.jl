@@ -7,6 +7,13 @@ function parse_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
         end
         args = _get_function_args(_function)
         function_body = parse_math(_function.body.body, libsbml_model)
+        # To avoid problems with inserting a function into a math expression the function
+        # args are not allowed to match any other SBML model variables. Hence, args are
+        # renamed to have underscore names
+        for (i, arg) in pairs(args)
+            args[i] = "__" * arg * "__"
+            function_body.formula = replace_variable(function_body.formula, arg, args[i])
+        end
         model_SBML.functions[function_name] = FunctionSBML(args, function_body.formula)
     end
 
@@ -34,7 +41,6 @@ function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::
     # TODO: For early exit formula should track functions, can be done via math.jl,
     # and will make this function faster for larger models, as the haskey function
     # can be used here
-    println("formula in = ", formula)
     if !any(occursin.(keys(_functions) .* '(', formula))
         return formula
     end
@@ -60,9 +66,7 @@ function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::
             function_insert = _get_expression_insert(function_call, _function, piecewise)
             formula = replace(formula, function_call => function_insert; count=1)
         end
-        println("formula = ", formula)
     end
-    println("formula out = ", formula)
     # Functions can be nested, handled via recursion
     if any(occursin.(keys(_functions), formula))
         formula = insert_functions(formula, _functions; piecewise=piecewise)
