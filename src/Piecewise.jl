@@ -1,9 +1,6 @@
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
 function piecewise_to_ifelse(formula::String)::String
-    if !tmp_has_piecewise(formula)
-        return formula
-    end
     return insert_functions(formula, PIECEWISE_FN; piecewise=true)
 end
 

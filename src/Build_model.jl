@@ -76,6 +76,9 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # Per level3 rateOf can appear in any formula, and should be replaced with corresponding rate
     replace_rateOf!(model_SBML)
 
+    # Specie reference ids can appear in formula, and need to be replaced
+    replace_specie_references!(model_SBML, libsbml_model)
+
     # Inlining assignment rule variables makes the model less readable, however, if not done for
     # larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true

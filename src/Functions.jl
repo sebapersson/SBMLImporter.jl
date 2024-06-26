@@ -12,7 +12,7 @@ function parse_functions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
         # renamed to have underscore names
         for (i, arg) in pairs(args)
             args[i] = "__" * arg * "__"
-            function_body.formula = replace_variable(function_body.formula, arg, args[i])
+            function_body.formula = _replace_variable(function_body.formula, arg, args[i])
         end
         model_SBML.functions[function_name] = FunctionSBML(args, function_body.formula)
     end
@@ -46,10 +46,10 @@ function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::
     end
 
     # TODO: As above, can be tracked with math.jl for faster early exit
-    if piecewise == false && replace_variable(formula, "and", "") != formula
+    if piecewise == false && _replace_variable(formula, "and", "") != formula
         throw(SBMLSupport("and is not supported in SBML functions"))
     end
-    if piecewise == false && replace_variable(formula, "or", "") != formula
+    if piecewise == false && _replace_variable(formula, "or", "") != formula
         throw(SBMLSupport("or is not supported in SBML functions"))
     end
 
@@ -98,7 +98,7 @@ function _get_expression_insert(function_call::String, _function::FunctionSBML, 
     @assert length(args) == length(args_insert) "Number of arguments to insert does not match SBML function"
     function_inserted = deepcopy(body)
     for i in eachindex(args_insert)
-        function_inserted = replace_variable(function_inserted, args[i], args_insert[i])
+        function_inserted = _replace_variable(function_inserted, args[i], args_insert[i])
     end
     return function_inserted
 end

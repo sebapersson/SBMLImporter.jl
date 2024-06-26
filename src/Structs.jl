@@ -13,6 +13,7 @@ mutable struct SpecieSBML
     algebraic_rule::Bool
     has_reaction_ids::Bool
     has_rateOf::Bool
+    has_specieref::Bool
 end
 
 mutable struct ParameterSBML
@@ -25,6 +26,7 @@ mutable struct ParameterSBML
     algebraic_rule::Bool
     has_reaction_ids::Bool
     has_rateOf::Bool
+    has_specieref::Bool
 end
 
 mutable struct CompartmentSBML
@@ -37,6 +39,7 @@ mutable struct CompartmentSBML
     algebraic_rule::Bool
     has_reaction_ids::Bool
     has_rateOf::Bool
+    has_specieref::Bool
 end
 
 struct FunctionSBML
@@ -53,6 +56,8 @@ mutable struct EventSBML
     const has_reaction_ids_assignments::Bool
     const has_rateOf_trigger::Bool
     const has_rateOf_assignments::Bool
+    const has_specieref_trigger::Bool
+    const has_specieref_assignments::Bool
 end
 
 mutable struct ReactionSBML
@@ -66,12 +71,14 @@ mutable struct ReactionSBML
     const has_assignment_rule_variable::Bool
     const has_reaction_ids::Bool
     const has_rateOf::Bool
+    const has_specieref::Bool
 end
 
 mutable struct AlgebraicRuleSBML
     formula::String
     const idents::Vector{String}
     const has_rateOf::Bool
+    const has_specieref::Bool
 end
 
 struct ModelSBML
@@ -95,9 +102,12 @@ struct ModelSBML
     conversion_factor::String
     specie_reference_ids::Vector{String}
     rule_variables::Vector{String}
+    libsbml_rule_variables::Vector{String}
+    reactionids::Vector{String}
 end
 function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[],
-                   conversion_factor::String = "")::ModelSBML
+                   conversion_factor::String = "", libsbml_rule_variables::Vector{String} = String[],
+                   reactionids::Vector{String} = String[])::ModelSBML
     model_SBML = ModelSBML(name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
@@ -117,7 +127,9 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
                            Vector{String}(undef, 0),
                            conversion_factor,
                            specie_reference_ids,
-                           Vector{String}(undef, 0)) # Variables with piecewise
+                           Vector{String}(undef, 0),
+                           libsbml_rule_variables,
+                           reactionids) # Variables with piecewise
     return model_SBML
 end
 function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
@@ -126,10 +138,16 @@ function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
     name = replace(name, " " => "_")
 
     # Specie reference ids can sometimes appear in math expressions, where they should
-    # be replaced. Precomputing the ids save computational time.
-    # TODO: This info should be in math-idents
+    # be replaced. Precomputing the ids save computational time. Similar hold for rule
+    # variables
     specie_reference_ids = get_specie_reference_ids(libsbml_model)
-    return ModelSBML(name, specie_reference_ids=specie_reference_ids, conversion_factor=conversion_factor)
+    libsbml_rule_variables = _get_sbml_rules_variables(libsbml_model)
+    if isempty(libsbml_model.reactions)
+        reactionids = String[]
+    else
+        reactionids = collect(keys(libsbml_model.reactions))
+    end
+    return ModelSBML(name, specie_reference_ids=specie_reference_ids, conversion_factor=conversion_factor, libsbml_rule_variables=libsbml_rule_variables, reactionids=reactionids)
 end
 
 struct ModelSBMLString

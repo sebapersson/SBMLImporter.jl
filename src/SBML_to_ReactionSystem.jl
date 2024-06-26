@@ -164,7 +164,7 @@ function _reactionsystem_from_SBML(model_SBML::ModelSBML;
         (isempty(model_SBML.compartments) ||
          sum([c.rate_rule for c in values(model_SBML.compartments)]) == 0))
         model_SBML.species["foo"] = SpecieSBML("foo", false, false, "1.0", "0.0", "1.0", "",
-                                               :Amount, false, false, false, false, false, false)
+                                               :Amount, false, false, false, false, false, false, false)
     end
 
     # Setup Catalyst ReactionNetwork
@@ -431,7 +431,7 @@ function reaction_is_mass_action(r::ReactionSBML, model_SBML::ModelSBML)::Bool
     # Check that no rule variables appear in formula
     formula = r.kinetic_math
     for rule_variable in model_SBML.rule_variables
-        if SBMLImporter.replace_variable(formula, rule_variable, "") != formula
+        if SBMLImporter._replace_variable(formula, rule_variable, "") != formula
             return false
         end
     end

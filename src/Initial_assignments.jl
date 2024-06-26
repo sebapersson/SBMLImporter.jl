@@ -1,16 +1,15 @@
 function parse_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for (assign_id, assignment) in libsbml_model.initial_assignments
-        formula, math_expression = _parse_assignment_formula(assign_id, assignment, model_SBML, libsbml_model)
-        have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
-        have_rateOf = "rateOf" in math_expression.fns
+        math_expression = _parse_assignment_formula(assign_id, assignment, model_SBML, libsbml_model)
 
         if _is_model_variable(assign_id, model_SBML) == true
-            _add_assignment_info!(model_SBML, assign_id, formula, have_ridents, have_rateOf)
+            _add_assignment_info!(model_SBML, assign_id, math_expression)
             continue
         end
         @warn "Initial assignment creates new specie $(assign_id). Happens when " *
               "$(assign_id) does not correspond to any model specie, parameter, or compartment."
-        model_SBML.species[assign_id] = SpecieSBML(assign_id, false, false, formula, "", "1.0", "", :Amount, false, false, false, false, have_ridents, have_rateOf)
+        model_SBML.species[assign_id] = SpecieSBML(assign_id, false, false, math_expression.formula, "", "1.0", "", :Amount, false, false, false, false, false, false, false)
+        _add_ident_info!(model_SBML.species[assign_id], math_expression, model_SBML)
     end
 
     # The initial assignment can depend on other species, but this cannot be handled by
@@ -28,18 +27,19 @@ function parse_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.M
     return nothing
 end
 
-function _parse_assignment_formula(assignment_id::String, assignment, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, MathSBML}
+function _parse_assignment_formula(assignment_id::String, assignment, model_SBML::ModelSBML, libsbml_model::SBML.Model)::MathSBML
     # Initial assignment applies at t = 0.0
     math_expression = parse_math(assignment, libsbml_model)
-    formula = process_SBML_str_formula(math_expression.formula, model_SBML, libsbml_model; check_scaling=true, variable=assignment_id, initial_assignment=true)
-    formula = replace_variable(formula, "t", "0.0")
-    return formula, math_expression
+    formula = _process_formula(math_expression, model_SBML; variable=assignment_id)
+    formula = _replace_variable(formula, "t", "0.0")
+    math_expression.formula = formula
+    return math_expression
 end
 
-function _add_assignment_info!(model_SBML::ModelSBML, assign_id::String, formula::String, have_ridents::Bool, have_rateOf::Bool)::Nothing
+function _add_assignment_info!(model_SBML::ModelSBML, assign_id::String, math_expression::MathSBML)::Nothing
     variable = _get_model_variable(assign_id, model_SBML)
-    variable.has_reaction_ids = have_ridents
-    variable.has_rateOf = have_rateOf
+    _add_ident_info!(variable, math_expression, model_SBML)
+    formula = math_expression.formula
     if haskey(model_SBML.species, variable.name)
         variable.initial_value = _adjust_for_unit(formula, variable)
         return nothing
@@ -72,7 +72,7 @@ function _unnest_initial_assignment!(model_SBML::ModelSBML, assign_id::String)::
             if specie_id == assign_id
                 continue
             end
-            formula = replace_variable(formula, specie_id, specie.initial_value)
+            formula = _replace_variable(formula, specie_id, specie.initial_value)
         end
         if formula == _formula
             break

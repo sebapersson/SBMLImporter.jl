@@ -106,10 +106,10 @@ function create_callback_ifelse(parameter_name::String,
     # Replace any state or parameter with their corresponding index in the ODE system to be comaptible with event
     # syntax
     for (i, specie_name) in pairs(model_specie_names)
-        _condition = replace_variable(_condition, specie_name, "u[" * string(i) * "]")
+        _condition = _replace_variable(_condition, specie_name, "u[" * string(i) * "]")
     end
     for (i, p_name) in pairs(p_ode_problem_names)
-        _condition = replace_variable(_condition, p_name, "integrator.p[" * string(i) * "]")
+        _condition = _replace_variable(_condition, p_name, "integrator.p[" * string(i) * "]")
     end
 
     # Replace inequality with - (root finding cont. event) or with == in case of
@@ -192,13 +192,13 @@ function create_callback_SBML_event(event_name::String,
     # syntax
     _condition_at_t0 = event.trigger
     for (i, specie_name) in pairs(model_specie_names)
-        _condition = replace_variable(_condition, specie_name, "u[" * string(i) * "]")
-        _condition_at_t0 = replace_variable(_condition_at_t0, specie_name,
+        _condition = _replace_variable(_condition, specie_name, "u[" * string(i) * "]")
+        _condition_at_t0 = _replace_variable(_condition_at_t0, specie_name,
                                             "u[" * string(i) * "]")
     end
     for (i, p_name) in pairs(p_ode_problem_names)
-        _condition = replace_variable(_condition, p_name, "integrator.p[" * string(i) * "]")
-        _condition_at_t0 = replace_variable(_condition_at_t0, p_name,
+        _condition = _replace_variable(_condition, p_name, "integrator.p[" * string(i) * "]")
+        _condition_at_t0 = _replace_variable(_condition_at_t0, p_name,
                                             "integrator.p[" * string(i) * "]")
     end
     # Build the condition function used in Julia file, for discrete checking that event indeed is coming from negative
@@ -222,9 +222,9 @@ function create_callback_SBML_event(event_name::String,
         # In RHS we use u_tmp to not let order affects, while in assigning LHS we use u
         affect_function1, affect_function2 = split(affect, "=")
         for j in eachindex(model_specie_names)
-            affect_function1 = replace_variable(affect_function1, model_specie_names[j],
+            affect_function1 = _replace_variable(affect_function1, model_specie_names[j],
                                                 "integrator.u[" * string(j) * "]")
-            affect_function2 = replace_variable(affect_function2, model_specie_names[j],
+            affect_function2 = _replace_variable(affect_function2, model_specie_names[j],
                                                 "u_tmp[" * string(j) * "]")
         end
         affect_function *= "\t" * affect_function1 * " = " * affect_function2 * '\n'
@@ -235,9 +235,9 @@ function create_callback_SBML_event(event_name::String,
     affect_function *= "\t\treset_aggregated_jumps!(integrator)\n\tend\n"
     affect_function *= "end"
     for i in eachindex(p_ode_problem_names)
-        affect_function = replace_variable(affect_function, p_ode_problem_names[i],
+        affect_function = _replace_variable(affect_function, p_ode_problem_names[i],
                                            "integrator.p[" * string(i) * "]")
-        affect_function_body = replace_variable(affect_function_body,
+        affect_function_body = _replace_variable(affect_function_body,
                                                 p_ode_problem_names[i],
                                                 "integrator.p[" * string(i) * "]")
     end
@@ -346,11 +346,11 @@ function create_tstops_function(model_SBML::ModelSBML,
         end
 
         for (i, specie_name) in pairs(model_specie_names)
-            expression_time = replace_variable(expression_time, specie_name,
+            expression_time = _replace_variable(expression_time, specie_name,
                                                "integrator.u[" * string(i) * "]")
         end
         for (i, p_name) in pairs(p_ode_problem_names)
-            expression_time = replace_variable(expression_time, p_name,
+            expression_time = _replace_variable(expression_time, p_name,
                                                "integrator.p[" * string(i) * "]")
         end
 
@@ -369,7 +369,7 @@ end
 function check_condition_has_states(condition::AbstractString,
                                     model_specie_names::Vector{String})::Bool
     for i in eachindex(model_specie_names)
-        _condition = replace_variable(condition, model_specie_names[i], "")
+        _condition = _replace_variable(condition, model_specie_names[i], "")
         if _condition != condition
             return true
         end

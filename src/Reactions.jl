@@ -9,6 +9,7 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
             reactant == "nothing" && continue
             _update_ode!(model_SBML.species[reactant], reactants_s[i], reactants_cs[i], propensity, :reactant)
             reactants_s[i] = _template_stoichiometry(reactants_s[i], reactants_cs[i])
+            _add_ident_info!(model_SBML.species[reactant], math_expression, model_SBML)
         end
 
         products = _get_reaction_species(reaction, model_SBML, :products)
@@ -18,15 +19,17 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
             product == "nothing" && continue
             _update_ode!(model_SBML.species[product], products_s[i], products_cs[i], propensity, :product)
             products_s[i] = _template_stoichiometry(products_s[i], products_cs[i])
+            _add_ident_info!(model_SBML.species[product], math_expression, model_SBML)
         end
 
         # Storing whether kinetic_math has assignment rules and reaction-ids is important
         # for faster downstream processes, as these can be replaced
         assignment_rules = _has_assignment_rule_ident(math_expression.math_idents, model_SBML)
-        have_ridents = _has_reactionid_ident(math_expression.math_idents, libsbml_model)
+        have_ridents = _has_reactionid(math_expression.math_idents, model_SBML)
         have_rateOf = "rateOf" in math_expression.fns
+        have_specieref = _has_specieref(math_expression.math_idents, model_SBML)
         stoichiometry_massaction = all([reactants_massaction, products_massaction])
-        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, have_ridents, have_rateOf)
+        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s, reactants, reactants_s, stoichiometry_massaction, assignment_rules, have_ridents, have_rateOf, have_specieref)
         for specie in Iterators.flatten((reactants, products))
             push!(model_SBML.species_in_reactions, specie)
         end
@@ -45,12 +48,13 @@ end
 function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML, libsbml_model::SBML.Model)::Tuple{String, MathSBML}
     math_expression = parse_math(reaction.kinetic_math, libsbml_model)
     formula = math_expression.formula
-
     # SBML where statements, that can occur in reaction
     for (parameter_id, parameter) in reaction.kinetic_parameters
-        formula = replace_variable(formula, parameter_id, string(parameter.value))
+        formula = _replace_variable(formula, parameter_id, string(parameter.value))
     end
-    formula = process_SBML_str_formula(formula, model_SBML, libsbml_model, check_scaling = true)
+
+    math_expression.formula = formula
+    formula = _process_formula(math_expression, model_SBML)
     return formula, math_expression
 end
 
@@ -130,9 +134,11 @@ function _parse_stoichiometry(specie::SBML.SpeciesReference, model_SBML::ModelSB
     if specie.id in model_SBML.rate_rule_variables
         return specie.id, massaction
     end
-    if _is_event_variable(specie.id, model_SBML) == true
+    # TODO: Check if needed
+    if _is_event_assigned(specie.id, model_SBML) == true
         return specie.id, massaction
     end
+
     # Here the stoichiometry is given as an assignment rule, that has been added as a
     # model specie during rule parsing
     if haskey(model_SBML.species, specie.id)
@@ -182,7 +188,7 @@ function _remove_stoichiometry_math!(model_SBML::ModelSBML, libsbml_model::SBML.
             if specie_ref.id in model_SBML.rate_rule_variables
                 continue
             end
-            if _is_event_variable(specie_ref.id, model_SBML)
+            if _is_event_assigned(specie_ref.id, model_SBML)
                 continue
             end
 
@@ -227,7 +233,7 @@ function _replace_reactionid(formula::String, model_SBML::ModelSBML)::String
         return formula
     end
     for (reaction_id, reaction) in model_SBML.reactions
-        formula = replace_variable(formula, reaction_id, reaction.kinetic_math)
+        formula = _replace_variable(formula, reaction_id, reaction.kinetic_math)
     end
     return formula
 end

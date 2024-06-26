@@ -1,131 +1,37 @@
-"""
-    replace_variable(formula::T, to_replace::String, replace_with::String)::T where T<:AbstractString
-
-In formula, replaces to_replace with replace_with. Exact match is required, so if to_replace=time1
-and replace_with=1 while formula = time * 2 nothing is replaced.
-"""
-function replace_variable(formula::T, to_replace::String,
-                          replace_with::String)::T where {T <: AbstractString}
+function _replace_variable(formula::String, to_replace::String, replace_with::String)::String
     if !occursin(to_replace, formula)
         return formula
     end
-
-    _to_replace = Regex("(\\b" * to_replace * "\\b)")
-    return replace(formula, _to_replace => replace_with)
+    to_replace_r = Regex("(\\b" * to_replace * "\\b)")
+    return replace(formula, to_replace_r => replace_with)
 end
 
-"""
-    process_SBML_str_formula(formula::T, model_SBML::ModelSBML, libsbml_model::SBML.Model;
-                             check_scaling::Bool=false, rate_rule::Bool=false)::T where T<:AbstractString
-
-Processes a string formula by inserting SBML functions, rewriting piecewise to ifelse, and scaling species.
-"""
-function process_SBML_str_formula(formula::T, model_SBML::ModelSBML,
-                                  libsbml_model::SBML.Model;
-                                  check_scaling::Bool = false,
-                                  rate_rule::Bool = false,
-                                  assignment_rule::Bool = false,
-                                  algebraic_rule::Bool = false,
-                                  scale_rateof::Bool = true,
-                                  initial_assignment::Bool = false,
-                                  variable = "")::T where {T <: AbstractString}
-    _formula = insert_functions(formula, model_SBML.functions)
+function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML; rate_rule::Bool = false, assignment_rule::Bool = false, algebraic_rule::Bool = false, variable = "")::String
+    # Sometimes t is decoded as time
+    formula = insert_functions(math_expression.formula, model_SBML.functions)
+    formula = _replace_variable(formula, "time", "t")
     if algebraic_rule && tmp_has_piecewise(formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
     end
-    if initial_assignment && haskey(model_SBML.species, variable) && tmp_has_piecewise(formula)
-        throw(SBMLSupport("Piecewise in initial assignment is not supported"))
-    end
-    if tmp_has_piecewise(_formula)
-        _formula = piecewise_to_ifelse(_formula)
-        if assignment_rule || rate_rule
-            !isempty(variable) && push!(model_SBML.variables_with_piecewise, variable)
+
+    if tmp_has_piecewise(formula)
+        formula = piecewise_to_ifelse(formula)
+        if (assignment_rule || rate_rule) && !isempty(variable)
+            push!(model_SBML.variables_with_piecewise, variable)
         end
     end
-    _formula = replace_variable(_formula, "time", "t") # Sometimes t is decoded as time
 
-    # SBML equations are given in concentration, in case an amount specie appears in the equation scale with the
-    # compartment in the formula every time the species appear
+    # Per the standard SBML formulas are given in concentration, therefore species with
+    # unit amount must be rescaled.
     for (specie_id, specie) in model_SBML.species
-        if !occursin(specie_id, _formula)
-            continue
-        end
-        if check_scaling == false
-            continue
-        end
-        if specie.unit == :Concentration || specie.only_substance_units == true
-            continue
-        end
-        # TODO: Remember for rateOf parsing
-        if scale_rateof == false && occursin("rateOf", _formula)
-            continue
-        end
-
-        compartment = specie.compartment
-        _formula = replace_variable(_formula, specie_id,
-                                    "(" * specie_id * "/" * compartment * ")")
+        specie.unit == :Concentration && continue
+        specie.only_substance_units && continue
+        specie_id ∉ math_expression.math_idents && continue
+        c = specie.compartment
+        formula = _replace_variable(formula, specie_id, "(" * specie_id * "/" * c * ")")
     end
 
-    # Replace potential expressions given in initial assignment and that appear in stoichemetric experssions
-    # of reactions (these are not species, only math expressions that should be replaced)
-    for id in keys(libsbml_model.initial_assignments)
-        # In case ID does not occur in stoichemetric expressions
-        if isempty(libsbml_model.reactions)
-            continue
-        end
-        if id ∉ model_SBML.specie_reference_ids
-            continue
-        end
-        if !haskey(model_SBML.species, id) && rate_rule == false
-            continue
-        end
-        if isnothing(id)
-            continue
-        end
-        # Do not rewrite is stoichemetric is controlled via event
-        if !isempty(model_SBML.events) &&
-           any(occursin.(id, reduce(vcat, [e.formulas for e in values(model_SBML.events)])))
-            continue
-        end
-        if rate_rule == false
-            _formula = replace_variable(_formula, id,
-                                        "(" * model_SBML.species[id].initial_value * ")")
-        else
-            math_expression = parse_math(libsbml_model.initial_assignments[id], libsbml_model)
-            _formula = replace_variable(_formula, id, "(" * math_expression.formula * ")")
-        end
-    end
-
-    # Sometimes we have a stoichemetric expression appearing in for example rule expressions, etc..., but it does not
-    # have any initial assignment, or rule assignment. In this case the reference should be replaced with its
-    # corresponding stoichemetry
-    if any(occursin.(model_SBML.specie_reference_ids, _formula))
-        for (_, reaction) in libsbml_model.reactions
-            specie_references = Iterators.flatten(([reactant
-                                                    for reactant in reaction.reactants],
-                                                   [product
-                                                    for product in reaction.products]))
-            for specie_reference in specie_references
-                if isnothing(specie_reference.id)
-                    continue
-                end
-                if haskey(libsbml_model.species, specie_reference.id)
-                    continue
-                end
-                if haskey(libsbml_model.initial_assignments, specie_reference.id)
-                    continue
-                end
-                if specie_reference.id ∈ [rule isa SBML.AlgebraicRule ? "" : rule.variable
-                    for rule in libsbml_model.rules]
-                    continue
-                end
-                _formula = replace_variable(_formula, specie_reference.id,
-                                            string(specie_reference.stoichiometry))
-            end
-        end
-    end
-
-    return _formula
+    return formula
 end
 
 # TODO: Not needed when start tracking fn
@@ -151,7 +57,7 @@ function _get_model_as_str(path_SBML::String, model_as_string::Bool)::String
 end
 
 function _has_time(formula::String)::Bool
-    _formula = replace_variable(formula, "t", "")
+    _formula = _replace_variable(formula, "t", "")
     return formula != _formula
 end
 
@@ -195,7 +101,7 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                 elseif haskey(model_SBML.compartments, variable)
                     formula = model_SBML.compartments[variable].formula
                 end
-                reaction.kinetic_math = replace_variable(reaction.kinetic_math, variable,
+                reaction.kinetic_math = _replace_variable(reaction.kinetic_math, variable,
                                                          formula)
             end
 
@@ -228,7 +134,7 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                     elseif haskey(model_SBML.compartments, variable)
                         formula = model_SBML.compartments[variable].formula
                     end
-                    raterule.formula = replace_variable(reaction.kinetic_math, variable,
+                    raterule.formula = _replace_variable(reaction.kinetic_math, variable,
                                                         formula)
                 end
                 if raterule.formula == _kinetic_math
@@ -278,17 +184,18 @@ function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
 end
 
 # TODO: What is assigned to should be its own field
-function _is_event_variable(variable::Union{Nothing, String}, model_SBML::ModelSBML)::Bool
+function _is_event_assigned(variable::Union{Nothing, String}, model_SBML::ModelSBML)::Bool
     isnothing(variable) && return false
     for e in values(model_SBML.events)
         for formula in e.formulas
-            occursin(variable, formula) && return true
+            formula_lhs = split(formula, "=")[1]
+            occursin(variable, formula_lhs) && return true
         end
     end
     return false
 end
 
-function _which_specieref(variable::String, libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
+function _get_specieref(variable::String, libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
     for reactions in values(libsbml_model.reactions)
         for reactant in reactions.reactants
             reactant.id == variable && return reactant
@@ -314,6 +221,22 @@ function _get_model_variable(variable::String, model_SBML::ModelSBML)
     haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
 end
 
+# TODO: Should not require libsbml model if I can precompute reaction ids
+function _add_ident_info!(variable::Union{SpecieSBML, ParameterSBML, CompartmentSBML}, math_expression::MathSBML, model_SBML::ModelSBML)::Nothing
+    @unpack has_reaction_ids, has_rateOf, has_specieref = variable
+    reaction_ids = _has_reactionid(math_expression.math_idents, model_SBML)
+    rateOf = "rateOf" in math_expression.fns
+    specieref = _has_specieref(math_expression.math_idents, model_SBML)
+    variable.has_reaction_ids = _update_only_if_true(has_reaction_ids, reaction_ids)
+    variable.has_rateOf = _update_only_if_true(has_rateOf, rateOf)
+    variable.has_specieref = _update_only_if_true(has_specieref, specieref)
+    return nothing
+end
+
+function _update_only_if_true(cond_old::Bool, cond_new::Bool)::Bool
+    return cond_old == true ? true : cond_new
+end
+
 function _has_assignment_rule_ident(idents::Vector{String}, model_SBML::ModelSBML)::Bool
     for ident in idents
         ident in model_SBML.assignment_rule_variables && return true
@@ -321,11 +244,12 @@ function _has_assignment_rule_ident(idents::Vector{String}, model_SBML::ModelSBM
     return false
 end
 
-function _has_reactionid_ident(idents::Vector{String}, libsbml_model::SBML.Model)::Bool
-    for ident in idents
-        haskey(libsbml_model.reactions, ident) && return true
-    end
-    return false
+function _has_reactionid(idents::Vector{String}, model_SBML::ModelSBML)::Bool
+    return any(in.(idents, [model_SBML.reactionids]))
+end
+
+function _has_specieref(idents::Vector{String}, model_SBML)::Bool
+    return any(in.(model_SBML.specie_reference_ids, [idents]))
 end
 
 function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML)::String
@@ -334,7 +258,7 @@ function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBM
             if variable.assignment_rule == false
                 continue
             end
-            formula = replace_variable(formula, variable_id, variable.formula)
+            formula = _replace_variable(formula, variable_id, variable.formula)
         end
     end
     return formula
