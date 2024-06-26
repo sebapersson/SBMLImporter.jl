@@ -134,7 +134,6 @@ function _parse_stoichiometry(specie::SBML.SpeciesReference, model_SBML::ModelSB
     if specie.id in model_SBML.rate_rule_variables
         return specie.id, massaction
     end
-    # TODO: Check if needed
     if _is_event_assigned(specie.id, model_SBML) == true
         return specie.id, massaction
     end
@@ -201,39 +200,4 @@ function _remove_stoichiometry_math!(model_SBML::ModelSBML, libsbml_model::SBML.
         end
     end
     return nothing
-end
-
-function replace_reactionid!(model_SBML::ModelSBML)::Nothing
-    variables = Iterators.flatten((model_SBML.parameters, model_SBML.compartments, model_SBML.species))
-    for (_, variable) in variables
-        variable.has_reaction_ids == false && continue
-        variable.formula = _replace_reactionid(variable.formula, model_SBML)
-        variable.initial_value = _replace_reactionid(variable.initial_value, model_SBML)
-    end
-
-    for event in values(model_SBML.events)
-        if event.has_reaction_ids_trigger
-            event.trigger = _replace_reactionid(event.trigger, model_SBML)
-        end
-        event.has_reaction_ids_assignments == false && continue
-        for (i, formula) in pairs(event.formulas)
-            event.formulas[i] = _replace_reactionid(formula, model_SBML)
-        end
-    end
-
-    for reaction in values(model_SBML.reactions)
-        reaction.has_reaction_ids == false && continue
-        reaction.kinetic_math = _replace_reactionid(reaction.kinetic_math, model_SBML)
-    end
-    return nothing
-end
-
-function _replace_reactionid(formula::String, model_SBML::ModelSBML)::String
-    if !any(occursin.(keys(model_SBML.reactions), formula))
-        return formula
-    end
-    for (reaction_id, reaction) in model_SBML.reactions
-        formula = _replace_variable(formula, reaction_id, reaction.kinetic_math)
-    end
-    return formula
 end

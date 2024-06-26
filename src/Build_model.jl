@@ -53,7 +53,7 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     # Following the SBML standard reaction ids can appear in formulas, where they correspond
     # to the reaction kinetic_math expression
-    replace_reactionid!(model_SBML)
+    replace_ident!(model_SBML, libsbml_model, :reactionid)
 
     # Rewrite any time-dependent ifelse to boolean statements so that these can be expressed
     # as efficient DiscreteCallbacks later
@@ -73,11 +73,12 @@ function _build_SBML_model(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # Must be after conversion factor, as the latter must be correctly handled in the transformation
     adjust_for_dynamic_compartment!(model_SBML)
 
-    # Per level3 rateOf can appear in any formula, and should be replaced with corresponding rate
-    replace_rateOf!(model_SBML)
+    # Per level3 rateOf can appear in any formula, and should be replaced with corresponding
+    # rate
+    replace_ident!(model_SBML, libsbml_model, :rateOf)
 
     # Specie reference ids can appear in formula, and need to be replaced
-    replace_specie_references!(model_SBML, libsbml_model)
+    replace_ident!(model_SBML, libsbml_model, :specieref)
 
     # Inlining assignment rule variables makes the model less readable, however, if not done for
     # larger models Catalyst might crash due to a stack-overflow error

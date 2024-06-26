@@ -32,7 +32,7 @@ include("Piecewise.jl")
 include("Events.jl")
 include("sbml_functions.jl")
 include("math.jl")
-include("rateof.jl")
+include("replace_idents.jl")
 include("Initial_assignments.jl")
 include("Reactions.jl")
 

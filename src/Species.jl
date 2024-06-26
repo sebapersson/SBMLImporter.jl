@@ -1,7 +1,3 @@
-#=
-    Functionality for parsing, and handling SBML species (e.g conversion factor etc...)
-=#
-
 function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
                         mass_action::Bool)::Nothing
     for (specie_id, specie) in libsbml_model.species
@@ -164,62 +160,6 @@ function _get_amount_formula(specie::SpecieSBML, V::String)::String
         return "0.0"
     end
     return isempty(specie.formula) ? "0.0" : "(" * specie.formula * ")" * V
-end
-
-function replace_specie_references!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
-    variables = Iterators.flatten((model_SBML.species, model_SBML.parameters))
-    for (_, variable) in variables
-        variable.has_specieref == false && continue
-        variable.formula = _replace_specieref(variable.formula, model_SBML, libsbml_model)
-    end
-    for reaction in values(model_SBML.reactions)
-        reaction.has_specieref == false && continue
-        reaction.kinetic_math = _replace_specieref(reaction.kinetic_math, model_SBML, libsbml_model)
-    end
-    for event in values(model_SBML.events)
-        if event.has_specieref_trigger
-            event.trigger = _replace_specieref(event.trigger, model_SBML, libsbml_model)
-        end
-        event.has_specieref_assignments == false && continue
-        for (i, formula) in pairs(event.formulas)
-            event.formulas[i] = _replace_specieref(formula, model_SBML, libsbml_model)
-        end
-    end
-    #=
-    for rule in values(model_SBML.algebraic_rules)
-        rule.has_specieref == false && continue
-        rule.formula = _replace_specieref(rule.formula, model_SBML)
-    end
-
-
-    =#
-    return nothing
-end
-
-function _replace_specieref(formula::String, model_SBML::ModelSBML, libsbml_model::SBML.Model)::String
-    # Sometimes specie_reference_ids appear in rules, kinetic-math..., where the reference
-    # id it not assigned by any rules. In this case the reference id should be replaced by
-    # its stoichemetry, or if provided via an initial assignment, its initial assignment
-    # value
-    for specie_reference_id in model_SBML.specie_reference_ids
-        isnothing(specie_reference_id) && continue
-        specie_reference_id in model_SBML.libsbml_rule_variables && continue
-
-        if !haskey(libsbml_model.initial_assignments, specie_reference_id)
-            haskey(libsbml_model.species, specie_reference_id) && continue
-            specie_reference = _get_specieref(specie_reference_id, libsbml_model)
-            S = string(specie_reference.stoichiometry)
-            formula = _replace_variable(formula, specie_reference.id, S)
-            continue
-        end
-        # Initial assignments might at time not map to any model variables, so reparsing of
-        # formula is needed.
-        assignment = libsbml_model.initial_assignments[specie_reference_id]
-        s0 = _parse_assignment_formula(specie_reference_id, assignment, model_SBML, libsbml_model)
-        s0 = "(" * s0.formula * ")"
-        formula = _replace_variable(formula, specie_reference_id, s0)
-    end
-    return formula
 end
 
 # TODO : should be able to parse cv here for stoichometires, and avoid to have to do it
