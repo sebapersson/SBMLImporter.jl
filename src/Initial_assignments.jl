@@ -50,11 +50,14 @@ function _add_assignment_info!(model_SBML::ModelSBML, assign_id::String, math_ex
         return nothing
     end
     # The variable can now be non-constant (depend on species). This can be handled by
-    # treating it as an assignment rule
+    # treating it as an assignment rule. However, if variable is constant, so must the
+    # initial assignment be
     variable.formula = formula
     variable.initial_value = formula
-    variable.assignment_rule = true
-    push!(model_SBML.assignment_rule_variables, assign_id)
+    if variable.constant == false
+        variable.assignment_rule = true
+        push!(model_SBML.assignment_rule_variables, assign_id)
+    end
     return nothing
 end
 

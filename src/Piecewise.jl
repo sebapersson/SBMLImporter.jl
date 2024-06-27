@@ -112,7 +112,6 @@ function _template_bool_picewise(bool_name::String, ifelse_arg1::String, ifelse_
 end
 
 function _get_sign_time(formula::String)::Int64
-    println("formula = ", formula)
     formula = replace(formula, " " => "")
     formula = _trim_paranthesis(formula)
     _formula = _find_term_with_t(formula)

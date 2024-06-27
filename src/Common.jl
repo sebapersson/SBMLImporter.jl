@@ -313,14 +313,17 @@ function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
 end
 
 function get_rule_variables!(model_SBML::ModelSBML)::Nothing
-    _rule_variables = unique(vcat(model_SBML.rate_rule_variables,
-                                  model_SBML.assignment_rule_variables,
-                                  model_SBML.algebraic_rule_variables))
-    filter!(x -> x ∉ keys(model_SBML.generated_ids), _rule_variables)
-
-    for var in _rule_variables
+    rule_variables = Iterators.flatten((model_SBML.rate_rule_variables,
+                                        model_SBML.assignment_rule_variables,
+                                        model_SBML.algebraic_rule_variables))
+    rule_variables = unique(rule_variables)
+    filter!(x -> !haskey(model_SBML.generated_ids, x), rule_variables)
+    for var in rule_variables
         push!(model_SBML.rule_variables, var)
     end
-
+    # For downstrem processing, further filter generated ids from other rule list
+    filter!(x -> !haskey(model_SBML.generated_ids, x), rule_variables)
+    filter!(x -> !haskey(model_SBML.generated_ids, x), model_SBML.assignment_rule_variables)
+    filter!(x -> !haskey(model_SBML.generated_ids, x), model_SBML.rate_rule_variables)
     return nothing
 end

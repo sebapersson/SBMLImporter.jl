@@ -33,6 +33,8 @@ include("Events.jl")
 include("sbml_functions.jl")
 include("math.jl")
 include("replace_idents.jl")
+include("templates.jl")
+include("system.jl")
 include("Initial_assignments.jl")
 include("Reactions.jl")
 

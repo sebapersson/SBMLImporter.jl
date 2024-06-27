@@ -59,11 +59,6 @@ function insert_functions(formula::T, _functions::Dict, fns_reaplce::Vector{Stri
     nfunctions_replaced == 0 && return formula
     # Functions can be nested, with a function returning a function. In this case,
     # recursively all possible functions in the model
-    #=
-    if any(occursin.(fns_reaplce .* '(', formula))
-        formula = insert_functions(formula, _functions, fns_reaplce; piecewise=piecewise)
-    end
-    =#
     if any(occursin.(keys(_functions), formula))
         formula = insert_functions(formula, _functions, collect(keys(_functions)); piecewise=piecewise)
     end

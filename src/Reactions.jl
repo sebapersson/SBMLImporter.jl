@@ -161,19 +161,6 @@ function _update_ode!(specie::SpecieSBML, s::String, c_scaling::String, propensi
     return nothing
 end
 
-function _template_stoichiometry(s::String, c_scaling::String)::String
-    s == "nothing" && return "nothing"
-    return s * c_scaling
-end
-
-function _template_ode_reaction(s::String, c_scaling::String, propensity::String, which_side::Symbol)::String
-    s == "nothing" && return ""
-    @assert which_side in [:reactant, :product] "$(which_side) is an invalid reaction side"
-    sign = which_side == :product ? '+' : '-'
-    # c_scaling either "" or "/...", hence the 1
-    return sign * s * "*1" * c_scaling * "*(" * propensity * ")"
-end
-
 function _remove_stoichiometry_math!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     for reaction in values(libsbml_model.reactions)
         species_ref = vcat([r for r in reaction.reactants], [p for p in reaction.products])

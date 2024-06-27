@@ -150,15 +150,15 @@ function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
     return ModelSBML(name, specie_reference_ids=specie_reference_ids, conversion_factor=conversion_factor, libsbml_rule_variables=libsbml_rule_variables, reactionids=reactionids)
 end
 
-struct ModelSBMLString
+struct ModelSBMLSystem
     species::String
     specie_map::String
     variables::String
     parameters::String
     parameter_map::String
     reactions::String
-    no_species::Bool
-    int_stoichiometries::Bool
+    has_species::Bool
+    all_integer_S::Bool
 end
 
 struct SBMLSupport <: Exception
