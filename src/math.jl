@@ -15,18 +15,29 @@ this struct tracks math IDs.
   - `fns::Vector{String}`: Stores the functions applied to the expression
 """
 function parse_math(math_sbml::SBML.MathApply, libsbml_model::SBML.Model)::MathSBML
-    math_expression = MathSBML("", String[], "", String[], String[])
+    math_expression = MathSBML("", String[], "", String[], String[], String[])
     _parse_math!(math_expression, math_sbml, libsbml_model)
     unique!(math_expression.math_idents)
     unique!(math_expression.fns)
+    # For efficient insertion of functions into formulas the user defined functions
+    # are stored. Note that inequality functions do not have a corresponding Julia version,
+    # so they are treated as user functions
+    for fn in math_expression.fns
+        if haskey(libsbml_model.function_definitions, fn)
+            push!(math_expression.user_fns, fn)
+        end
+    end
+    for fn in ["gt", "lt", "geq", "leq"]
+        push!(math_expression.user_fns, fn)
+    end
     return math_expression
 end
 function parse_math(math_sbml::SBMLMathVariables, libsbml_model::SBML.Model)::MathSBML
     formula = _parse_arg(math_sbml)
-    return MathSBML(formula, String[formula], "", String[], String[])
+    return MathSBML(formula, String[formula], "", String[], String[], String[])
 end
 function parse_math(math_sbml::Nothing, libsbml_model::SBML.Model)::MathSBML
-    return MathSBML("", String[], "", String[], String[])
+    return MathSBML("", String[], "", String[], String[], String[])
 end
 
 function _parse_math!(math_expression::MathSBML, math_sbml::SBML.MathApply, libsbml_model::SBML.Model; parse_fn_arg::Bool=false)::Nothing

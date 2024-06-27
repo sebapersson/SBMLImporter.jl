@@ -171,4 +171,5 @@ mutable struct MathSBML
     tmp_arg::String
     args::Vector{String}
     fns::Vector{String}
+    user_fns::Vector{String}
 end

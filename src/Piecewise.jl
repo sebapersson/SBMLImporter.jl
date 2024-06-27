@@ -1,7 +1,7 @@
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
 function piecewise_to_ifelse(formula::String)::String
-    return insert_functions(formula, PIECEWISE_FN; piecewise=true)
+    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES; piecewise=true)
 end
 
 function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
@@ -34,6 +34,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML):
         # If !=, ==, false, true, ifelse is in condition rewriting to event is not possible.
         # This rarely happens outside SBML test-suite
         condition, arg1, arg2 = _extract_args_insert(ifelse_call, true)
+        condition = _trim_paranthesis(condition)
         if any(occursin.(["!=", "==", "false", "true", "ifelse"], condition))
             continue
         end
@@ -51,7 +52,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML):
 
         model_SBML.ifelse_parameters[bool_name] = [condition, side_activated]
         model_SBML.ifelse_bool_expressions[ifelse_call] = formula_bool
-        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false, false, false, false)
+        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false, false, false, false, false, false)
         ifelse_with_time = true
         break
     end
@@ -111,6 +112,7 @@ function _template_bool_picewise(bool_name::String, ifelse_arg1::String, ifelse_
 end
 
 function _get_sign_time(formula::String)::Int64
+    println("formula = ", formula)
     formula = replace(formula, " " => "")
     formula = _trim_paranthesis(formula)
     _formula = _find_term_with_t(formula)

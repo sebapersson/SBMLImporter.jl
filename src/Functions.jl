@@ -37,39 +37,35 @@ function _add_inequality_functions!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-function insert_functions(formula::T, _functions::Dict; piecewise::Bool=false)::T where {T <: AbstractString}
-    # TODO: For early exit formula should track functions, can be done via math.jl,
-    # and will make this function faster for larger models, as the haskey function
-    # can be used here
-    if !any(occursin.(keys(_functions) .* '(', formula))
-        return formula
-    end
+function insert_functions(formula::T, _functions::Dict, fns_reaplce::Vector{String}; piecewise::Bool=false)::T where {T <: AbstractString}
+    isempty(fns_reaplce) && return formula
 
-    # TODO: As above, can be tracked with math.jl for faster early exit
-    if piecewise == false && _replace_variable(formula, "and", "") != formula
-        throw(SBMLSupport("and is not supported in SBML functions"))
-    end
-    if piecewise == false && _replace_variable(formula, "or", "") != formula
-        throw(SBMLSupport("or is not supported in SBML functions"))
-    end
+    nfunctions_replaced::Int64 = 0
+    for function_name in fns_reaplce
+        # As (due to nesting) functions are pased via recursion a function_name might not
+        # appear in the formula
+        !occursin(function_name * '(', formula) && continue
 
-    for (function_name, _function) in _functions
-        # TODO: Early exit, to make more efficient as above let math.jl track
-        # (will not need later as will loop over know functions in the expression)
-        if !occursin(function_name * '(', formula)
-            continue
-        end
-
+        _function = _functions[function_name]
         nfunction_occurrences = _get_times_appear(function_name, formula)
         for _ in 1:nfunction_occurrences
             function_call = _extract_function_call(function_name, formula)
             function_insert = _get_expression_insert(function_call, _function, piecewise)
             formula = replace(formula, function_call => function_insert; count=1)
+            nfunctions_replaced += 1
         end
     end
-    # Functions can be nested, handled via recursion
+    # For fast exit when hitting recrusion bottom
+    nfunctions_replaced == 0 && return formula
+    # Functions can be nested, with a function returning a function. In this case,
+    # recursively all possible functions in the model
+    #=
+    if any(occursin.(fns_reaplce .* '(', formula))
+        formula = insert_functions(formula, _functions, fns_reaplce; piecewise=piecewise)
+    end
+    =#
     if any(occursin.(keys(_functions), formula))
-        formula = insert_functions(formula, _functions; piecewise=piecewise)
+        formula = insert_functions(formula, _functions, collect(keys(_functions)); piecewise=piecewise)
     end
 
     return formula

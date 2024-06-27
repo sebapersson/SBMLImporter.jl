@@ -7,8 +7,8 @@ function _replace_variable(formula::AbstractString, to_replace::String, replace_
 end
 
 function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML; rate_rule::Bool = false, assignment_rule::Bool = false, algebraic_rule::Bool = false, variable = "")::String
-    # Sometimes t is decoded as time
-    formula = insert_functions(math_expression.formula, model_SBML.functions)
+    @unpack formula, user_fns = math_expression
+    formula = insert_functions(formula, model_SBML.functions, user_fns)
     formula = _replace_variable(formula, "time", "t")
     if algebraic_rule && tmp_has_piecewise(formula)
         throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
@@ -66,6 +66,7 @@ function _contains_time_or_species(formula::String, model_SBML)::Bool
 end
 
 function _trim_paranthesis(formula::String)::String
+    formula = replace(formula, " " => "")
     length(formula) == 1 && return formula
     for _ in 1:100
         if (formula[1] == '(' && formula[end] == ')') &&
