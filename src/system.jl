@@ -32,11 +32,10 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     # Build reaction system from its components. The reactions must be parsed sequentially
     # to avoid any stackoverflow error for very large models with more than 10^4 reactions
     # TODO: This is going to be a pain with with Catalyst v14... (maybe can then add vector)
-    combinatoric_ratelaws = model_SBML_sys.all_integer_S
     reactions = _reaction_str_to_vec(model_SBML_sys)
     r1 = eval(Meta.parse(reactions[1]))
     r1 = isnothing(r1) ? Catalyst.Reaction[] : [r1]
-    rn = Catalyst.ReactionSystem(r1, t, sps_arg, ps; name = Symbol(name), combinatoric_ratelaws = combinatoric_ratelaws)
+    rn = Catalyst.ReactionSystem(r1, t, sps_arg, ps; name = Symbol(name), combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     for i in eachindex(reactions)
         i == 1 && continue
         # Adding a reaction and equation differs, as with reaction we can simply add via
@@ -95,7 +94,9 @@ function _get_system_variables(model_SBML::ModelSBML, inline_assignment_rules::B
         if variable.assignment_rule && inline_assignment_rules
             continue
         end
-        variable.constant == true && continue
+        if !(variable isa SpecieSBML) && variable.constant == true && continue
+            continue
+        end
         mtk_variables *= variable_id * "(t) "
         if !(variable_id in model_SBML.algebraic_rule_variables)
             specie_map *= _template_value_map(variable_id, variable.initial_value)
@@ -184,16 +185,6 @@ function _has_derivatives(model_SBML::ModelSBML)::Bool
     else
         return true
     end
-end
-
-function _get_cf_scaling(specie::SpecieSBML, model_SBML::ModelSBML)::String
-    if isempty(specie.conversion_factor) && isempty(model_SBML.conversion_factor)
-         return ""
-    elseif !isempty(specie.conversion_factor)
-        return specie.conversion_factor
-    else
-        return model_SBML.conversion_factor
-     end
 end
 
 function _get_reaction_stoichiometry(stoichiometry::String)::Tuple{String, Bool}
@@ -287,6 +278,6 @@ function _reaction_str_to_vec(model_SBML_sys::ModelSBMLSystem)
 end
 
 function update_rate_reaction(rx; combinatoric_ratelaw::Bool = true)
-    @set rx.rate = Catalyst.simplify((rx.rate^2) / Catalyst.oderatelaw(rx;
-                                                         combinatoric_ratelaw = combinatoric_ratelaw))
+    @set rx.rate = Catalyst.simplify((rx.rate^2) /
+                                      Catalyst.oderatelaw(rx; combinatoric_ratelaw = combinatoric_ratelaw))
 end

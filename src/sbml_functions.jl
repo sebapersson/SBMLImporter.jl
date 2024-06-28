@@ -3,7 +3,6 @@
 # rateOf is a SBML function. This expression is replaced later, as reactions rates
 # have to be parsed for this stage.
 # nallowed_args=Int64[] is any number of args
-# TODO: Set n of piecewise args
 const SBML_FN_INFO = Dict("*" => (fn="*", nallowed_args=[0, 1, 2]),
                           "+" => (fn="+", nallowed_args=[0, 1, 2]),
                           "-" => (fn="-", nallowed_args=[1, 2]),

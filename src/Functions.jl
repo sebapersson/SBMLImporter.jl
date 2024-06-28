@@ -100,7 +100,7 @@ function _extract_args_insert(function_call::String, piecewise::Bool)::Vector{St
     istart_args = findfirst('(', function_call) + 1
     args_insert = _split_by_indicies(function_call, icomma; istart=istart_args, iend=1)
     # To ensure correct function evaluation order as args can be expression, paranthesis is
-    # added around each arg. E.g. test case 1770. Does not hold for picewise parsing
+    # added around each arg. E.g. test case 1770. Does not hold for picewise parsing.
     if piecewise == false
         args_insert = '(' .* replace.(args_insert, " " => "") .* ')'
     end

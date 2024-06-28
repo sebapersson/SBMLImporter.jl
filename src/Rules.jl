@@ -19,7 +19,6 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule, libsbml_
     # and do not correspond to specie, parameter and compartment.
     if occursin("generatedId", id)
         model_SBML.generated_ids[id] = math_expression.formula
-        # TODO : Can probably remove from list of assignment rules already here
         return nothing
     end
 

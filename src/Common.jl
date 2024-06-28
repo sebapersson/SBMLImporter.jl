@@ -10,11 +10,10 @@ function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML; rate
     @unpack formula, user_fns = math_expression
     formula = insert_functions(formula, model_SBML.functions, user_fns)
     formula = _replace_variable(formula, "time", "t")
-    if algebraic_rule && tmp_has_piecewise(formula)
-        throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
-    end
-
-    if tmp_has_piecewise(formula)
+    if _has_piecewise(formula)
+        if algebraic_rule
+            throw(SBMLSupport("Piecewise in algebraic rules is not supported"))
+        end
         formula = piecewise_to_ifelse(formula)
         if (assignment_rule || rate_rule) && !isempty(variable)
             push!(model_SBML.variables_with_piecewise, variable)
@@ -33,12 +32,8 @@ function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML; rate
     return formula
 end
 
-# TODO: Not needed when start tracking fn
-function tmp_has_piecewise(formula)::Bool
-    occursin("piecewise(", formula) && return true
-    occursin("piecewise2(", formula) && return true
-    occursin("piecewise4(", formula) && return true
-    return false
+function _has_piecewise(formula::String)::Bool
+    return any(occursin.(["piecewise", "piecewise2", "piecewise4"] .* '(', formula))
 end
 
 function _get_model_as_str(path_SBML::String, model_as_string::Bool)::String
@@ -291,6 +286,16 @@ function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart=1, i
     end
     out[end] = str[(indices[end]+1):end-iend]
     return out
+end
+
+function _get_cf_scaling(specie::SpecieSBML, model_SBML::ModelSBML)::String
+    if isempty(specie.conversion_factor) && isempty(model_SBML.conversion_factor)
+         return ""
+    elseif !isempty(specie.conversion_factor)
+        return specie.conversion_factor
+    else
+        return model_SBML.conversion_factor
+     end
 end
 
 function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}

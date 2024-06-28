@@ -13,7 +13,7 @@ function build_SBML_model(path_SBML::String; ifelse_to_callback::Bool = true,
                           model_as_string = true, inline_assignment_rules::Bool = true,
                           mass_action::Bool = false)::ModelSBML
     model_str = _get_model_as_str(path_SBML, model_as_string)
-    check_support(path_SBML, model_as_string)
+    check_support(path_SBML)
 
     # stoichiometryMath only occurs in SBML level 2. If stoichiometryMath occur in the
     # model it is converted to a level three model via SBML.jl libsbml functionality

@@ -15,7 +15,7 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
         boundary_condition = _parse_bool(specie.boundary_condition)
         compartment = specie.compartment
         # In case we have a constant or boundary condition the formula (derivative) is
-        # guaranteed zero. TODO: I think this should be moved where formula parsing occurs
+        # guaranteed zero.
         if boundary_condition == true || constant == true
             formula = "0.0"
         else
@@ -162,8 +162,6 @@ function _get_amount_formula(specie::SpecieSBML, V::String)::String
     return isempty(specie.formula) ? "0.0" : "(" * specie.formula * ")" * V
 end
 
-# TODO : should be able to parse cv here for stoichometires, and avoid to have to do it
-# later. But check when arrive at said point
 function add_conversion_factor_ode!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     # Conversion factor only apply to species changed via recations, not rules or
     # boundary conditions per SBML standard
@@ -174,14 +172,9 @@ function add_conversion_factor_ode!(model_SBML::ModelSBML, libsbml_model::SBML.M
         specie.boundary_condition == true && continue
         isempty(specie.formula) && continue
 
-        if !isempty(specie.conversion_factor)
-            conversion_factor = specie.conversion_factor
-        elseif !isempty(model_SBML.conversion_factor)
-            conversion_factor = model_SBML.conversion_factor
-        else
-            continue
-        end
-        specie.formula = "(" * specie.formula * ") * " * conversion_factor
+        cf = _get_cf_scaling(specie, model_SBML)
+        isempty(cf) && continue
+        specie.formula = "(" * specie.formula * ") * " * cf
     end
     return nothing
 end

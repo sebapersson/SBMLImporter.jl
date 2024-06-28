@@ -1,4 +1,4 @@
-function check_support(model_str::String, model_as_string::Bool)::Nothing
+function check_support(model_str::String)::Nothing
     if _has_event_with_delay(model_str) == true
         throw(SBMLSupport("Events with delay are not supported"))
     end
