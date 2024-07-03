@@ -58,6 +58,7 @@ mutable struct EventSBML
     const has_rateOf_assignments::Bool
     const has_specieref_trigger::Bool
     const has_specieref_assignments::Bool
+    const is_ifelse::Bool
 end
 
 mutable struct ReactionSBML
@@ -93,7 +94,6 @@ struct ModelSBML
     generated_ids::Dict{String, String}
     piecewise_expressions::Dict{String, String}
     ifelse_bool_expressions::Dict{String, String}
-    ifelse_parameters::Dict{String, Vector{String}}
     rate_rule_variables::Vector{String}
     assignment_rule_variables::Vector{String}
     algebraic_rule_variables::Vector{String}
@@ -119,7 +119,6 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
                            Dict{String, String}(), # Generated id:s
                            Dict{String, String}(), # Piecewise to ifelse_expressions
                            Dict{String, String}(), # Ifelse to bool expression
-                           Dict{String, Vector{String}}(), # Ifelse parameters
                            Vector{String}(undef, 0), # Rate rule variables
                            Vector{String}(undef, 0), # Assignment rule variables
                            Vector{String}(undef, 0), # Algebraic rule variables

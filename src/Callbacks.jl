@@ -1,5 +1,7 @@
 # Function generating callbacksets for time-depedent SBML piecewise expressions, as callbacks are more efficient than
 # using ifelse (for example better integration stability, faster runtimes etc...)
+# TODO: The refactoring should be such that we actually rewrite the picewise variables
+# to SBML events, and then just parse from that point
 function create_callbacks_SBML(system,
                                model_SBML::ModelSBML,
                                model_name::String;
@@ -7,8 +9,7 @@ function create_callbacks_SBML(system,
     p_ode_problem_names::Vector{String} = string.(parameters(system))
     model_specie_names::Vector{String} = replace.(string.(states(system)), "(t)" => "")
 
-    n_callbacks = length(keys(model_SBML.ifelse_parameters)) +
-                  length(keys(model_SBML.events))
+    n_callbacks = length(keys(model_SBML.events))
 
     # Set function names
     model_name = replace(model_name, "-" => "_")
@@ -17,29 +18,10 @@ function create_callbacks_SBML(system,
 
     # tstops function is added in the initialisation part of the first model callback (whether or not it is
     # a discrete or cont. callback)
-    write_tstops, _tstops = create_tstops_function(model_SBML, model_specie_names,
-                                                   p_ode_problem_names::Vector{String})
+    write_tstops, _tstops = create_tstops_function(model_SBML, model_specie_names, p_ode_problem_names)
     callback_str *= write_tstops
 
     k = 1
-    # For ifelse parameter
-    for parameter in keys(model_SBML.ifelse_parameters)
-        first_callback = k == 1
-        _affect, _cond, _callback, _active_t0 = create_callback_ifelse(parameter,
-                                                                       model_SBML,
-                                                                       p_ode_problem_names,
-                                                                       model_specie_names,
-                                                                       first_callback,
-                                                                       _tstops)
-        callback_str *= _affect * _cond * _callback * _active_t0
-        _affect_f = @RuntimeGeneratedFunction(Meta.parse(_affect))
-        _cond_f = @RuntimeGeneratedFunction(Meta.parse(_cond))
-        _active_t0_f = @RuntimeGeneratedFunction(Meta.parse(_active_t0))
-        _get_cb = @RuntimeGeneratedFunction(Meta.parse(_callback))
-        callbacks[k] = _get_cb(_cond_f, _affect_f, _active_t0_f)
-        k += 1
-    end
-
     # For classical SBML events
     for key in keys(model_SBML.events)
         first_callback = k == 1
@@ -90,77 +72,6 @@ function create_callbacks_SBML(system,
     return cbset, callback_str
 end
 
-function create_callback_ifelse(parameter_name::String,
-                                model_SBML::ModelSBML,
-                                p_ode_problem_names::Vector{String},
-                                model_specie_names::Vector{String},
-                                first_callback::Bool,
-                                tstops::String)::Tuple{String, String, String, String}
-
-    # Check if the event trigger depend on parameters which are to be i) estimated, or ii) if it depend on models state.
-    # For i) we need to convert tspan. For ii) we cannot compute tstops (the event times) prior to starting to solve
-    # the ODE so it most be cont. callback
-    _condition, side_activated_with_time = model_SBML.ifelse_parameters[parameter_name]
-    discrete_event = !(check_condition_has_states(_condition, model_specie_names))
-
-    # Replace any state or parameter with their corresponding index in the ODE system to be comaptible with event
-    # syntax
-    for (i, specie_name) in pairs(model_specie_names)
-        _condition = _replace_variable(_condition, specie_name, "u[" * string(i) * "]")
-    end
-    for (i, p_name) in pairs(p_ode_problem_names)
-        _condition = _replace_variable(_condition, p_name, "integrator.p[" * string(i) * "]")
-    end
-
-    # Replace inequality with - (root finding cont. event) or with == in case of
-    # discrete event
-    replace_with = discrete_event == true ? "==" : "-"
-    _condition_for_t0 = deepcopy(_condition) # Needed for checking active at t0 function
-    _condition = replace(_condition, r"<=|>=|>|<" => replace_with)
-
-    # Build the condition function
-    condition_function = "\nfunction condition_" * parameter_name * "(u, t, integrator)\n"
-    condition_function *= "\t" * _condition * "\nend\n"
-
-    # Build the affect function
-    i_ifelse_parameter = findfirst(x -> x == parameter_name, p_ode_problem_names)
-    affect_function = "function affect_" * parameter_name * "!(integrator)\n"
-    affect_function *= "\tintegrator.p[" * string(i_ifelse_parameter) * "] = 1.0\nend\n"
-
-    # Build the callback formula
-    callback_formula = "function get_callback_" * parameter_name * "(cond, affect!, init)"
-    if discrete_event == false
-        callback_formula *= "\tcb = ContinuousCallback(cond, affect!, "
-    else
-        callback_formula *= "\tcb = DiscreteCallback(cond, affect!, "
-    end
-    callback_formula *= "save_positions=(false, false), initialize=init)\n" # So we do not get problems with saveat in the ODE solver
-    callback_formula *= "\treturn cb\nend"
-
-    # Building a function which check if a callback is activated at time zero (as this is not something Julia will
-    # check for us so must be done here). This is then passed
-    side_inequality = side_activated_with_time == "right" ? "!" : "" # Check if true or false evaluates expression to true
-    active_t0_function = "function is_active_t0_" * parameter_name *
-                         "!(c, u, t, integrator)\n"
-    active_t0_function *= "\tt = 0.0 # Used to check conditions activated at t0=0\n" *
-                          "\tintegrator.p[" * string(i_ifelse_parameter) *
-                          "] = 0.0 # Default to being off\n"
-    active_t0_function *= "\tif " * side_inequality * "(" * _condition_for_t0 * ")\n" *
-                          "\t\tintegrator.p[" * string(i_ifelse_parameter) *
-                          "] = 1.0\n\tend\n"
-    if first_callback == false
-        active_t0_function *= "end\n"
-    else
-        active_t0_function *= "\t_tstops = " * tstops * "\n"
-        # Ensure tstops are within the integrator time-intervall
-        active_t0_function *= "tstops=_tstops[@.((integrator.tdir * _tstops > integrator.tdir * integrator.sol.prob.tspan[1])*(integrator.tdir *_tstops < integrator.tdir * integrator.sol.prob.tspan[2]))]\n"
-        active_t0_function *= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
-        active_t0_function *= "\tadd_tstop!.((integrator,), tstops)\nend\n"
-    end
-
-    return affect_function, condition_function, callback_formula, active_t0_function
-end
-
 function create_callback_SBML_event(event_name::String,
                                     model_SBML::ModelSBML,
                                     p_ode_problem_names::Vector{String},
@@ -173,6 +84,14 @@ function create_callback_SBML_event(event_name::String,
     initial_value_cond = event.trigger_initial_value
 
     discrete_event = !(check_condition_has_states(_condition, model_specie_names))
+
+    if event.is_ifelse == true
+        if check_condition_has_states(_condition, model_specie_names) == true
+            _condition = replace(_condition, r"<=|>=|>|<|≤|≥" => "-")
+        else
+            _condition = replace(_condition, r"<=|>=|>|<|≤|≥" => "==")
+        end
+    end
 
     # If the event trigger does not contain a model state but fixed parameters it can at a maximum be triggered once.
     if discrete_event == false
@@ -247,7 +166,7 @@ function create_callback_SBML_event(event_name::String,
         initial_value_str = "function init_" * event_name * "(c,u,t,integrator)\n"
         initial_value_str *= "\tcond = " * _condition_at_t0 * "\n"
         initial_value_str *= "\tif cond == true\n"
-        #initial_value_str *= "\t" * affect_function_body * "\n\tend\n"
+        initial_value_str *= "\t" * affect_function_body * "\n"
         initial_value_str *= "\t" * "" * "\n\tend\n"
     elseif discrete_event == false && initial_value_cond == false
         initial_value_str = "function init_" * event_name * "(c,u,t,integrator)\n"
@@ -304,14 +223,12 @@ function create_tstops_function(model_SBML::ModelSBML,
                                 model_specie_names::Vector{String},
                                 p_ode_problem_names::Vector{String})::Tuple{String, String}
     write_tstops = "\nfunction __compute_tstops(integrator)\n"
-    if isempty(model_SBML.ifelse_parameters) && isempty(model_SBML.events)
+    if isempty(model_SBML.events)
         write_tstops *= "\t return Float64[]\nend\n"
         return write_tstops, "Float64[]"
     end
 
-    conditions = string.(vcat([model_SBML.ifelse_parameters[key][1]
-                               for key in keys(model_SBML.ifelse_parameters)],
-                              [e.trigger for e in values(model_SBML.events)]))
+    conditions = [e.trigger for e in values(model_SBML.events)]
     tstops = Vector{String}(undef, length(conditions))
     tstops_to_float = Vector{String}(undef, length(conditions))
     for (i, condition) in pairs(conditions)

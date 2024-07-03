@@ -13,7 +13,8 @@ function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML)::String
+function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
+                                        ifelse_parameter_names=String[])::String
     if !occursin("ifelse", formula)
         return formula
     end
@@ -46,19 +47,20 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML):
         @assert time_in_rhs != time_in_lhs "Error with time in both condition sides"
         side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition, operator, time_in_rhs)
 
-        bool_name = _get_name_bool_piecewise(model_SBML)
+        bool_name = _get_name_bool_piecewise(ifelse_parameter_names)
         formula_bool = _template_bool_picewise(bool_name, arg1, arg2, side_activated)
         formula = replace(formula, ifelse_call => formula_bool; count=1)
 
-        model_SBML.ifelse_parameters[bool_name] = [condition, side_activated]
         model_SBML.ifelse_bool_expressions[ifelse_call] = formula_bool
         model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false, false, false, false, false, false)
+        model_SBML.events[bool_name] = _ifelse_to_event(bool_name, condition, side_activated)
+
         ifelse_with_time = true
         break
     end
 
     if ifelse_with_time == true
-        formula = _time_dependent_ifelse_to_bool(formula, model_SBML)
+        formula = _time_dependent_ifelse_to_bool(formula, model_SBML; ifelse_parameter_names=ifelse_parameter_names)
     end
     return formula
 end
@@ -93,14 +95,16 @@ function _split_condition(formula::String)::Tuple{String, String, String}
     return lhs, rhs, operator
 end
 
-function _get_name_bool_piecewise(model_SBML::ModelSBML)::String
+function _get_name_bool_piecewise(ifelse_parameter_names::Vector{String})::String
     j = 1
     while true
         parameter_name = "__parameter_ifelse" * string(j)
-        !haskey(model_SBML.ifelse_parameters, parameter_name) && break
+        !(parameter_name in ifelse_parameter_names) && break
         j += 1
     end
-    return "__parameter_ifelse" * string(j)
+    parameter_name = "__parameter_ifelse" * string(j)
+    push!(ifelse_parameter_names, parameter_name)
+    return parameter_name
 end
 
 function _template_bool_picewise(bool_name::String, ifelse_arg1::String, ifelse_arg2::String, side_activated::String)::String
@@ -158,4 +162,22 @@ function _find_term_with_t(formula::String)::String
         istart = i
     end
     return ""
+end
+
+function _ifelse_to_event(id::String, condition::String, side_activated)::EventSBML
+    assignments = [id * " = 1.0"]
+    # When triggered we change the bool variable from 0 to 1. If side_activated = "right"
+    # we activate the event when the ifelse condition goes from true to false. Reverse for
+    # side_activated = "left". Thus, for side_activated = "right" we need to invert the
+    # condition, as otherwise we mess up callback initialisation where the bool variable
+    # is set to 1 if the condition is true
+    if side_activated == "right"
+        if any(occursin.(["<", "≤", "<="], condition))
+            condition = replace(condition, r"≤|<=|<" => "≥")
+        else
+            condition = replace(condition, r"≥|>=|>" => "≤")
+        end
+    end
+    event = SBMLImporter.EventSBML(id, condition, assignments, false, false, false, false, false, false, false, true)
+    return event
 end

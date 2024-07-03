@@ -14,7 +14,7 @@ function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothin
             name = "event" * string(event_index)
             event_index += 1
         end
-        model_SBML.events[name] = EventSBML(name, trigger, assignments, event.trigger.initial_value, have_ridents1, have_ridents2, have_rateOf1, have_rateOf2, have_specieref1, have_specieref2)
+        model_SBML.events[name] = EventSBML(name, trigger, assignments, event.trigger.initial_value, have_ridents1, have_ridents2, have_rateOf1, have_rateOf2, have_specieref1, have_specieref2, false)
     end
     return nothing
 end
