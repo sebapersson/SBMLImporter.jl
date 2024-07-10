@@ -2,8 +2,8 @@ mutable struct SpecieSBML
     const name::String
     const boundary_condition::Bool
     const constant::Bool
-    initial_value::String # Can be changed by initial assignment
-    formula::String # Is updated over time
+    initial_value::String
+    formula::String
     const compartment::String
     const conversion_factor::String
     const unit::Symbol

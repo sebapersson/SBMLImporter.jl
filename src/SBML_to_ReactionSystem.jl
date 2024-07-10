@@ -1,25 +1,20 @@
 """
-    load_SBML(path_SBML::AbstractString;
-              ifelse_to_callback::Bool=true,
-              inline_assignment_rules::Bool=false,
-              write_to_file::Bool=false,
-              model_as_string::Bool=false,
-              check_massaction=true,
-              mass_action::Bool=false)
+    load_SBML(path; massaction=false, kwargs...)
 
-Parse an SBML model into a `ParsedReactionNetwork` and convert SBML events/piecewise to callbacks.
+Import a [SBML](https://sbml.org/) into a `ParsedReactionNetwork` that can simulated
+as a `JumpProblem` (Gillespie), a `SDEProblem` (chemical Langevin), or an `ODEProblem`
 
-For information on simulating the `ParsedReactionNetwork`, as a `JumpProblem`, a `SDEProblem`, or
-an `ODEProblem` see the documentation.
+The keyword `massaction` should be set to `true` if the model reactions follow chemical
+mass action [ADD], which often holds for rule based models generated from packages such as
+[BioNetGEn](https://bionetgen.org/). **Note** that `massaction=true` is required for
+carrying out efficient JumpProblem (Gillespie) simulations, more details [here](add!)
 
-`path_SBML` can be the model as a string if `model_as_string=true`.
-
-## Arguments
-- `path_SBML`: File path to a valid SBML file (level 2 or higher).
-- `ifelse_to_callback=true`: Whether to rewrite `ifelse` (piecewise) expressions to callbacks; recommended
-    for performance.
-- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations. Recommended for
-    model import speed, however, it will not be possible to access the rule-variable via `sol[:var]`.
+## Keyword arguments
+- `ifelse_to_callback=true`: Whether to rewrite `ifelse` (SBML piecewise) expressions to
+    [callbacks](ADD). Recommended as this improves simulation runtime and stabillity.
+- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations.
+    Recommended for lage models, **however**, if `true` is it not possible to access
+    assignment rule variables via `sol[:var]`.
 - `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the
     SBML file.
 - `model_as_string=false`: Whether or not the model (`path_SBML`) is provided as a string.
@@ -76,7 +71,7 @@ function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 
     # Build callback functions
-    cbset, callback_str = create_callbacks_SBML(rn, model_SBML, model_SBML.name)
+    cbset = create_callbacks(rn, model_SBML, model_SBML.name)
 
     # if model is written to file write the callback
     #= TODO: Fix later

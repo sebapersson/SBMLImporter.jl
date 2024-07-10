@@ -113,7 +113,7 @@ function _get_specie_rateOf(arg::String, model_SBML::ModelSBML)::SpecieSBML
     return model_SBML.species[arg]
 end
 
-function _has_ident(variable::Union{SpecieSBML, ParameterSBML, CompartmentSBML, ReactionSBML}, ident_replace::Symbol)::Bool
+function _has_ident(variable::Union{VariableSBML, ReactionSBML}, ident_replace::Symbol)::Bool
     if ident_replace == :rateOf
         return variable.has_rateOf
     elseif ident_replace == :specieref

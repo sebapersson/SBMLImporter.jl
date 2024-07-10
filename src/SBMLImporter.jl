@@ -8,16 +8,19 @@ using PrecompileTools
 using ReactionNetworkImporters
 using RuntimeGeneratedFunctions
 using SBML
+using SciMLBase
 using Setfield
 using SpecialFunctions
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
+include("Structs.jl")
+
 const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst, SBML.MathAvogadro}
 const SBMLRule = Union{SBML.AssignmentRule, SBML.RateRule, SBML.AlgebraicRule}
 const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
+const VariableSBML = Union{SpecieSBML, ParameterSBML, CompartmentSBML}
 
-include("Structs.jl")
 include("Build_model.jl")
 include("Callbacks.jl")
 include("compartments.jl")
@@ -40,12 +43,12 @@ include("Reactions.jl")
 
 #=
 @setup_workload begin
+    dirmodels = joinpath(@__DIR__, "..", "test", "Models")
     # Model without events
-    path_SBML = joinpath(@__DIR__, "..", "test", "Models",
-                         "model_Boehm_JProteomeRes2014.xml")
+    path_SBML = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
     parsed_rn, cb = load_SBML(path_SBML)
     # Model with events
-    path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Brannmark_JBC2010.xml")
+    path_SBML = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
     parsed_rn, cb = load_SBML(path_SBML)
 end
 =#

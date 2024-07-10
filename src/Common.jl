@@ -216,7 +216,7 @@ function _get_model_variable(variable::String, model_SBML::ModelSBML)
     haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
 end
 
-function _add_ident_info!(variable::Union{SpecieSBML, ParameterSBML, CompartmentSBML}, math_expression::MathSBML, model_SBML::ModelSBML)::Nothing
+function _add_ident_info!(variable::VariableSBML, math_expression::MathSBML, model_SBML::ModelSBML)::Nothing
     @unpack has_reaction_ids, has_rateOf, has_specieref = variable
     reaction_ids = _has_reactionid(math_expression.math_idents, model_SBML)
     rateOf = "rateOf" in math_expression.fns

@@ -171,7 +171,7 @@ function _get_algebraic_species(idents, model_SBML)::Union{SpecieSBML, Nothing}
     throw(SBMLSupport("Cannot process algebraic rule, two species are equally valid"))
 end
 
-function _isassigned(variable::Union{SpecieSBML, ParameterSBML, CompartmentSBML})::Bool
+function _isassigned(variable::VariableSBML)::Bool
     variable.constant && return true
     variable.rate_rule && return true
     variable.assignment_rule && return true
