@@ -54,6 +54,56 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     return rn, specie_map, parameter_map
 end
 
+function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, model_SBML::ModelSBML)::String
+    # If model is written to file save it in the same directory as the SBML-file. Only
+    # save if model is not provided as a string (as then there is not file)
+    pathsave = joinpath(dirsave, "Model.jl")
+
+    sps = model_SBML_sys.has_species ? model_SBML_sys.species : "Any[]"
+    if model_SBML_sys.variables != "\tvs = ModelingToolkit.@variables "
+        vs = model_SBML_sys.variables
+    else
+        vs = "Any[]"
+    end
+    if vs == "Any[]"
+        sps_arg = "sps"
+    elseif model_SBML_sys.has_species == true
+        sps_arg = "[sps; vs]"
+    else
+        sps_arg = "vs"
+    end
+    if model_SBML_sys.parameters != "\tps = Catalyst.@parameters "
+        ps = model_SBML_sys.parameters
+    else
+        ps = "Any[]"
+    end
+    reactions = model_SBML_sys.reactions
+    model_name = "\"" * model_SBML.name * "\""
+    comb_ratelaws = string(model_SBML_sys.all_integer_S)
+    rn_write = "Catalyst.ReactionSystem(_reactions, t, sps_arg, ps; " *
+                                        "name=Symbol($(model_name)), " *
+                                        "combinatoric_ratelaws=comb_ratelaws)"
+
+    frn = "function get_reaction_system(foo)\n"
+    frn *= "\tModelingToolkit.@variables t\n"
+    frn *= "\tD = Differential(t)\n"
+    frn *= sps * "\n"
+    frn *= "\tvs = " * vs * "\n"
+    frn *= "\tsps_arg = " * sps_arg * "\n"
+    frn *= ps * "\n\n"
+    frn *= reactions * "\n"
+    frn *= "\tcomb_ratelaws = " * comb_ratelaws * "\n"
+    frn *= "\trn = " * rn_write * "\n\n"
+    frn *= model_SBML_sys.specie_map * "\n\n"
+    frn *= model_SBML_sys.parameter_map * "\n"
+    frn *= "\treturn rn, specie_map, parameter_map\nend"
+
+    open(pathsave, "w") do f
+        write(f, frn)
+    end
+    return frn
+end
+
 function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool; check_massaction::Bool = true)::ModelSBMLSystem
     # If model is empty of derivatives a dummy state must be added to be able to create
     # a ReactionSystem
@@ -280,4 +330,20 @@ end
 function update_rate_reaction(rx; combinatoric_ratelaw::Bool = true)
     @set rx.rate = Catalyst.simplify((rx.rate^2) /
                                       Catalyst.oderatelaw(rx; combinatoric_ratelaw = combinatoric_ratelaw))
+end
+
+function _get_dir_save(write_to_file::Bool, model_as_string::Bool, path_SBML::String)::Union{Nothing, String}
+    if write_to_file == true
+        dir_save = if model_as_string
+            nothing
+        else
+            joinpath(splitdir(path_SBML)[1], "SBML")
+        end
+    else
+        dir_save = nothing
+    end
+    if !(isnothing(dir_save) || isdir(dir_save))
+        mkdir(dir_save)
+    end
+    return dir_save
 end

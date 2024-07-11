@@ -63,96 +63,19 @@ function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
                                   model_as_string = model_as_string,
                                   inline_assignment_rules = inline_assignment_rules,
                                   mass_action = mass_action)
-    # If model is written to file save it in the same directory as the SBML-file. Only
-    # save if model is not provided as a string (as then there is not file)
-    dir_save = _get_dir_save(write_to_file, model_as_string)
-
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules; check_massaction = check_massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 
     # Build callback functions
     cbset = create_callbacks(rn, model_SBML, model_SBML.name)
 
-    # if model is written to file write the callback
-    #= TODO: Fix later
-    if write_to_file == true
-        path_save = joinpath(dir_save, model_SBML.name * "_callbacks.jl")
-        io = open(path_save, "w")
-        write(io, callback_str)
-        close(io)
-        _ = reactionsystem_to_string(parsed_model_SBML, write_to_file, path_save_model,
-                                     model_SBML)
+    if write_to_file == true && model_as_string == true
+        @warn "If the model is provided as a string we do not support writing it to " *
+              "file. Hence write_to_file argument is ignored"
+    elseif write_to_file == true
+        dirsave = _get_dir_save(write_to_file, model_as_string, path_SBML)
+        write_reactionsystem(model_SBML_sys, dirsave, model_SBML)
     end
-    =#
-
     parsed_rn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
     return parsed_rn, cbset
-end
-
-function _get_dir_save(write_to_file::Bool, model_as_string::Bool)::Union{Nothing, String}
-    if write_to_file == true
-        dir_save = if model_as_string
-            nothing
-        else
-            joinpath(splitdir(path_SBML)[1], "SBML")
-        end
-    else
-        dir_save = nothing
-    end
-    if !(isnothing(dir_save) || isdir(dir_save))
-        mkdir(dir_save)
-    end
-    return dir_save
-end
-
-function reactionsystem_to_string(parsed_model_SBML::ModelSBMLSystem,
-                                  write_to_file::Bool, path_save_model::String,
-                                  model_SBML::ModelSBML)::String
-
-    # ReactionSystem
-    combinatoric_ratelaws_arg = parsed_model_SBML.int_stoichiometries ? "true" : "false"
-    _species_write = parsed_model_SBML.species
-    if isempty(model_SBML.rule_variables)
-        sps_arg = "sps"
-    elseif parsed_model_SBML.no_species == false
-        sps_arg = "[sps; vs]"
-    else
-        sps_arg = "vs"
-        _species_write = replace(_species_write, "sps = Catalyst.@species" => "")
-    end
-    # Parameters might be an empty set
-    if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
-        _rn_write = "\trn = Catalyst.ReactionSystem(_reactions, t, $sps_arg, ps; name=Symbol(\"" *
-                    model_SBML.name *
-                    "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
-    else
-        _rn_write = "\trn = Catalyst.ReactionSystem(_reactions, t, $sps_arg, Any[]; name=Symbol(\"" *
-                    model_SBML.name *
-                    "\"), combinatoric_ratelaws=$combinatoric_ratelaws_arg)"
-    end
-
-    # Create a function returning the ReactionSystem, specie-map, and parameter-map
-    _function_write = "function get_reaction_system(foo)\n\n"
-    _function_write *= _species_write * "\n"
-    if parsed_model_SBML.variables != "\tvs = ModelingToolkit.@variables"
-        _function_write *= parsed_model_SBML.variables * "\n"
-    end
-    if parsed_model_SBML.parameters != "\tps = Catalyst.@parameters "
-        _function_write *= parsed_model_SBML.parameters * "\n\n"
-    end
-    _function_write *= "\tD = Differential(t)\n\n"
-    _function_write *= parsed_model_SBML.reactions * "\n\n"
-    _function_write *= _rn_write * "\n\n"
-    _function_write *= parsed_model_SBML.specie_map * "\n"
-    _function_write *= parsed_model_SBML.parameter_map * "\n"
-    _function_write *= "\treturn rn, specie_map, parameter_map\nend"
-
-    # In case user request file to be written
-    if write_to_file == true
-        open(path_save_model, "w") do f
-            write(f, _function_write)
-        end
-    end
-
-    return _function_write
 end

@@ -8,7 +8,7 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String; con
 
     # To reduce the number of returned functions by load_SBML tstops for any potential
     # DiscreteCallback are computed via a get_tstops functions, which is executed in the
-    # initialisation part of the first model callback
+    # initialisation part of the first callback
     tstops = _get_tstops(model_SBML, specie_ids, parameter_ids)
 
     first_callback::Bool, k = true, 1
@@ -36,13 +36,7 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String; con
         k += 1
         first_callback = false
     end
-
-    if n_callbacks > 0
-        cbset = CallbackSet(callbacks...)
-    else
-        cbset = CallbackSet()
-    end
-    return cbset
+    return CallbackSet(callbacks...)
 end
 
 function _get_callback_condition(event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String})::Function
