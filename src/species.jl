@@ -1,13 +1,13 @@
 function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
-                        mass_action::Bool)::Nothing
+                        massaction::Bool)::Nothing
     for (specie_id, specie) in libsbml_model.species
         if specie_id in FORBIDDEN_IDS
             throw(SBMLSupport("Specie name $(specie_id) is not allowed."))
         end
         @assert !isempty(specie.compartment) "Specie $specie_id does not have a compartment"
 
-        # If mass_action=true the user enforces only_substance_units=true
-        only_substance_units = _get_only_substance_units(specie, mass_action)
+        # If massaction=true the user enforces only_substance_units=true
+        only_substance_units = _get_only_substance_units(specie, massaction)
         unit = _get_unit(specie, only_substance_units)
         initial_value = _get_initial_value(specie, unit)
         conversion_factor = _parse_variable(specie.conversion_factor)
@@ -26,8 +26,8 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
     return nothing
 end
 
-function _get_only_substance_units(specie::SBML.Species, mass_action::Bool)::Bool
-    mass_action == true && return true
+function _get_only_substance_units(specie::SBML.Species, massaction::Bool)::Bool
+    massaction == true && return true
     return _parse_bool(specie.only_substance_units)
 end
 

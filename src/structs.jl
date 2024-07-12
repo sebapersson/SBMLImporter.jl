@@ -171,4 +171,6 @@ mutable struct MathSBML
     args::Vector{String}
     fns::Vector{String}
     user_fns::Vector{String}
+    has_reaction_ids::Bool
+    has_rateOf::Bool
 end

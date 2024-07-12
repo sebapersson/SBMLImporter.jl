@@ -59,7 +59,6 @@ function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML,
 end
 
 function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML, which_side::Symbol)::Vector{String}
-    @assert which_side in [:reactants, :products] "$(which_side) is an invalid reaction side"
     species = which_side == :reactants ? reaction.reactants : reaction.products
 
     reaction_species = Vector{String}(undef, length(species))
@@ -75,7 +74,6 @@ function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML, w
 end
 
 function _get_stoichiometries(reaction::SBML.Reaction, species_id::Vector{String}, model_SBML::ModelSBML, which_side::Symbol)::Tuple{Vector{String}, Bool}
-    @assert which_side in [:reactants, :products] "$(which_side) is an invalid reaction side"
     species = which_side == :reactants ? reaction.reactants : reaction.products
 
     massaction::Bool = true

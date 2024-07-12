@@ -19,7 +19,7 @@ carrying out efficient JumpProblem (Gillespie) simulations, more details [here](
     SBML file.
 - `model_as_string=false`: Whether or not the model (`path_SBML`) is provided as a string.
 - `check_massaction=true`: Whether to check if and rewrite a reaction to mass action if possible.
-- `mass_action=false`: Determines if reactions are treated as mass-action reactions. This option should
+- `massaction=false`: Determines if reactions are treated as mass-action reactions. This option should
     be set to true **only** if it is certain that the model has mass action reactions, for example
     if the model is an SBML file produced by BioNetGen.
 
@@ -55,15 +55,11 @@ oprob = ODEProblem(sys, prnbng.u₀, tspan, prnbng.p, jac=true)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
-function load_SBML(path_SBML::AbstractString; ifelse_to_callback::Bool = true,
+function load_SBML(path_SBML::AbstractString; massaction::Bool = false, ifelse_to_callback::Bool = true,
                    inline_assignment_rules::Bool = true, write_to_file::Bool = false,
-                   model_as_string::Bool = false, check_massaction::Bool = true,
-                   mass_action::Bool = false)
-    model_SBML = build_SBML_model(path_SBML; ifelse_to_callback = ifelse_to_callback,
-                                  model_as_string = model_as_string,
-                                  inline_assignment_rules = inline_assignment_rules,
-                                  mass_action = mass_action)
-    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules; check_massaction = check_massaction)
+                   model_as_string::Bool = false)
+    model_SBML = parse_SBML(path_SBML; massaction = massaction, ifelse_to_callback = ifelse_to_callback, model_as_string = model_as_string, inline_assignment_rules = inline_assignment_rules)
+    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules; massaction = massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 
     # Build callback functions

@@ -178,8 +178,8 @@ function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
     return formula
 end
 
-# TODO: What is assigned to should be its own field
 function _is_event_assigned(variable::Union{Nothing, String}, model_SBML::ModelSBML)::Bool
+    isempty(model_SBML.events) && return false
     isnothing(variable) && return false
     for e in values(model_SBML.events)
         for formula in e.formulas
@@ -210,7 +210,6 @@ function _is_model_variable(variable::String, model_SBML::ModelSBML)::Bool
 end
 
 function _get_model_variable(variable::String, model_SBML::ModelSBML)
-    @assert _is_model_variable(variable, model_SBML) "$variable not a SBML id"
     haskey(model_SBML.species, variable) && return model_SBML.species[variable]
     haskey(model_SBML.parameters, variable) && return model_SBML.parameters[variable]
     haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
@@ -218,8 +217,8 @@ end
 
 function _add_ident_info!(variable::VariableSBML, math_expression::MathSBML, model_SBML::ModelSBML)::Nothing
     @unpack has_reaction_ids, has_rateOf, has_specieref = variable
-    reaction_ids = _has_reactionid(math_expression.math_idents, model_SBML)
-    rateOf = "rateOf" in math_expression.fns
+    reaction_ids = math_expression.has_reaction_ids
+    rateOf = math_expression.has_rateOf
     specieref = _has_specieref(math_expression.math_idents, model_SBML)
     variable.has_reaction_ids = _update_only_if_true(has_reaction_ids, reaction_ids)
     variable.has_rateOf = _update_only_if_true(has_rateOf, rateOf)
@@ -239,11 +238,18 @@ function _has_assignment_rule_ident(idents::Vector{String}, model_SBML::ModelSBM
 end
 
 function _has_reactionid(idents::Vector{String}, model_SBML::ModelSBML)::Bool
-    return any(in.(idents, [model_SBML.reactionids]))
+    return false
+    for ident in idents
+        ident in model_SBML.reactionids && return true
+    end
+    return false
 end
 
 function _has_specieref(idents::Vector{String}, model_SBML)::Bool
-    return any(in.(model_SBML.specie_reference_ids, [idents]))
+    for ident in idents
+        ident in model_SBML.specie_reference_ids && return true
+    end
+    return false
 end
 
 function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBML)::String
@@ -314,7 +320,7 @@ function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}
             push!(specie_reference_ids, product.id)
         end
     end
-    return specie_reference_ids
+    return unique(specie_reference_ids)
 end
 
 function get_rule_variables!(model_SBML::ModelSBML)::Nothing

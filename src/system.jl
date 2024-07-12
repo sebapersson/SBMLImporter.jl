@@ -57,7 +57,7 @@ end
 function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, model_SBML::ModelSBML)::String
     # If model is written to file save it in the same directory as the SBML-file. Only
     # save if model is not provided as a string (as then there is not file)
-    pathsave = joinpath(dirsave, "Model.jl")
+    pathsave = joinpath(dirsave, model_SBML.name * ".jl")
 
     sps = model_SBML_sys.has_species ? model_SBML_sys.species : "Any[]"
     if model_SBML_sys.variables != "\tvs = ModelingToolkit.@variables "
@@ -104,7 +104,7 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, 
     return frn
 end
 
-function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool; check_massaction::Bool = true)::ModelSBMLSystem
+function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool; massaction::Bool = true)::ModelSBMLSystem
     # If model is empty of derivatives a dummy state must be added to be able to create
     # a ReactionSystem
     if _has_derivatives(model_SBML) == false
@@ -114,7 +114,7 @@ function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool;
     species, variables, specie_map = _get_system_variables(model_SBML, inline_assignment_rules)
     parameters, parameter_map = _get_system_parameters(model_SBML)
 
-    reactions, all_integer_S = _get_system_reactions(model_SBML, check_massaction)
+    reactions, all_integer_S = _get_system_reactions(model_SBML, massaction)
 
     # Rules (ODEs) go into the Catalyst reaction vector when parsing the system. Note, we
     # need to close with "\t]\n" for nice printing to file
@@ -190,13 +190,11 @@ function _get_system_reactions(model_SBML::ModelSBML, massaction::Bool)::Tuple{S
         # 3. Stoichiometry is mass-action, e.g. stoichiometry is not given by model
         #    parameters
         is_massaction = _is_massaction(r, model_SBML, r_integer_S, p_integer_S)
-        #= TODO: Add when updating version
         if massaction == true && is_massaction == false
             @warn "That the system is massaction was provided, however, the reaction " *
                   "$id is not massaction. It is parsed as non massaction reaction, which " *
                   "can negative impact simulation times."
         end
-        =#
         catalyst_reactions *= _template_reaction(reactants, products, r_S, p_S, propensity, is_massaction)
 
         # For creating the reaction system we need to know if only integer stoichiometry
