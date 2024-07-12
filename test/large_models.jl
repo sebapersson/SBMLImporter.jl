@@ -24,7 +24,7 @@ b2 = @elapsed parsed_rn, cb = load_SBML(path_SBML)
 
 # Test that SBMLImporter correctly enforces mass action
 path_SBML = joinpath(@__DIR__, "Models", "egfr_net.xml")
-b3 = @elapsed model, cb = load_SBML(path_SBML; mass_action = true)
+b3 = @elapsed model, cb = load_SBML(path_SBML; massaction = true)
 dprob = DiscreteProblem(model.rn, model.u₀, (0.0, 0.0), model.p)
 dprob = remake(dprob, u0 = Int64.(dprob.u0));
 jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions = (false, false))
@@ -35,7 +35,6 @@ jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions = (false, false))
 sbml_url = "https://www.ebi.ac.uk/biomodels/model/download/BIOMD0000000627.3?filename=BIOMD0000000627_url.xml"
 sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
 mdl, cb = load_SBML(sbml_string; inline_assignment_rules = true, ifelse_to_callback = true,
-                    check_massaction = false,
                     model_as_string = true)
 sys = structural_simplify(convert(ODESystem, mdl.rn))
 @test length(states(sys)) == 66

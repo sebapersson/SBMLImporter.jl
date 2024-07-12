@@ -1,11 +1,11 @@
-# Compares a model (with non-unitary stoichiometries) for which we know the catalyst reaction system it should be produced.
-# Checks that simulations are correct and generates mass action jumps.
+# Compares a model (with non-unitary stoichiometries) for which we know the catalyst
+# reaction system it should be produced. Checks that simulations are correct and generates
+# mass action jumps.
 
-# Fetch packages.
 using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEq, Test
 
 # Creates models.
-parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"))
+parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)
 rn_sbml = parsed_rn.rn
 u0_sbml = parsed_rn.u₀
 ps_sbml = parsed_rn.p
@@ -25,7 +25,7 @@ ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
 @test issetequal(species(rn_sbml), species(rn_catalyst))
 @test issetequal(parameters(rn_sbml), parameters(rn_catalyst))
 @test isequal(reactions(rn_sbml)[1], reactions(rn_catalyst)[1])
-# @test isequal(reactions(rn_sbml)[2], reactions(rn_catalyst)[2]) # Fails for weird Symbolics reason were (when loaded) 2*compartment != compartment / (1//2). Makes no sense. Evaluates to teh same though.
+@test isequal(reactions(rn_sbml)[2], reactions(rn_catalyst)[2]) # Fails for weird Symbolics reason were (when loaded) 2*compartment != compartment / (1//2). Makes no sense. Evaluates to teh same though.
 @test isequal(reactions(rn_sbml)[3], reactions(rn_catalyst)[3])
 @test isequal(reactions(rn_sbml)[4], reactions(rn_catalyst)[4])
 
@@ -49,10 +49,8 @@ sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
 # Check consistent simulations when model is imported with and without rewriting to
 # Catalyst mass-action format
 path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
-parsed_rn1, cb1 = load_SBML(path_SBML)
-parsed_rn2, cb2 = load_SBML(path_SBML; check_massaction = false)
-@test reactions(parsed_rn1.rn)[1].only_use_rate == false
-@test reactions(parsed_rn2.rn)[1].only_use_rate == true
+parsed_rn1, cb1 = load_SBML(path_SBML; massaction = true)
+parsed_rn2, cb2 = load_SBML(path_SBML; massaction = false)
 oprob1 = ODEProblem(parsed_rn1.rn, parsed_rn1.u0, (0.0, 10.0), parsed_rn1.p)
 oprob2 = ODEProblem(parsed_rn2.rn, parsed_rn2.u0, (0.0, 10.0), parsed_rn2.p)
 sol1 = solve(oprob1, Rodas5())
