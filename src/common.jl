@@ -237,15 +237,7 @@ function _has_assignment_rule_ident(idents::Vector{String}, model_SBML::ModelSBM
     return false
 end
 
-function _has_reactionid(idents::Vector{String}, model_SBML::ModelSBML)::Bool
-    return false
-    for ident in idents
-        ident in model_SBML.reactionids && return true
-    end
-    return false
-end
-
-function _has_specieref(idents::Vector{String}, model_SBML)::Bool
+function _has_specieref(idents::Vector{String}, model_SBML::ModelSBML)::Bool
     for ident in idents
         ident in model_SBML.specie_reference_ids && return true
     end

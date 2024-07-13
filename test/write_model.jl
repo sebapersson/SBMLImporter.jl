@@ -1,6 +1,6 @@
 using OrdinaryDiffEq, SBMLImporter, ModelingToolkit, Catalyst, Test
 
-path_model = joinpath(@__DIR__, "Models", "SBML", "Model.jl")
+path_model = joinpath(@__DIR__, "Models", "SBML", "model_Boehm_JProteomeRes2014.jl")
 isfile(path_model) && rm(path_model)
 
 path_SBML = joinpath(@__DIR__, "Models", "model_Boehm_JProteomeRes2014.xml")

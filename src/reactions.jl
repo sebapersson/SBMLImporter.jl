@@ -25,7 +25,7 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
         # Storing whether kinetic_math has assignment rules and reaction-ids is important
         # for faster downstream processes, as these can be replaced
         assignment_rules = _has_assignment_rule_ident(math_expression.math_idents, model_SBML)
-        have_ridents = _has_reactionid(math_expression.math_idents, model_SBML)
+        have_ridents = math_expression.has_reaction_ids
         have_rateOf = "rateOf" in math_expression.fns
         have_specieref = _has_specieref(math_expression.math_idents, model_SBML)
         stoichiometry_massaction = all([reactants_massaction, products_massaction])

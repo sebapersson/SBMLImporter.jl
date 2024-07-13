@@ -22,8 +22,6 @@ function read_settings(settings_url::String)
     return species_test_amount, species_test_conc, abstol_test, reltol_test
 end
 
-test_case, solver = "01684", Rodas4P()
-#check_test_case(test_case, solver)
 function check_test_case(test_case, solver)
     @info "Test case $test_case"
 
@@ -55,7 +53,7 @@ function check_test_case(test_case, solver)
     # Case for FBA models an exceptions should be thrown
     if !("Time" ∈ names(results) || "time" ∈ names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
-        SBMLImporter.build_SBML_model(sbml_string; model_as_string = true)
+        SBMLImporter.parse_SBML(sbml_string; model_as_string = true)
     end
 
     tsave = "Time" in names(results) ? Float64.(results[!, :Time]) : Float64.(results[!, :time])
@@ -68,10 +66,9 @@ function check_test_case(test_case, solver)
     species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(settings_url)
     sbml_url = sbml_urls[end]
 
-    # TODO : Make sure SBML functions args do not match anything in formula
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-        model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string = true, inline_assignment_rules=false)
+        model_SBML = SBMLImporter.parse_SBML(sbml_string, model_as_string = true, inline_assignment_rules=false)
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
         if occursin("stoichiometryMath", sbml_string) == false
@@ -146,8 +143,8 @@ end
 
 # To run this you might have to add Catalyst into the SBMLImporter.jl file
 solver = Rodas4P()
-#@testset "Catalyst" begin
-    for i in 1:500
+@testset "Catalyst" begin
+    for i in 1:1821
         test_case = repeat("0", 5 - length(string(i))) * string(i)
 
         delay_cases = ["00937", "00938", "00939", "00940", "00941", "00942", "00943",

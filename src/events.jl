@@ -25,7 +25,7 @@ function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::
     if any(in.(["if", "and", "xor"], [math_expression.fns]))
         throw(SBMLSupport("Events with gated triggers (if, and, xor) are not supported"))
     end
-    have_ridents = _has_reactionid(math_expression.math_idents, model_SBML)
+    have_ridents = math_expression.has_reaction_ids
     have_rateOf = "rateOf" in math_expression.fns
     have_specieref = _has_specieref(math_expression.math_idents, model_SBML)
     trigger = _process_formula(math_expression, model_SBML)
@@ -54,7 +54,7 @@ function _parse_assignments(event_assignments::Vector{SBML.EventAssignment}, mod
         math_expression = parse_math(event_assignment.math, libsbml_model)
         isempty(math_expression.formula) && continue
 
-        _have_ridents = _has_reactionid(math_expression.math_idents, model_SBML)
+        _have_ridents = math_expression.has_reaction_ids
         _have_rateOf = "rateOf" in math_expression.fns
         _have_specieref = _has_specieref(math_expression.math_idents, model_SBML)
         have_ridents = _update_only_if_true(have_ridents, _have_ridents)
