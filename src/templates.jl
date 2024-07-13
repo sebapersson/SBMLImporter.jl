@@ -10,17 +10,18 @@ function _template_assignment_rule(id::String, formula::String)::String
     return "\t\t" * id * " ~ " * formula * ",\n"
 end
 
-function _template_reaction(reactants::String, products::String, r_S::String, p_S::String, propensity::String, is_massaction::Bool)::String
+function _template_reaction(reactants::String, products::String, r_S::String, p_S::String,
+                            propensity::String, is_massaction::Bool)::String
     reaction = "\t\t"
     if is_massaction
         reaction *= "SBMLImporter.update_rate_reaction("
     end
     reaction *= "Catalyst.Reaction(" *
-        propensity * ", " *
-        reactants * ", " *
-        products * ", " *
-        r_S * ", " *
-        p_S
+                propensity * ", " *
+                reactants * ", " *
+                products * ", " *
+                r_S * ", " *
+                p_S
     if is_massaction
         reaction *= "; only_use_rate=false)),\n"
     else
@@ -34,7 +35,8 @@ function _template_stoichiometry(s::String, c_scaling::String)::String
     return s * c_scaling
 end
 
-function _template_ode_reaction(s::String, c_scaling::String, propensity::String, which_side::Symbol)::String
+function _template_ode_reaction(s::String, c_scaling::String, propensity::String,
+                                which_side::Symbol)::String
     s == "nothing" && return ""
     @assert which_side in [:reactant, :product] "$(which_side) is an invalid reaction side"
     sign = which_side == :product ? '+' : '-'
@@ -51,7 +53,8 @@ function _template_tstops(tstops::Vector{String})::String
     return tstops_vec
 end
 
-function _template_condition(condition::String, discrete_callback::Bool, name::String)::String
+function _template_condition(condition::String, discrete_callback::Bool,
+                             name::String)::String
     # Discrete callbacks are only activated when condition transition from false to true
     # Continious callbacks are activated via root-finding (hence the -)
     if discrete_callback == true
@@ -68,7 +71,8 @@ function _template_condition(condition::String, discrete_callback::Bool, name::S
     return condition_f
 end
 
-function _template_affect(event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String}; only_body::Bool=false)::String
+function _template_affect(event::EventSBML, specie_ids::Vector{String},
+                          parameter_ids::Vector{String}; only_body::Bool = false)::String
     if only_body == false
         affect_f = "function affect_" * event.name * "!(integrator)\n"
     else
@@ -79,7 +83,8 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String}, paramete
     for affect in event.formulas
         affect_lhs, affect_rhs = string.(split(affect, "="))
         affect_lhs = _ids_to_callback_syntax(affect_lhs, specie_ids, :specie)
-        affect_rhs = _ids_to_callback_syntax(affect_rhs, specie_ids, :specie; integrator=false, utmp=true)
+        affect_rhs = _ids_to_callback_syntax(affect_rhs, specie_ids, :specie;
+                                             integrator = false, utmp = true)
         affect_eq = affect_lhs * "=" * affect_rhs
         affect_eq = _ids_to_callback_syntax(affect_eq, parameter_ids, :parameter)
         affect_f *= "\t" * affect_eq * "\n"
@@ -94,7 +99,9 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String}, paramete
     return affect_f
 end
 
-function _template_init(event::EventSBML, condition::String, affect_body::String, tstops::String, first_callback::Bool, discrete_callback::Bool)::String
+function _template_init(event::EventSBML, condition::String, affect_body::String,
+                        tstops::String, first_callback::Bool,
+                        discrete_callback::Bool)::String
     init = "function init_" * event.name * "(c,u,t,integrator)\n"
     # For DiscreteCallback's we might need to support tstops, these can be computed in the
     # init

@@ -1,4 +1,5 @@
-function replace_ident!(model_SBML::ModelSBML, libsbml_model::SBML.Model, ident_replace::Symbol)::Nothing
+function replace_ident!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
+                        ident_replace::Symbol)::Nothing
     @assert ident_replace in [:rateOf, :specieref, :reactionid] "Unknown ident $ident_replace to replace"
     if ident_replace == :rateOf
         f_replace = _replace_rateOf
@@ -12,7 +13,8 @@ function replace_ident!(model_SBML::ModelSBML, libsbml_model::SBML.Model, ident_
     for (_, variable) in Iterators.flatten((species, parameters, compartments))
         _has_ident(variable, ident_replace) == false && continue
         variable.formula = f_replace(variable.formula, model_SBML, libsbml_model)
-        variable.initial_value = f_replace(variable.initial_value, model_SBML, libsbml_model)
+        variable.initial_value = f_replace(variable.initial_value, model_SBML,
+                                           libsbml_model)
     end
     for rule in values(model_SBML.algebraic_rules)
         ident_replace in [:specieref, :reactionid] && continue
@@ -40,12 +42,13 @@ function _replace_rateOf(formula::String, model_SBML::ModelSBML, ::SBML.Model)::
     for _ in 1:nrateOf_occurrences
         function_call = _extract_function_call("rateOf", formula)
         rateOf_insert = _get_rateOf_insert(function_call, model_SBML)
-        formula = replace(formula, function_call => rateOf_insert; count=1)
+        formula = replace(formula, function_call => rateOf_insert; count = 1)
     end
     return formula
 end
 
-function _replace_specieref(formula::String, model_SBML::ModelSBML, libsbml_model::SBML.Model)::String
+function _replace_specieref(formula::String, model_SBML::ModelSBML,
+                            libsbml_model::SBML.Model)::String
     # Sometimes specie_reference_ids appear in rules, kinetic-math..., where the reference
     # id it not assigned by any rules. In this case the reference id should be replaced by
     # its stoichemetry, or if provided via an initial assignment, its initial assignment
@@ -64,7 +67,8 @@ function _replace_specieref(formula::String, model_SBML::ModelSBML, libsbml_mode
         # Initial assignments might not map to any model variables, so reparsing of
         # formula is needed.
         assignment = libsbml_model.initial_assignments[specie_reference_id]
-        s0 = _parse_assignment_formula(specie_reference_id, assignment, model_SBML, libsbml_model)
+        s0 = _parse_assignment_formula(specie_reference_id, assignment, model_SBML,
+                                       libsbml_model)
         s0 = "(" * s0.formula * ")"
         formula = _replace_variable(formula, specie_reference_id, s0)
     end
@@ -113,7 +117,8 @@ function _get_specie_rateOf(arg::String, model_SBML::ModelSBML)::SpecieSBML
     return model_SBML.species[arg]
 end
 
-function _has_ident(variable::Union{VariableSBML, ReactionSBML}, ident_replace::Symbol)::Bool
+function _has_ident(variable::Union{VariableSBML, ReactionSBML},
+                    ident_replace::Symbol)::Bool
     if ident_replace == :rateOf
         return variable.has_rateOf
     elseif ident_replace == :specieref

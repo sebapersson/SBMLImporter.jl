@@ -16,7 +16,8 @@ RuntimeGeneratedFunctions.init(@__MODULE__)
 
 include("structs.jl")
 
-const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst, SBML.MathAvogadro}
+const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst,
+                                SBML.MathAvogadro}
 const SBMLRule = Union{SBML.AssignmentRule, SBML.RateRule, SBML.AlgebraicRule}
 const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
 const VariableSBML = Union{SpecieSBML, ParameterSBML, CompartmentSBML}

@@ -1,4 +1,5 @@
-function create_callbacks(system, model_SBML::ModelSBML, model_name::String; convert_stpan::Bool = false)::CallbackSet
+function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
+                          convert_stpan::Bool = false)::CallbackSet
     model_name = replace(model_name, "-" => "_")
     parameter_ids = string.(parameters(system))
     specie_ids = replace.(string.(states(system)), "(t)" => "")
@@ -16,7 +17,8 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String; con
         discrete_callback = !(_condition_has_species(event.trigger, specie_ids))
         condition_f = _get_callback_condition(event, specie_ids, parameter_ids)
         affect_f! = _get_callback_affect(event, specie_ids, parameter_ids)
-        init_f!, has_init_f = _get_callback_init(event, specie_ids, parameter_ids, tstops, first_callback)
+        init_f!, has_init_f = _get_callback_init(event, specie_ids, parameter_ids, tstops,
+                                                 first_callback)
         event_direction = _get_event_direction(event, discrete_callback)
 
         if has_init_f == false
@@ -25,13 +27,19 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String; con
             _init_f! = init_f!
         end
         if discrete_callback == true
-            callbacks[k] = DiscreteCallback(condition_f, affect_f!, initialize=_init_f!, save_positions=(false, false))
+            callbacks[k] = DiscreteCallback(condition_f, affect_f!, initialize = _init_f!,
+                                            save_positions = (false, false))
         elseif discrete_callback == false && event_direction == :left
-            callbacks[k] = ContinuousCallback(condition_f, nothing, affect_f!, initialize=_init_f!, save_positions=(false, false))
+            callbacks[k] = ContinuousCallback(condition_f, nothing, affect_f!,
+                                              initialize = _init_f!,
+                                              save_positions = (false, false))
         elseif discrete_callback == false && event_direction == :right
-            callbacks[k] = ContinuousCallback(condition_f, affect_f!, nothing, initialize=_init_f!, save_positions=(false, false))
+            callbacks[k] = ContinuousCallback(condition_f, affect_f!, nothing,
+                                              initialize = _init_f!,
+                                              save_positions = (false, false))
         else
-            callbacks[k] = ContinuousCallback(condition_f, affect_f!, initialize=_init_f!, save_positions=(false, false))
+            callbacks[k] = ContinuousCallback(condition_f, affect_f!, initialize = _init_f!,
+                                              save_positions = (false, false))
         end
         k += 1
         first_callback = false
@@ -39,7 +47,8 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String; con
     return CallbackSet(callbacks...)
 end
 
-function _get_callback_condition(event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String})::Function
+function _get_callback_condition(event::EventSBML, specie_ids::Vector{String},
+                                 parameter_ids::Vector{String})::Function
     condition = event.trigger
     discrete_callback = !(_condition_has_species(condition, specie_ids))
 
@@ -52,7 +61,7 @@ function _get_callback_condition(event::EventSBML, specie_ids::Vector{String}, p
             condition = replace(condition, r"<=|>=|>|<|≤|≥" => "-")
         end
     end
-    condition = _ids_to_callback_syntax(condition, specie_ids, :specie; integrator=false)
+    condition = _ids_to_callback_syntax(condition, specie_ids, :specie; integrator = false)
     condition = _ids_to_callback_syntax(condition, parameter_ids, :parameter)
 
     condition_call = _template_condition(condition, discrete_callback, event.name)
@@ -70,20 +79,24 @@ function _get_callback_condition(event::EventSBML, specie_ids::Vector{String}, p
     return condition_f
 end
 
-function _get_callback_affect(event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String})::Function
+function _get_callback_affect(event::EventSBML, specie_ids::Vector{String},
+                              parameter_ids::Vector{String})::Function
     affect_call = _template_affect(event, specie_ids, parameter_ids)
     return @RuntimeGeneratedFunction(Meta.parse(affect_call))
 end
 
-function _get_callback_init(event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String}, tstops::String, first_callback::Bool)::Tuple{Function, Bool}
+function _get_callback_init(event::EventSBML, specie_ids::Vector{String},
+                            parameter_ids::Vector{String}, tstops::String,
+                            first_callback::Bool)::Tuple{Function, Bool}
     discrete_callback = !(_condition_has_species(event.trigger, specie_ids))
     condition = event.trigger
-    condition = _ids_to_callback_syntax(condition, specie_ids, :specie; integrator=false)
+    condition = _ids_to_callback_syntax(condition, specie_ids, :specie; integrator = false)
     condition = _ids_to_callback_syntax(condition, parameter_ids, :parameter)
 
-    affect_body = _template_affect(event, specie_ids, parameter_ids; only_body=true)
+    affect_body = _template_affect(event, specie_ids, parameter_ids; only_body = true)
 
-    init_call = _template_init(event, condition, affect_body, tstops, first_callback, discrete_callback)
+    init_call = _template_init(event, condition, affect_body, tstops, first_callback,
+                               discrete_callback)
     init_f! = @RuntimeGeneratedFunction(Meta.parse(init_call))
     has_init = event.trigger_initial_value == false || first_callback
     return init_f!, has_init
@@ -108,7 +121,8 @@ function _get_event_direction(event::EventSBML, discrete_callback::Bool)::Symbol
     return event_direction
 end
 
-function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String}, parameter_ids::Vector{String})::String
+function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
+                     parameter_ids::Vector{String})::String
     tstops = String[]
     for event in values(model_SBML.events)
         if _condition_has_species(event.trigger, specie_ids)
@@ -125,7 +139,8 @@ function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String}, paramete
         condition_symbolic = eval(Meta.parse(condition))
         local tstop
         try
-            tstop = string.(Symbolics.solve_for(condition_symbolic, variables_symbolic[1], simplify = true))
+            tstop = string.(Symbolics.solve_for(condition_symbolic, variables_symbolic[1],
+                                                simplify = true))
         catch
             throw(SBMLSupport("Not possible to solve for time event $(event.name) is activated"))
         end
@@ -147,7 +162,8 @@ function _condition_has_species(condition::String, specie_ids::Vector{String})::
     return false
 end
 
-function _ids_to_callback_syntax(formula::String, ids::Vector{String}, id_type::Symbol; integrator::Bool=true, utmp::Bool=false)::String
+function _ids_to_callback_syntax(formula::String, ids::Vector{String}, id_type::Symbol;
+                                 integrator::Bool = true, utmp::Bool = false)::String
     @assert id_type in [:specie, :parameter] "Invalid id type $id_type when parsing to callback syntax"
     for (i, id) in pairs(ids)
         if id_type == :specie

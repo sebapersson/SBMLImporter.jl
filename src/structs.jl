@@ -106,7 +106,8 @@ struct ModelSBML
     reactionids::Vector{String}
 end
 function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[],
-                   conversion_factor::String = "", libsbml_rule_variables::Vector{String} = String[],
+                   conversion_factor::String = "",
+                   libsbml_rule_variables::Vector{String} = String[],
                    reactionids::Vector{String} = String[])::ModelSBML
     model_SBML = ModelSBML(name,
                            Dict{String, SpecieSBML}(),
@@ -133,7 +134,7 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
 end
 function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
     conversion_factor = _parse_variable(libsbml_model.conversion_factor)
-    name = _parse_variable(libsbml_model.name; default="SBML_model")
+    name = _parse_variable(libsbml_model.name; default = "SBML_model")
     name = replace(name, " " => "_")
 
     # Specie reference ids can sometimes appear in math expressions, where they should
@@ -146,7 +147,10 @@ function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
     else
         reactionids = collect(keys(libsbml_model.reactions))
     end
-    return ModelSBML(name, specie_reference_ids=specie_reference_ids, conversion_factor=conversion_factor, libsbml_rule_variables=libsbml_rule_variables, reactionids=reactionids)
+    return ModelSBML(name, specie_reference_ids = specie_reference_ids,
+                     conversion_factor = conversion_factor,
+                     libsbml_rule_variables = libsbml_rule_variables,
+                     reactionids = reactionids)
 end
 
 struct ModelSBMLSystem

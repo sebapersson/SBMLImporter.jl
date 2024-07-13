@@ -55,11 +55,16 @@ oprob = ODEProblem(sys, prnbng.u₀, tspan, prnbng.p, jac=true)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
-function load_SBML(path::AbstractString; massaction::Bool = false, ifelse_to_callback::Bool = true,
+function load_SBML(path::AbstractString; massaction::Bool = false,
+                   ifelse_to_callback::Bool = true,
                    inline_assignment_rules::Bool = true, write_to_file::Bool = false,
                    model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
-    model_SBML = parse_SBML(path; massaction = massaction, ifelse_to_callback = ifelse_to_callback, model_as_string = model_as_string, inline_assignment_rules = inline_assignment_rules)
-    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules; massaction = massaction)
+    model_SBML = parse_SBML(path; massaction = massaction,
+                            ifelse_to_callback = ifelse_to_callback,
+                            model_as_string = model_as_string,
+                            inline_assignment_rules = inline_assignment_rules)
+    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules;
+                                       massaction = massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 
     # Build callback functions

@@ -1,6 +1,8 @@
-function parse_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+function parse_initial_assignments!(model_SBML::ModelSBML,
+                                    libsbml_model::SBML.Model)::Nothing
     for (assign_id, assignment) in libsbml_model.initial_assignments
-        math_expression = _parse_assignment_formula(assign_id, assignment, model_SBML, libsbml_model)
+        math_expression = _parse_assignment_formula(assign_id, assignment, model_SBML,
+                                                    libsbml_model)
 
         if _is_model_variable(assign_id, model_SBML) == true
             _add_assignment_info!(model_SBML, assign_id, math_expression)
@@ -8,7 +10,10 @@ function parse_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.M
         end
         @warn "Initial assignment creates new specie $(assign_id). Happens when " *
               "$(assign_id) does not correspond to any model specie, parameter, or compartment."
-        model_SBML.species[assign_id] = SpecieSBML(assign_id, false, false, math_expression.formula, "", "1.0", "", :Amount, false, false, false, false, false, false, false)
+        model_SBML.species[assign_id] = SpecieSBML(assign_id, false, false,
+                                                   math_expression.formula, "", "1.0", "",
+                                                   :Amount, false, false, false, false,
+                                                   false, false, false)
         _add_ident_info!(model_SBML.species[assign_id], math_expression, model_SBML)
     end
 
@@ -22,21 +27,24 @@ function parse_initial_assignments!(model_SBML::ModelSBML, libsbml_model::SBML.M
     # be inlined as in the initial-value mapping assignment rules are not identified.
     # Holds for all species
     for specie in values(model_SBML.species)
-        specie.initial_value = _adjust_assignment_rule_variables(specie.initial_value, model_SBML)
+        specie.initial_value = _adjust_assignment_rule_variables(specie.initial_value,
+                                                                 model_SBML)
     end
     return nothing
 end
 
-function _parse_assignment_formula(assignment_id::String, assignment, model_SBML::ModelSBML, libsbml_model::SBML.Model)::MathSBML
+function _parse_assignment_formula(assignment_id::String, assignment, model_SBML::ModelSBML,
+                                   libsbml_model::SBML.Model)::MathSBML
     # Initial assignment applies at t = 0.0
     math_expression = parse_math(assignment, libsbml_model)
-    formula = _process_formula(math_expression, model_SBML; variable=assignment_id)
+    formula = _process_formula(math_expression, model_SBML; variable = assignment_id)
     formula = _replace_variable(formula, "t", "0.0")
     math_expression.formula = formula
     return math_expression
 end
 
-function _add_assignment_info!(model_SBML::ModelSBML, assign_id::String, math_expression::MathSBML)::Nothing
+function _add_assignment_info!(model_SBML::ModelSBML, assign_id::String,
+                               math_expression::MathSBML)::Nothing
     variable = _get_model_variable(assign_id, model_SBML)
     _add_ident_info!(variable, math_expression, model_SBML)
     formula = math_expression.formula
@@ -80,7 +88,7 @@ function _unnest_initial_assignment!(model_SBML::ModelSBML, assign_id::String)::
         if formula == _formula
             break
         end
-        @assert i != 100 "Got stuck in recursion while unnesting initial assignment"
+        @assert i!=100 "Got stuck in recursion while unnesting initial assignment"
     end
 
     variable.initial_value = formula

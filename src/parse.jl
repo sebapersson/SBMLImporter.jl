@@ -9,7 +9,9 @@ Rewriting ifelse to Boolean callbacks is strongly recommended (if possible).
 
 For testing path_SBML can be the model as a string if model_as_string=true.
 """
-function parse_SBML(path_SBML::String; massaction::Bool = false, ifelse_to_callback::Bool = true, model_as_string = true, inline_assignment_rules::Bool = true)::ModelSBML
+function parse_SBML(path_SBML::String; massaction::Bool = false,
+                    ifelse_to_callback::Bool = true, model_as_string = true,
+                    inline_assignment_rules::Bool = true)::ModelSBML
     model_str = _get_model_as_str(path_SBML, model_as_string)
     check_support(path_SBML)
 
@@ -25,10 +27,12 @@ function parse_SBML(path_SBML::String; massaction::Bool = false, ifelse_to_callb
                                            end)
     end
 
-    return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules, massaction)
+    return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules,
+                       massaction)
 end
 
-function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool, inline_assignment_rules::Bool, massaction::Bool)::ModelSBML
+function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
+                     inline_assignment_rules::Bool, massaction::Bool)::ModelSBML
     model_SBML = ModelSBML(libsbml_model)
 
     parse_species!(model_SBML, libsbml_model, massaction)

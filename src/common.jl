@@ -1,4 +1,5 @@
-function _replace_variable(formula::AbstractString, to_replace::String, replace_with::String)::String
+function _replace_variable(formula::AbstractString, to_replace::String,
+                           replace_with::String)::String
     if !occursin(to_replace, formula)
         return formula
     end
@@ -6,7 +7,9 @@ function _replace_variable(formula::AbstractString, to_replace::String, replace_
     return replace(formula, to_replace_r => replace_with)
 end
 
-function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML; rate_rule::Bool = false, assignment_rule::Bool = false, algebraic_rule::Bool = false, variable = "")::String
+function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML;
+                          rate_rule::Bool = false, assignment_rule::Bool = false,
+                          algebraic_rule::Bool = false, variable = "")::String
     @unpack formula, user_fns = math_expression
     formula = insert_functions(formula, model_SBML.functions, user_fns)
     formula = _replace_variable(formula, "time", "t")
@@ -65,8 +68,8 @@ function _trim_paranthesis(formula::String)::String
     length(formula) == 1 && return formula
     for _ in 1:100
         if (formula[1] == '(' && formula[end] == ')') &&
-           (formula[2] == '(' && formula[end-1] == ')')
-            formula = formula[2:end-1]
+           (formula[2] == '(' && formula[end - 1] == ')')
+            formula = formula[2:(end - 1)]
         else
             return formula
         end
@@ -97,7 +100,7 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                     formula = model_SBML.compartments[variable].formula
                 end
                 reaction.kinetic_math = _replace_variable(reaction.kinetic_math, variable,
-                                                         formula)
+                                                          formula)
             end
 
             if reaction.kinetic_math == _kinetic_math
@@ -130,7 +133,7 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                         formula = model_SBML.compartments[variable].formula
                     end
                     raterule.formula = _replace_variable(reaction.kinetic_math, variable,
-                                                        formula)
+                                                         formula)
                 end
                 if raterule.formula == _kinetic_math
                     break
@@ -161,12 +164,13 @@ function _parse_bool(x::Union{Nothing, Bool})::Bool
     return x
 end
 
-function _parse_variable(x::Union{Nothing, String, Real}; default::String="")::String
+function _parse_variable(x::Union{Nothing, String, Real}; default::String = "")::String
     isnothing(x) && return default
     return string(x)
 end
 
-function _get_times_appear(id::String, formula::AbstractString; isfunction::Bool=true)::Integer
+function _get_times_appear(id::String, formula::AbstractString;
+                           isfunction::Bool = true)::Integer
     pattern = isfunction ? Regex("\\b" * id * "\\(") : Regex("\\b" * id)
     return count(pattern, formula)
 end
@@ -190,7 +194,8 @@ function _is_event_assigned(variable::Union{Nothing, String}, model_SBML::ModelS
     return false
 end
 
-function _get_specieref(variable::String, libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
+function _get_specieref(variable::String,
+                        libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
     for reactions in values(libsbml_model.reactions)
         for reactant in reactions.reactants
             reactant.id == variable && return reactant
@@ -215,7 +220,8 @@ function _get_model_variable(variable::String, model_SBML::ModelSBML)
     haskey(model_SBML.compartments, variable) && return model_SBML.compartments[variable]
 end
 
-function _add_ident_info!(variable::VariableSBML, math_expression::MathSBML, model_SBML::ModelSBML)::Nothing
+function _add_ident_info!(variable::VariableSBML, math_expression::MathSBML,
+                          model_SBML::ModelSBML)::Nothing
     @unpack has_reaction_ids, has_rateOf, has_specieref = variable
     reaction_ids = math_expression.has_reaction_ids
     rateOf = math_expression.has_rateOf
@@ -256,7 +262,8 @@ function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBM
     return formula
 end
 
-function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; start_depth=0)::Vector{Integer}
+function _find_indices_outside_paranthesis(x::Char, formula::AbstractString;
+                                           start_depth = 0)::Vector{Integer}
     out = Vector{Int64}(undef, 0)
     paranthesis_depth = start_depth
     for (i, char) in pairs(formula)
@@ -273,27 +280,28 @@ function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; sta
     return out
 end
 
-function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart=1, iend=0)::Vector{String}
-    isempty(str[istart:end-iend]) && return String[]
-    length(indices) == 0 && return [str[istart:end-iend]]
+function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart = 1,
+                            iend = 0)::Vector{String}
+    isempty(str[istart:(end - iend)]) && return String[]
+    length(indices) == 0 && return [str[istart:(end - iend)]]
 
-    out = Vector{String}(undef, length(indices)+1)
+    out = Vector{String}(undef, length(indices) + 1)
     for (j, index) in pairs(indices)
-        out[j] = str[istart:index-1]
+        out[j] = str[istart:(index - 1)]
         istart = index + 1
     end
-    out[end] = str[(indices[end]+1):end-iend]
+    out[end] = str[(indices[end] + 1):(end - iend)]
     return out
 end
 
 function _get_cf_scaling(specie::SpecieSBML, model_SBML::ModelSBML)::String
     if isempty(specie.conversion_factor) && isempty(model_SBML.conversion_factor)
-         return ""
+        return ""
     elseif !isempty(specie.conversion_factor)
         return specie.conversion_factor
     else
         return model_SBML.conversion_factor
-     end
+    end
 end
 
 function get_specie_reference_ids(libsbml_model::SBML.Model)::Vector{String}

@@ -1,7 +1,7 @@
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
 function piecewise_to_ifelse(formula::String)::String
-    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES; piecewise=true)
+    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES; piecewise = true)
 end
 
 function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
@@ -14,14 +14,14 @@ function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
 end
 
 function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
-                                        ifelse_parameter_names=String[])::String
+                                        ifelse_parameter_names = String[])::String
     if !occursin("ifelse", formula)
         return formula
     end
     ifelse_with_time::Bool = false
     nifelse = _get_times_appear("ifelse", formula)
     ifelse_calls = _extract_function_calls("ifelse", formula)
-    @assert length(ifelse_calls) == nifelse "Error in ifelse to bool parsing"
+    @assert length(ifelse_calls)==nifelse "Error in ifelse to bool parsing"
 
     for ifelse_call in ifelse_calls
         # In some cases the same ifelse-call can appear in several equations
@@ -44,28 +44,33 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
         time_in_rhs = _has_time(rhs_condition)
         time_in_lhs = _has_time(lhs_condition)
         time_in_lhs == false && time_in_rhs == false && continue
-        @assert time_in_rhs != time_in_lhs "Error with time in both condition sides"
-        side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition, operator, time_in_rhs)
+        @assert time_in_rhs!=time_in_lhs "Error with time in both condition sides"
+        side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition,
+                                                       operator, time_in_rhs)
 
         bool_name = _get_name_bool_piecewise(ifelse_parameter_names)
         formula_bool = _template_bool_picewise(bool_name, arg1, arg2, side_activated)
-        formula = replace(formula, ifelse_call => formula_bool; count=1)
+        formula = replace(formula, ifelse_call => formula_bool; count = 1)
 
         model_SBML.ifelse_bool_expressions[ifelse_call] = formula_bool
-        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false, false, false, false, false, false)
-        model_SBML.events[bool_name] = _ifelse_to_event(bool_name, condition, side_activated)
+        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false,
+                                                         false, false, false, false, false)
+        model_SBML.events[bool_name] = _ifelse_to_event(bool_name, condition,
+                                                        side_activated)
 
         ifelse_with_time = true
         break
     end
 
     if ifelse_with_time == true
-        formula = _time_dependent_ifelse_to_bool(formula, model_SBML; ifelse_parameter_names=ifelse_parameter_names)
+        formula = _time_dependent_ifelse_to_bool(formula, model_SBML;
+                                                 ifelse_parameter_names = ifelse_parameter_names)
     end
     return formula
 end
 
-function _get_side_activated_with_time(lhs_condition::String, rhs_condition::String, operator::String, time_in_rhs::Bool)::String
+function _get_side_activated_with_time(lhs_condition::String, rhs_condition::String,
+                                       operator::String, time_in_rhs::Bool)::String
     sign_time = time_in_rhs ? _get_sign_time(rhs_condition) : _get_sign_time(lhs_condition)
     # Example : if we have -t > -1 then sign_time = -1, and when time increases from
     # t0=0 we have with time a transition from true -> false, which means that in the
@@ -107,7 +112,8 @@ function _get_name_bool_piecewise(ifelse_parameter_names::Vector{String})::Strin
     return parameter_name
 end
 
-function _template_bool_picewise(bool_name::String, ifelse_arg1::String, ifelse_arg2::String, side_activated::String)::String
+function _template_bool_picewise(bool_name::String, ifelse_arg1::String,
+                                 ifelse_arg2::String, side_activated::String)::String
     activated = side_activated == "left" ? ifelse_arg1 : ifelse_arg2
     deactivated = side_activated == "left" ? ifelse_arg2 : ifelse_arg1
     formula = "((1 - 1" * bool_name * ") * (" * deactivated * ") + " *
@@ -178,6 +184,7 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
             condition = replace(condition, r"≥|>=|>" => "≤")
         end
     end
-    event = SBMLImporter.EventSBML(id, condition, assignments, false, false, false, false, false, false, false, false)
+    event = SBMLImporter.EventSBML(id, condition, assignments, false, false, false, false,
+                                   false, false, false, false)
     return event
 end

@@ -35,7 +35,8 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     reactions = _reaction_str_to_vec(model_SBML_sys)
     r1 = eval(Meta.parse(reactions[1]))
     r1 = isnothing(r1) ? Catalyst.Reaction[] : [r1]
-    rn = Catalyst.ReactionSystem(r1, t, sps_arg, ps; name = Symbol(name), combinatoric_ratelaws = model_SBML_sys.all_integer_S)
+    rn = Catalyst.ReactionSystem(r1, t, sps_arg, ps; name = Symbol(name),
+                                 combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     for i in eachindex(reactions)
         i == 1 && continue
         # Adding a reaction and equation differs, as with reaction we can simply add via
@@ -54,7 +55,8 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     return rn, specie_map, parameter_map
 end
 
-function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, model_SBML::ModelSBML)::String
+function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
+                              model_SBML::ModelSBML)::String
     # If model is written to file save it in the same directory as the SBML-file. Only
     # save if model is not provided as a string (as then there is not file)
     pathsave = joinpath(dirsave, model_SBML.name * ".jl")
@@ -81,8 +83,8 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, 
     model_name = "\"" * model_SBML.name * "\""
     comb_ratelaws = string(model_SBML_sys.all_integer_S)
     rn_write = "Catalyst.ReactionSystem(_reactions, t, sps_arg, ps; " *
-                                        "name=Symbol($(model_name)), " *
-                                        "combinatoric_ratelaws=comb_ratelaws)"
+               "name=Symbol($(model_name)), " *
+               "combinatoric_ratelaws=comb_ratelaws)"
 
     frn = "function get_reaction_system(foo)\n"
     frn *= "\tModelingToolkit.@variables t\n"
@@ -104,14 +106,18 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String, 
     return frn
 end
 
-function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool; massaction::Bool = true)::ModelSBMLSystem
+function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool;
+                           massaction::Bool = true)::ModelSBMLSystem
     # If model is empty of derivatives a dummy state must be added to be able to create
     # a ReactionSystem
     if _has_derivatives(model_SBML) == false
-        model_SBML.species["__foo__"] = SpecieSBML("__foo__", false, false, "1.0", "0.0", "1.0", "", :Amount, false, false, false, false, false, false, false)
+        model_SBML.species["__foo__"] = SpecieSBML("__foo__", false, false, "1.0", "0.0",
+                                                   "1.0", "", :Amount, false, false, false,
+                                                   false, false, false, false)
     end
 
-    species, variables, specie_map = _get_system_variables(model_SBML, inline_assignment_rules)
+    species, variables, specie_map = _get_system_variables(model_SBML,
+                                                           inline_assignment_rules)
     parameters, parameter_map = _get_system_parameters(model_SBML)
 
     reactions, all_integer_S = _get_system_reactions(model_SBML, massaction)
@@ -122,10 +128,12 @@ function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool;
     reactions *= "\t]\n"
 
     has_species = species != "\tsps = Catalyst.@species "
-    return ModelSBMLSystem(species, specie_map, variables, parameters, parameter_map, reactions, has_species, all_integer_S)
+    return ModelSBMLSystem(species, specie_map, variables, parameters, parameter_map,
+                           reactions, has_species, all_integer_S)
 end
 
-function _get_system_variables(model_SBML::ModelSBML, inline_assignment_rules::Bool)::Tuple{String, String, String}
+function _get_system_variables(model_SBML::ModelSBML,
+                               inline_assignment_rules::Bool)::Tuple{String, String, String}
     # Species in reactions are treated as Catalyst.@species, meanwhile, dynamic variables
     # not changed by reactions (rule variables) are ModelingToolkit variables. Note,
     # both mtk_variables and catalyst_species initial values are set via the specie_map
@@ -195,7 +203,8 @@ function _get_system_reactions(model_SBML::ModelSBML, massaction::Bool)::Tuple{S
                   "$id is not massaction. It is parsed as non massaction reaction, which " *
                   "can negative impact simulation times."
         end
-        catalyst_reactions *= _template_reaction(reactants, products, r_S, p_S, propensity, is_massaction)
+        catalyst_reactions *= _template_reaction(reactants, products, r_S, p_S, propensity,
+                                                 is_massaction)
 
         # For creating the reaction system we need to know if only integer stoichiometry
         # holds for all reactions
@@ -249,7 +258,8 @@ function _get_reaction_stoichiometry(stoichiometry::String)::Tuple{String, Bool}
     return stoichiometry, false
 end
 
-function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML, which_side::Symbol)::Tuple{String, String, Bool}
+function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
+                                   which_side::Symbol)::Tuple{String, String, Bool}
     if which_side === :Reactants
         species_id, stoichiometries = r.reactants, r.reactants_stoichiometry
     elseif which_side === :Products
@@ -298,7 +308,8 @@ function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML, which
     return catalyst_S, catalyst_species, integer_S
 end
 
-function _is_massaction(r::ReactionSBML, model_SBML::ModelSBML, r_integer_S::Bool, p_integer_S::Bool)::Bool
+function _is_massaction(r::ReactionSBML, model_SBML::ModelSBML, r_integer_S::Bool,
+                        p_integer_S::Bool)::Bool
     r_integer_S == false && return false
     p_integer_S == false && return false
     r.stoichiometry_mass_action == false && return false
@@ -327,10 +338,12 @@ end
 
 function update_rate_reaction(rx; combinatoric_ratelaw::Bool = true)
     @set rx.rate = Catalyst.simplify((rx.rate^2) /
-                                      Catalyst.oderatelaw(rx; combinatoric_ratelaw = combinatoric_ratelaw))
+                                     Catalyst.oderatelaw(rx;
+                                                         combinatoric_ratelaw = combinatoric_ratelaw))
 end
 
-function _get_dir_save(write_to_file::Bool, model_as_string::Bool, path_SBML::String)::Union{Nothing, String}
+function _get_dir_save(write_to_file::Bool, model_as_string::Bool,
+                       path_SBML::String)::Union{Nothing, String}
     if write_to_file == true
         dir_save = if model_as_string
             nothing

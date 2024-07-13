@@ -56,7 +56,8 @@ function parse_math(math_sbml::Nothing, libsbml_model::SBML.Model)::MathSBML
     return MathSBML("", String[], "", String[], String[], String[], false, false)
 end
 
-function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML, libsbml_model::SBML.Model)::String
+function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
+                     libsbml_model::SBML.Model)::String
     fn = _parse_fn(math_sbml, libsbml_model.function_definitions)
     push!(math_expression.fns, fn)
 
@@ -92,7 +93,7 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML, libsb
         @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended."
         fn *= string(nargs)
     end
-    return fn * "(" * prod(args .* ", ")[1:end-2] * ")"
+    return fn * "(" * prod(args .* ", ")[1:(end - 2)] * ")"
 end
 _parse_math(math::SBML.MathVal, ::MathSBML, ::SBML.Model)::String = string(math.val)
 _parse_math(math::SBML.MathTime, ::MathSBML, ::SBML.Model)::String = "t"
@@ -107,7 +108,7 @@ function _parse_math(math::SBML.MathConst, ::MathSBML, ::SBML.Model)::String
     math.id == "exponentiale" && return "2.718281828459045"
     math.id == "pi" && return "3.1415926535897"
     return math.id
- end
+end
 
 function _parse_fn(math_sbml::SBML.MathApply, sbml_functions::Dict)::String
     if haskey(sbml_functions, math_sbml.fn)
