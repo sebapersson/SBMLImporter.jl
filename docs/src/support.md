@@ -1,6 +1,6 @@
 # [Supported SBML Features](@id support)
 
-SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes 1265 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
+SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes around 1300 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
 
 - Events.
 - Rate rules.
@@ -25,8 +25,6 @@ Currently SBMLImporter does not support the following features:
 * Parameter or species names corresponding to Julia constants (`pi`, `Inf`, `NaN`, `true`, `false`).
 * Certain uncommon math expressions, such as `lt` with three arguments, `implies` etc...
 
-Import might also fail for complicated nested piecewise expressions inside SBML functions.
-
 ## Support for additional features
 
-If SBMLImporter lacks support for a feature you would like to have, please file an issue on GitHub.
+If SBMLImporter lacks support for a feature you would like to have, please file an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).

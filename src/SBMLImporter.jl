@@ -8,36 +8,48 @@ using PrecompileTools
 using ReactionNetworkImporters
 using RuntimeGeneratedFunctions
 using SBML
+using SciMLBase
 using Setfield
 using SpecialFunctions
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
-# Importing SBML models
-include("Structs.jl")
-include("Build_model.jl")
-include("Callbacks.jl")
-include("Check_support.jl")
-include("SBML_to_ReactionSystem.jl")
-include("Parameters.jl")
-include("Species.jl")
-include("Functions.jl")
-include("Rules.jl")
-include("Common.jl")
-include("Piecewise.jl")
-include("Events.jl")
-include("Math.jl")
-include("Initial_assignments.jl")
-include("Reactions.jl")
+include("structs.jl")
+
+const SBMLMathVariables = Union{SBML.MathIdent, SBML.MathVal, SBML.MathTime, SBML.MathConst,
+                                SBML.MathAvogadro}
+const SBMLRule = Union{SBML.AssignmentRule, SBML.RateRule, SBML.AlgebraicRule}
+const FORBIDDEN_IDS = ["true", "false", "time", "pi", "Inf", "NaN"]
+const VariableSBML = Union{SpecieSBML, ParameterSBML, CompartmentSBML}
+
+include("callbacks.jl")
+include("common.jl")
+include("compartments.jl")
+include("events.jl")
+include("functions.jl")
+include("initial_assignments.jl")
+include("load.jl")
+include("math.jl")
+include("parameters.jl")
+include("parse.jl")
+include("piecewise.jl")
+include("reactions.jl")
+include("replace_idents.jl")
+include("rules.jl")
+include("sbml_functions.jl")
+include("support.jl")
+include("species.jl")
+include("system.jl")
+include("templates.jl")
 
 @setup_workload begin
-    # Model without events 
-    path_SBML = joinpath(@__DIR__, "..", "test", "Models",
-                         "model_Boehm_JProteomeRes2014.xml")
-    parsed_rn, cb = load_SBML(path_SBML)
-    # Model with events 
-    path_SBML = joinpath(@__DIR__, "..", "test", "Models", "model_Brannmark_JBC2010.xml")
-    parsed_rn, cb = load_SBML(path_SBML)
+    dirmodels = joinpath(@__DIR__, "..", "test", "Models")
+    # Model without events
+    path = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
+    prn, cb = load_SBML(path)
+    # Model with events
+    path = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
+    prn, cb = load_SBML(path)
 end
 
 export load_SBML

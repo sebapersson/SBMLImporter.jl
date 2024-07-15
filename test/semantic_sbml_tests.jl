@@ -25,7 +25,8 @@ end
 function check_test_case(test_case, solver)
     @info "Test case $test_case"
 
-    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/semantic/$test_case/$test_case"
+    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/" *
+               "semantic/$test_case/$test_case"
     sbml_urls = get_sbml_urls(base_url)
 
     _results_url = base_url * "-results.csv"
@@ -40,13 +41,19 @@ function check_test_case(test_case, solver)
     if test_case in _cases
         results = results[2:end, :]
     end
+    # Have trigger time t = 0, which is not currently handled
+    if test_case == "01488"
+        ifelse_to_callback = false
+    else
+        ifelse_to_callback = true
+    end
     colnames = Symbol.(replace.(string.(names(results)), " " => ""))
     rename!(results, colnames)
 
     # Case for FBA models an exceptions should be thrown
     if !("Time" ∈ names(results) || "time" ∈ names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
-        SBMLImporter.build_SBML_model(sbml_string; model_as_string = true)
+        SBMLImporter.parse_SBML(sbml_string, false; model_as_string = true)
     end
 
     tsave = "Time" in names(results) ? Float64.(results[!, :Time]) : Float64.(results[!, :time])
@@ -61,7 +68,8 @@ function check_test_case(test_case, solver)
 
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-        model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string = true)
+        model_SBML = SBMLImporter.parse_SBML(sbml_string, false, model_as_string = true,
+                                             inline_assignment_rules=false)
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
         if occursin("stoichiometryMath", sbml_string) == false
@@ -74,7 +82,7 @@ function check_test_case(test_case, solver)
                                                end)
         end
 
-        prnbng, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false)
+        prnbng, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
         if isempty(model_SBML.algebraic_rules)
             osys = structural_simplify(convert(ODESystem, prnbng.rn))
         else
@@ -188,11 +196,9 @@ solver = Rodas4P()
                           "01549", "01550", "01551", "01558", "01559", "01560", "01565",
                           "01567", "01568", "01569", "01570", "01571", "01572"]
         imply_cases = ["01274", "01279", "01497"]
-        three_arugment_and_xor = ["00198", "00200", "00201", "00276", "00279"]
-        piecewise_in_function_with_and_or = ["00956", "01282", "01488", "01503", "01516",
-                                             "01561"]
+        three_arugment_and_xor = ["00198", "00200", "00201", "00276", "00279", "01282"]
         piecewise_algebraic_rules = ["01503"]
-        rem_div_parameters = ["01272", "01277", "01495"]
+        rem_div_parameters = ["01272", "01273", "01277", "01278", "01495", "01496"]
         event_multiple_triggers = ["01211", "01531"]
         multiple_argument_inequality = ["01216", "01494", "01781", "01782", "01783",
                                         "01209", "01210", "00278"]
@@ -209,6 +215,7 @@ solver = Rodas4P()
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
+            continue
         end
         if test_case ∈ piecewise_algebraic_rules
             @test_throws SBMLImporter.SBMLSupport begin
@@ -276,12 +283,6 @@ solver = Rodas4P()
             end
             continue
         end
-        if test_case ∈ piecewise_in_function_with_and_or
-            @test_throws SBMLImporter.SBMLSupport begin
-                check_test_case(test_case, Rodas4P())
-            end
-            continue
-        end
         if test_case ∈ three_arugment_and_xor
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
@@ -295,25 +296,12 @@ solver = Rodas4P()
             continue
         end
 
-        # We do not aim to support Flux-Balance-Analysis (FBA) models
-        not_test1 = ["01" * string(i) for i in 186:197]
-        not_test2 = ["01" * string(i) for i in 606:625]
-        if test_case ∈ not_test1 || test_case ∈ not_test2 ||
-           test_case ∈ ["01627", "01628", "01629", "01630"]
-            continue
-        end
-
         #=
             Errors SBML importer does not manage to catch - but these are very rare
             cases
         =#
         # Edge-cases where I think there is a bug in SBML.jl
         if test_case ∈ ["01318", "01319", "01320"]
-            continue
-        end
-        # Edge case we cannot capture as we have nested piecewise - where the picewise
-        # is inside a function
-        if test_case ∈ ["01491", "01492", "01493", "01486"]
             continue
         end
         # Uncommon mathML with boundary effects, not sure I agree with test-suite
@@ -342,9 +330,8 @@ solver = Rodas4P()
         if test_case ∈ ["00950", "00951"]
             continue
         end
-        # Reaction cannot be empty, but in principle should be very able to handle this
-        if test_case ∈
-           ["01245", "01246", "01300", "01301", "01302", "01303", "01304", "01305", "01306"]
+        # Subset of empty reactions. TODO: Add fix for
+        if test_case ∈ ["01304", "01305", "01306"]
             continue
         end
 
