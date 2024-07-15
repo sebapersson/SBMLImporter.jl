@@ -1,19 +1,15 @@
 """
-    build_SBML_model(libsbml_model::SBML.Model; ifelse_to_callback::Bool=true)::ModelSBML
+    parse_SBML(path, massaction::Bool; kwargs...)::ModelSBML
 
-Given the path to a SBML file, builds an intermediate SBML model struct.
+Parse the model into an intermediate SBML model struct that stores all information needed
+to create a ReactionSystem.
 
-The SBML model struct stores the information needed to create a ODESystem or ReactionSystem.
-
-Rewriting ifelse to Boolean callbacks is strongly recommended (if possible).
-
-For testing path_SBML can be the model as a string if model_as_string=true.
+For testing path can be the model as a string if model_as_string=true.
 """
-function parse_SBML(path_SBML::String; massaction::Bool = false,
-                    ifelse_to_callback::Bool = true, model_as_string = true,
-                    inline_assignment_rules::Bool = true)::ModelSBML
-    model_str = _get_model_as_str(path_SBML, model_as_string)
-    check_support(path_SBML)
+function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = true,
+                    model_as_string = true, inline_assignment_rules::Bool = true)::ModelSBML
+    model_str = _get_model_as_str(path, model_as_string)
+    check_support(path)
 
     # stoichiometryMath only occurs in SBML level 2. If stoichiometryMath occur in the
     # model it is converted to a level three model via SBML.jl libsbml functionality

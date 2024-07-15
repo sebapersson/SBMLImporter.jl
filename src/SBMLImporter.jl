@@ -45,11 +45,11 @@ include("templates.jl")
 @setup_workload begin
     dirmodels = joinpath(@__DIR__, "..", "test", "Models")
     # Model without events
-    path_SBML = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
-    parsed_rn, cb = load_SBML(path_SBML)
+    path = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
+    prn, cb = load_SBML(path)
     # Model with events
-    path_SBML = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
-    parsed_rn, cb = load_SBML(path_SBML)
+    path = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
+    prn, cb = load_SBML(path)
 end
 
 export load_SBML

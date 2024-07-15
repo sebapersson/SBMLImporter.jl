@@ -51,7 +51,6 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
 
-        model_SBML = SBMLImporter.parse_SBML(sbml_string, model_as_string = true, massaction = true)
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
         if occursin("stoichiometryMath", sbml_string) == false
@@ -71,11 +70,11 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         else
             ma = true
         end
-        parsed_rn, cb = load_SBML(sbml_string, model_as_string = true, massaction = ma,
+        prn, cb = load_SBML(sbml_string, model_as_string = true, massaction = ma,
                                   inline_assignment_rules = false)
         tspan = (0.0, tmax)
-        dprob = DiscreteProblem(parsed_rn.rn, parsed_rn.u₀, tspan, parsed_rn.p)
-        jprob = JumpProblem(parsed_rn.rn, dprob, Direct(); save_positions = (false, false))
+        dprob = DiscreteProblem(prn.rn, prn.u₀, tspan, prn.p)
+        jprob = JumpProblem(prn.rn, dprob, Direct(); save_positions = (false, false))
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
             sol = solve(eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve,

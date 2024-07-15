@@ -5,10 +5,10 @@
 using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEq, Test
 
 # Creates models.
-parsed_rn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)
-rn_sbml = parsed_rn.rn
-u0_sbml = parsed_rn.u₀
-ps_sbml = parsed_rn.p
+prn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)
+rn_sbml = prn.rn
+u0_sbml = prn.u₀
+ps_sbml = prn.p
 
 rn_catalyst = @reaction_network $(rn_sbml.name) begin
     @species Y(t) X(t) # SBMLImporter has flipped order of species and parameters.
@@ -48,11 +48,11 @@ sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
 
 # Check consistent simulations when model is imported with and without rewriting to
 # Catalyst mass-action format
-path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
-parsed_rn1, cb1 = load_SBML(path_SBML; massaction = true)
-parsed_rn2, cb2 = load_SBML(path_SBML; massaction = false)
-oprob1 = ODEProblem(parsed_rn1.rn, parsed_rn1.u0, (0.0, 10.0), parsed_rn1.p)
-oprob2 = ODEProblem(parsed_rn2.rn, parsed_rn2.u0, (0.0, 10.0), parsed_rn2.p)
+path = joinpath(@__DIR__, "Models", "brusselator.xml")
+prn1, cb1 = load_SBML(path; massaction = true)
+prn2, cb2 = load_SBML(path; massaction = false)
+oprob1 = ODEProblem(prn1.rn, prn1.u0, (0.0, 10.0), prn1.p)
+oprob2 = ODEProblem(prn2.rn, prn2.u0, (0.0, 10.0), prn2.p)
 sol1 = solve(oprob1, Rodas5())
 sol2 = solve(oprob2, Rodas5())
 @test sol1 == sol2

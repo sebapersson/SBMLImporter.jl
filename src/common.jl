@@ -39,17 +39,17 @@ function _has_piecewise(formula::String)::Bool
     return any(occursin.(["piecewise", "piecewise2", "piecewise4"] .* '(', formula))
 end
 
-function _get_model_as_str(path_SBML::String, model_as_string::Bool)::String
+function _get_model_as_str(path::String, model_as_string::Bool)::String
     if model_as_string == false
-        if !isfile(path_SBML)
-            throw(SBMLSupport("$path_SBML is not the path to a SBML file"))
+        if !isfile(path)
+            throw(SBMLSupport("$path is not the path to a SBML file"))
         end
-        f = open(path_SBML, "r")
+        f = open(path, "r")
         model_str = read(f, String)
         close(f)
         return model_str
     else
-        return path_SBML
+        return path
     end
 end
 

@@ -1,70 +1,69 @@
 """
     load_SBML(path; massaction=false, kwargs...)
 
-Import a [SBML](https://sbml.org/) into a `ParsedReactionNetwork` that can simulated
-as a `JumpProblem` (Gillespie), a `SDEProblem` (chemical Langevin), or an `ODEProblem`
+Import an [SBML](https://sbml.org/) model into a `ParsedReactionNetwork` that can be
+simulated as a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin
+simulations, or an `ODEProblem` for deterministic simulations.
 
 The keyword `massaction` should be set to `true` if the model reactions follow chemical
-mass action [ADD], which often holds for rule based models generated from packages such as
-[BioNetGEn](https://bionetgen.org/). **Note** that `massaction=true` is required for
-carrying out efficient JumpProblem (Gillespie) simulations, more details [here](add!)
+[mass action](https://en.wikipedia.org/wiki/Law_of_mass_action) kinetics. This is because
+the most efficient `JumpProblem` (Gillespie) simulators require mass action jumps, for more
+details see [here](https://docs.sciml.ai/JumpProcesses/stable/jump_types/). For how to
+check if a model follows mass action kinetics, see the FAQ in the documentation.
 
 ## Keyword arguments
-- `ifelse_to_callback=true`: Whether to rewrite `ifelse` (SBML piecewise) expressions to
-    [callbacks](ADD). Recommended as this improves simulation runtime and stabillity.
-- `inline_assignment_rules=true`: Whether to inline assignment rules into model equations.
-    Recommended for lage models, **however**, if `true` is it not possible to access
-    assignment rule variables via `sol[:var]`.
-- `write_to_file=false`: Whether to write the parsed SBML model to a Julia file in the same directory as the
-    SBML file.
-- `model_as_string=false`: Whether or not the model (`path`) is provided as a string.
-- `check_massaction=true`: Whether to check if and rewrite a reaction to mass action if possible.
-- `massaction=false`: Determines if reactions are treated as mass-action reactions. This option should
-    be set to true **only** if it is certain that the model has mass action reactions, for example
-    if the model is an SBML file produced by BioNetGen.
+- `ifelse_to_callback::Bool=true`: Rewrite `ifelse` (SBML piecewise) expressions to
+  [callbacks](https://github.com/SciML/DiffEqCallbacks.jl). This improves
+  simulation runtime and stability. Strongly recomended to set to `true`.
+- `inline_assignment_rules::Bool=false`: Inline SBML assignment rules into model equations.
+    Recommended for importing large models. **However**, if set to `true`, it is
+    not possible to access assignment rule variables via `sol[:var]`.
+- `write_to_file::Bool=false`: Write the parsed SBML model to a Julia file in the same
+    directory as the SBML file.
+- `model_as_string::Bool=false`: Whether the model (`path`) is provided as a string.
 
 ## Returns
-- `parsed_rn`: A `ParsedReactionNetwork` struct that can be converted into a `JumpProblem`, a `SDEProblem`, or
-    an `ODEProblem`
-- `cbset`: Callbackset (events, piecewise etc...) for the model.
+- `prn`: A `ParsedReactionNetwork` that can be converted into a `JumpProblem`, a
+    `SDEProblem`, or an `ODEProblem`. Important fields are:
+  - `prn.rn`: A [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionNetwork`.
+  - `prn.u0`: A value map for setting initial values for model species.
+  - `prn.p`: A value map for setting model parameter values.
+- `cbset`: A `CallbackSet` with SBML events and SBML piecewise functions.
 
 ## Examples
 ```julia
 # Import and simulate model as a JumpProblem
 using SBMLImporter, JumpProcesses
-prnbng, cb = load_SBML(path)
+prn, cb = load_SBML(path; massaction=true)
 tspan = (0.0, 10.0)
-dprob = DiscreteProblem(prnbng.rn, prnbng.u₀, tspan, prnbng.p)
-jprob = JumpProblem(prnbng.rn, dprob, Direct())
+dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
+jprob = JumpProblem(prn.rn, dprob, Direct())
 sol = solve(jprob, SSAStepper(), callback=cb)
 ```
 ```julia
 # Import and simulate model as a SDE
 using SBMLImporter, StochasticDiffEq
-prnbng, cb = load_SBML(path)
+prn, cb = load_SBML(path)
 tspan = (0.0, 10.0)
-sprob = SDEProblem(prnbng.rn, prnbng.u₀, tspan, prnbng.p)
+sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)
 sol = solve(sprob, LambaEM(), callback=cb)
 ```
 ```julia
 # Import and simulate model as an ODE
-using SBMLImporter, ModelingToolkit, OrdinaryDiffEq
-prnbng, cb = load_SBML(path)
-sys = convert(ODESystem, prnbng.rn)
-oprob = ODEProblem(sys, prnbng.u₀, tspan, prnbng.p, jac=true)
+using SBMLImporter, OrdinaryDiffEq
+prn, cb = load_SBML(path)
+oprob = ODEProblem(prn.rn, prn.u0, tspan, prn.p)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
 function load_SBML(path::AbstractString; massaction::Bool = false,
-                   ifelse_to_callback::Bool = true,
-                   inline_assignment_rules::Bool = true, write_to_file::Bool = false,
+                   ifelse_to_callback::Bool = true, write_to_file::Bool = false,
+                   inline_assignment_rules::Bool = false,
                    model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
-    model_SBML = parse_SBML(path; massaction = massaction,
-                            ifelse_to_callback = ifelse_to_callback,
+    model_SBML = parse_SBML(path, massaction; ifelse_to_callback = ifelse_to_callback,
                             model_as_string = model_as_string,
                             inline_assignment_rules = inline_assignment_rules)
-    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules;
-                                       massaction = massaction)
+    model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 
     # Build callback functions
@@ -77,6 +76,6 @@ function load_SBML(path::AbstractString; massaction::Bool = false,
         dirsave = _get_dir_save(write_to_file, model_as_string, path)
         write_reactionsystem(model_SBML_sys, dirsave, model_SBML)
     end
-    parsed_rn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
-    return parsed_rn, cbset
+    prn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
+    return prn, cbset
 end

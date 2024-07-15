@@ -53,7 +53,7 @@ function check_test_case(test_case, solver)
     # Case for FBA models an exceptions should be thrown
     if !("Time" ∈ names(results) || "time" ∈ names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
-        SBMLImporter.parse_SBML(sbml_string; model_as_string = true)
+        SBMLImporter.parse_SBML(sbml_string, false; model_as_string = true)
     end
 
     tsave = "Time" in names(results) ? Float64.(results[!, :Time]) : Float64.(results[!, :time])
@@ -68,7 +68,8 @@ function check_test_case(test_case, solver)
 
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-        model_SBML = SBMLImporter.parse_SBML(sbml_string, model_as_string = true, inline_assignment_rules=false)
+        model_SBML = SBMLImporter.parse_SBML(sbml_string, false, model_as_string = true,
+                                             inline_assignment_rules=false)
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
         if occursin("stoichiometryMath", sbml_string) == false

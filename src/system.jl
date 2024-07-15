@@ -106,8 +106,8 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
     return frn
 end
 
-function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool;
-                           massaction::Bool = true)::ModelSBMLSystem
+function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool,
+                           massaction::Bool)::ModelSBMLSystem
     # If model is empty of derivatives a dummy state must be added to be able to create
     # a ReactionSystem
     if _has_derivatives(model_SBML) == false
@@ -343,12 +343,12 @@ function update_rate_reaction(rx; combinatoric_ratelaw::Bool = true)
 end
 
 function _get_dir_save(write_to_file::Bool, model_as_string::Bool,
-                       path_SBML::String)::Union{Nothing, String}
+                       path::String)::Union{Nothing, String}
     if write_to_file == true
         dir_save = if model_as_string
             nothing
         else
-            joinpath(splitdir(path_SBML)[1], "SBML")
+            joinpath(splitdir(path)[1], "SBML")
         end
     else
         dir_save = nothing
