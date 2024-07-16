@@ -130,7 +130,7 @@ function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
         end
 
         # In this case we can solve for the event time via Symbolics
-        variables = "@variables t, "
+        variables = "ModelingToolkit.@variables t, "
         variables *= prod(parameter_ids .* ", ")[1:(end - 2)] * " "
         variables *= prod(specie_ids .* ", ")[1:(end - 2)] * " "
         variables_symbolic = eval(Meta.parse(variables))
