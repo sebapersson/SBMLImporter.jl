@@ -12,5 +12,5 @@ sys2 = structural_simplify(convert(ODESystem, prn2.rn))
 oprob2 = ODEProblem(sys2, prn2.u0, (0.0, 10.0), prn2.p)
 sol2 = solve(oprob2, Rodas5P(), abstol=1e-3, reltol=1e-8)
 for name in states(sys1)
-    all(.≈(sol1[name], sol2[name], atol = 1e-9))
+    @test all(.≈(sol1[name], sol2[name], atol = 1e-9))
 end
