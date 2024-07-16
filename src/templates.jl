@@ -3,7 +3,6 @@ function _apply(operator::Function, x::String, y::String)::String
     return string(operator) * '(' * x * ", " * y * ')'
 end
 
-
 function _template_value_map(id::String, value::String)::String
     return "\t" * id * " =>" * value * ",\n"
 end
@@ -135,7 +134,8 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
     return init
 end
 
-function _template_conc_dynamic_c(dndt::String, V::String, n_id::String, dVdt::String)::String
+function _template_conc_dynamic_c(dndt::String, V::String, n_id::String,
+                                  dVdt::String)::String
     # Math expressions are built via operator(a, b) to avoid any paranthesis problems
     # when parsing
     V2 = _apply(^, V, "2")
@@ -145,7 +145,8 @@ function _template_conc_dynamic_c(dndt::String, V::String, n_id::String, dVdt::S
     return _apply(-, arg1, arg3)
 end
 
-function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String, dVdt::String)::String
+function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String,
+                                    dVdt::String)::String
     arg1 = _apply(*, dcdt, V)
     arg2 = _apply(/, dVdt, V)
     arg3 = _apply(*, specie_id, arg2)
