@@ -115,7 +115,7 @@ function _inline_assignment_rules(formula::String, model_SBML::ModelSBML)::Strin
         if formula_start == formula
             break
         end
-        @assert i != 1000 "Stuck in recursion when inlining assignment rules"
+        @assert i!=1000 "Stuck in recursion when inlining assignment rules"
     end
     return formula
 end
