@@ -78,65 +78,18 @@ function _trim_paranthesis(formula::String)::String
 end
 
 function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
-    for (reaction_id, reaction) in model_SBML.reactions
-        if reaction.has_assignment_rule_variable == false
-            continue
-        end
-        # Assignment rule can be nested so must go via recursion here, and
-        # break when after one iteration kinetic-math formula has not changed
-        while true
-            _kinetic_math = reaction.kinetic_math
-
-            for variable in model_SBML.assignment_rule_variables
-                if !occursin(variable, reaction.kinetic_math)
-                    continue
-                end
-
-                if haskey(model_SBML.species, variable)
-                    formula = model_SBML.species[variable].formula
-                elseif haskey(model_SBML.parameters, variable)
-                    formula = model_SBML.parameters[variable].formula
-                elseif haskey(model_SBML.compartments, variable)
-                    formula = model_SBML.compartments[variable].formula
-                end
-                reaction.kinetic_math = _replace_variable(reaction.kinetic_math, variable,
-                                                          formula)
-            end
-
-            if reaction.kinetic_math == _kinetic_math
-                break
-            end
-        end
+    for reaction in values(model_SBML.reactions)
+        reaction.has_assignment_rule_variable == false && continue
+        reaction.kinetic_math = _inline_assignment_rules(reaction.kinetic_math, model_SBML)
     end
 
-    # Need to inline into rate-rules
-    for rule_id in model_SBML.rate_rule_variables
-        raterule = _get_model_variable(rule_id, model_SBML)
-        # Assignment rule can be nested so must go via recursion here
-        while true
-            _kinetic_math = deepcopy(raterule.formula)
-            for variable in model_SBML.assignment_rule_variables
-                if !occursin(variable, raterule.formula)
-                    continue
-                end
-                if haskey(model_SBML.species, variable)
-                    formula = model_SBML.species[variable].formula
-                elseif haskey(model_SBML.parameters, variable)
-                    formula = model_SBML.parameters[variable].formula
-                elseif haskey(model_SBML.compartments, variable)
-                    formula = model_SBML.compartments[variable].formula
-                end
-                raterule.formula = _replace_variable(raterule.formula, variable,
-                                                     formula)
-            end
-            if raterule.formula == _kinetic_math
-                break
-            end
-        end
+    for ruleid in model_SBML.rate_rule_variables
+        raterule = _get_model_variable(ruleid, model_SBML)
+        raterule.formula = _inline_assignment_rules(raterule.formula, model_SBML)
     end
 
-    # Need to inline into parameter assignments
-    for (parameter_id, parameter) in model_SBML.parameters
+    # Via InitialAssignments a parameter can take value of an assignment rule
+    for parameter in values(model_SBML.parameters)
         parameter.rate_rule && continue
         parameter.assignment_rule && continue
         if parameter.formula in model_SBML.assignment_rule_variables
@@ -146,9 +99,25 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
         end
     end
 
-    # As assignment rule variables have been inlined they can be removed from the model
     filter!(isempty, model_SBML.assignment_rule_variables)
     return nothing
+end
+
+function _inline_assignment_rules(formula::String, model_SBML::ModelSBML)::String
+    # Rules can be nested
+    for i in 1:1000
+        formula_start = deepcopy(formula)
+        for ruleid in model_SBML.assignment_rule_variables
+            !occursin(ruleid, formula) && continue
+            variable = _get_model_variable(ruleid, model_SBML)
+            formula = _replace_variable(formula, ruleid, variable.formula)
+        end
+        if formula_start == formula
+            break
+        end
+        @assert i != 1000 "Stuck in recursion when inlining assignment rules"
+    end
+    return formula
 end
 
 """
