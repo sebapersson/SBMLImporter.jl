@@ -136,19 +136,16 @@ end
 
 function _template_conc_dynamic_c(dndt::String, V::String, n_id::String,
                                   dVdt::String)::String
-    # Math expressions are built via operator(a, b) to avoid any paranthesis problems
-    # when parsing
+    # Math expressions are built via, e.g., +(1, 2) to avoid paranthesis problems
     V2 = _apply(^, V, "2")
-    arg1 = _apply(/, dndt, V)
-    arg2 = _apply(/, n_id, V2)
-    arg3 = _apply(*, arg2, dVdt)
-    return _apply(-, arg1, arg3)
+    p1 = _apply(/, dndt, V)
+    p2 = _apply(*, _apply(/, n_id, V2), dVdt)
+    return _apply(-, p1, p2)
 end
 
 function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String,
                                     dVdt::String)::String
-    arg1 = _apply(*, dcdt, V)
-    arg2 = _apply(/, dVdt, V)
-    arg3 = _apply(*, specie_id, arg2)
-    return _apply(+, arg1, arg3)
+    p1 = _apply(*, dcdt, V)
+    p2 = _apply(*, specie_id, _apply(/, dVdt, V))
+    return _apply(+, p1, p2)
 end

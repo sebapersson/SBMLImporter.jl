@@ -73,11 +73,11 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
     end
     # Julia does not have a root function, hence for two args this is needed
     if fn == "sqrt" && nargs == 2
-        return "(" * args[2] * ")^(1.0 / " * args[1] * ")"
+        return _apply(^, args[2], _apply(/, "1.0", args[1]))
     end
     # Gamma function requires a shift of +1; factorial(a) = Gamma(a+1)
     if fn == "SpecialFunctions.gamma"
-        args[1] *= " + 1"
+        args[1] = _apply(+, args[1], "1")
     end
     # For gated logical funcitons 0 and 1 arguments are allowed. As these cases correspond
     # to different functions than the normal gated logicals, these are renamed
