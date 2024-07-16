@@ -56,11 +56,11 @@ function _get_initial_value(specie::SBML.Species, unit::Symbol)::String
     given_in_conc = !isnothing(initial_concentration)
     given_in_amount = !isnothing(initial_amount)
     if given_in_conc && unit == :Amount
-        initial_value = string(initial_concentration) * "*" * specie.compartment
+        initial_value = _apply(*, string(initial_concentration), specie.compartment)
     elseif given_in_conc && unit == :Concentration
         initial_value = initial_concentration
     elseif given_in_amount && unit == :Concentration
-        initial_value = string(initial_amount) * "/" * specie.compartment
+        initial_value = _apply(/, string(initial_amount), specie.compartment)
     elseif given_in_amount && unit == :Amount
         initial_value = _parse_variable(initial_amount)
         # Defaults to zero
@@ -88,8 +88,8 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         specie.unit != :Amount && continue
 
         conc_id = "__" * specie_id * "__conc__"
-        conc_initial_value = specie.initial_value * "/" * compartment.name
-        dcdt = specie.formula * "/" * compartment.name
+        conc_initial_value = _apply(/, specie.initial_value, compartment.name)
+        dcdt = _apply(/, specie.formula, compartment.name)
         push!(model_SBML.rate_rule_variables, conc_id)
         model_SBML.species[conc_id] = SpecieSBML(conc_id, false, false, conc_initial_value,
                                                  dcdt, compartment.name,
@@ -99,7 +99,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
                                                  specie.has_specieref)
 
         V, dVdt = compartment.name, compartment.formula
-        specie.formula = dcdt * "*" * V * " + " * specie_id * "*" * dVdt * " / " * V
+        specie.formula = _template_amount_dynamic_c(dcdt, V, specie_id, dVdt)
     end
 
     # When a specie is given in concentration but compartment changes, the concentration (c)
@@ -135,7 +135,7 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
 
         V, dVdt = compartment.name, compartment.formula
         n_id = "__" * specie_id * "__amount__"
-        n_initial_amount = specie.initial_value * "*" * V
+        n_initial_amount = _apply(*, specie.initial_value, V)
         dndt = _get_amount_formula(specie, V)
         model_SBML.species[n_id] = SpecieSBML(n_id, false, false, n_initial_amount, dndt, V,
                                               specie.conversion_factor, :Amount, false,
@@ -144,21 +144,20 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
 
         # To enforce that dcdt is given by the ODE specie is promoted to rate-rule. Further
         # to obtain correct dn/dt formula, replace specie with n_id in reactions
-        #V, dVdt = compartment.name, compartment.formula
-        #dVdt = compartment.formula
-        specie.formula = dndt * "/(" * V * ") - " * n_id * "/(" * V * ")^2*" * dVdt
+        specie.formula = _template_conc_dynamic_c(dndt, V, n_id, dVdt)
         specie.rate_rule = true
         push!(model_SBML.rate_rule_variables, specie.name)
         for reaction in values(model_SBML.reactions)
+            @unpack products_stoichiometry, reactants_stoichiometry = reaction
             for (i, product) in pairs(reaction.products)
                 product != specie.name && continue
                 reaction.products[i] = n_id
-                reaction.products_stoichiometry[i] *= "*" * V
+                products_stoichiometry[i] = _apply(*, products_stoichiometry[i], V)
             end
             for (i, reactant) in pairs(reaction.reactants)
                 reactant != specie.name && continue
                 reaction.reactants[i] = n_id
-                reaction.reactants_stoichiometry[i] *= "*" * V
+                reactants_stoichiometry[i] = _apply(*, reactants_stoichiometry[i], V)
             end
         end
     end
@@ -171,7 +170,7 @@ function _get_amount_formula(specie::SpecieSBML, V::String)::String
     if specie.boundary_condition == true
         return "0.0"
     end
-    return isempty(specie.formula) ? "0.0" : "(" * specie.formula * ")" * V
+    return isempty(specie.formula) ? "0.0" : _apply(*, specie.formual, V)
 end
 
 function add_conversion_factor_ode!(model_SBML::ModelSBML,
@@ -187,7 +186,7 @@ function add_conversion_factor_ode!(model_SBML::ModelSBML,
 
         cf = _get_cf_scaling(specie, model_SBML)
         isempty(cf) && continue
-        specie.formula = "(" * specie.formula * ") * " * cf
+        specie.formula = _apply(*, specie.formula, cf)
     end
     return nothing
 end

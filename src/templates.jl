@@ -1,3 +1,9 @@
+function _apply(operator::Function, x::String, y::String)::String
+    @assert operator in [+, -, *, /, ^] "$operator is not allowed for building math expression"
+    return string(operator) * '(' * x * ", " * y * ')'
+end
+
+
 function _template_value_map(id::String, value::String)::String
     return "\t" * id * " =>" * value * ",\n"
 end
@@ -41,7 +47,9 @@ function _template_ode_reaction(s::String, c_scaling::String, propensity::String
     @assert which_side in [:reactant, :product] "$(which_side) is an invalid reaction side"
     sign = which_side == :product ? '+' : '-'
     # c_scaling either "" or "/...", hence the 1
-    return sign * s * "*1" * c_scaling * "*(" * propensity * ")"
+    p1 = _apply(*, c_scaling, propensity)
+    p2 = _apply(*, "1", p1)
+    return _apply(*, sign * s, p2)
 end
 
 function _template_tstops(tstops::Vector{String})::String
@@ -125,4 +133,21 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
     init *= "\t" * affect_body * "\n\tend"
     init *= "\nend"
     return init
+end
+
+function _template_conc_dynamic_c(dndt::String, V::String, n_id::String, dVdt::String)::String
+    # Math expressions are built via operator(a, b) to avoid any paranthesis problems
+    # when parsing
+    V2 = _apply(^, V, "2")
+    arg1 = _apply(/, dndt, V)
+    arg2 = _apply(/, n_id, V2)
+    arg3 = _apply(*, arg2, dVdt)
+    return _apply(-, arg1, arg3)
+end
+
+function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String, dVdt::String)::String
+    arg1 = _apply(*, dcdt, V)
+    arg2 = _apply(/, dVdt, V)
+    arg3 = _apply(*, specie_id, arg2)
+    return _apply(+, arg1, arg3)
 end

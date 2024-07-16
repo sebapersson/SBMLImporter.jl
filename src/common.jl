@@ -30,7 +30,7 @@ function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML;
         specie.only_substance_units && continue
         specie_id ∉ math_expression.math_idents && continue
         c = specie.compartment
-        formula = _replace_variable(formula, specie_id, "(" * specie_id * "/" * c * ")")
+        formula = _replace_variable(formula, specie_id, _apply(/, specie_id, c))
     end
     return formula
 end
@@ -149,7 +149,7 @@ end
 
 function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
     if specie.unit == :Amount && specie.only_substance_units == false
-        formula = '(' * formula * ") * " * specie.compartment
+        formula = _apply(*, formula, specie.compartment)
     end
     return formula
 end

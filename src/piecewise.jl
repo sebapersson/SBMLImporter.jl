@@ -90,12 +90,12 @@ function _get_side_activated_with_time(lhs_condition::String, rhs_condition::Str
 end
 
 function _split_condition(formula::String)::Tuple{String, String, String}
-    gt_operators = [">", "≥", ">="]
-    lt_operators = ["<", "≤", "<="]
-    igt = findfirst(x -> occursin(x, formula), gt_operators)
-    ilt = findfirst(x -> occursin(x, formula), lt_operators)
+    gt_applys = [">", "≥", ">="]
+    lt_applys = ["<", "≤", "<="]
+    igt = findfirst(x -> occursin(x, formula), gt_applys)
+    ilt = findfirst(x -> occursin(x, formula), lt_applys)
     @assert !all(isnothing.([igt, ilt])) "Error splitting ifelse condition"
-    operator = isnothing(igt) ? lt_operators[ilt] : gt_operators[igt]
+    operator = isnothing(igt) ? lt_applys[ilt] : gt_applys[igt]
     lhs, rhs = string.(split(formula, operator))
     return lhs, rhs, operator
 end
