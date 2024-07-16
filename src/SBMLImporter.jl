@@ -2,7 +2,6 @@ module SBMLImporter
 
 using Catalyst
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback, add_tstop!
-#using DiffEqCallbacks
 using JumpProcesses: JumpProblem
 using PrecompileTools: @setup_workload
 using ReactionNetworkImporters: ParsedReactionNetwork
