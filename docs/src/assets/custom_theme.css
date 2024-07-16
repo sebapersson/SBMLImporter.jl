@@ -4,7 +4,7 @@
 
 html.theme--documenter-dark pre,
 html.theme--documenter-dark code {
-  font-family: "JuliaMono";}
+  font-family: "JuliaMono"; }
 
 html:not(.theme--documenter-dark) body #documenter a {
   color: #a10ca1; }
@@ -51,25 +51,11 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
   html:not(.theme--documenter-dark) body #documenter pre .hljs-keyword, html:not(.theme--documenter-dark) body #documenter code .hljs-keyword {
     color: #703D6F; }
 
-.admonition.is-category-terminology {
-  background-color: #FFFEDD;
-  border-color: #FFEC8B; }
-  .admonition.is-category-terminology > .admonition-header {
-    background-color: #FFEC8B;
-    color: black; }
-    .admonition.is-category-terminology > .admonition-header:before {
-      content: "Terminology: ";
-      font-family: inherit;
-      font-weight: bold; }
-
-html.theme--documenter-dark .admonition.is-category-terminology {
-  border-color: #FFEC8B; }
-
 details {
   padding-left: 1rem;
   padding-right: 1rem;
   padding-bottom: 1rem;
-  background: #703D6F; }
+  background: aliceblue; }
 
 html.theme--documenter-dark details {
   background: #282f2f; }

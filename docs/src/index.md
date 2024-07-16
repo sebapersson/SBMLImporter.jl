@@ -5,11 +5,11 @@ SBMLImporter.jl is a Julia package for importing dynamic [Systems Biology Markup
 ## Major highlights
 
 * Import of SBML models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or an `ODEProblem`.
-* Support for a majority of SBML features, such as dynamic compartments, events, rules, piecewise (ifelse) expressions, and units. An extensive feature list can be found [here](@ref support).
+* Support for a majority of SBML features, such as dynamic compartments, events, rules, piecewise (`ifelse`) expressions, and units. An extensive feature list can be found [here](@ref support).
 * Thoroughly tested against both the [SBML test suite](https://github.com/sbmlteam/sbml-test-suite) and a large collection of published models.
 * Integrates with [PEtab.jl](https://github.com/sebapersson/PEtab.jl) for fitting SBML models to data.
 
-!!! info
+!!! note "Star us on GitHub!"
     If you find the package useful in your work please consider giving us a star on [GitHub](https://github.com/sebapersson/SBMLImporter.jl). This will help us secure funding in the future to continue maintaining the package.
 
 ## Installation
