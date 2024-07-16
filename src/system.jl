@@ -2,7 +2,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     # The ReactionSystem must be built via eval, as creating a function that returns
     # the rn fails for large models
     eval(Meta.parse("ModelingToolkit.@variables t"))
-    eval(Meta.parse("D = Differential(t)"))
+    eval(Meta.parse("D = Catalyst.Differential(t)"))
     # A model must have either variables or species, which dictates the sps call to
     # the reaction system
     if model_SBML_sys.has_species == true
@@ -90,7 +90,7 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
     frn *= "\tModelingToolkit.@variables t\n"
     frn *= "\tD = Differential(t)\n"
     frn *= sps * "\n"
-    frn *= "\tvs = " * vs * "\n"
+    frn *= vs * "\n"
     frn *= "\tsps_arg = " * sps_arg * "\n"
     frn *= ps * "\n\n"
     frn *= reactions * "\n"

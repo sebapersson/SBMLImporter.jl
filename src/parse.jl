@@ -14,13 +14,13 @@ function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = t
     # stoichiometryMath only occurs in SBML level 2. If stoichiometryMath occur in the
     # model it is converted to a level three model via SBML.jl libsbml functionality
     if occursin("stoichiometryMath", model_str) == false
-        libsbml_model = readSBMLFromString(model_str)
+        libsbml_model = SBML.readSBMLFromString(model_str)
     else
-        libsbml_model = readSBMLFromString(model_str,
-                                           doc -> begin
-                                               set_level_and_version(3, 2)(doc)
-                                               convert_promotelocals_expandfuns(doc)
-                                           end)
+        libsbml_model = SBML.readSBMLFromString(model_str,
+                                                doc -> begin
+                                                    SBML.set_level_and_version(3, 2)(doc)
+                                                    SBML.convert_promotelocals_expandfuns(doc)
+                                                end)
     end
 
     return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules,

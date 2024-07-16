@@ -1,16 +1,16 @@
 module SBMLImporter
 
 using Catalyst
-using DiffEqBase
-using DiffEqCallbacks
-using JumpProcesses
-using PrecompileTools
-using ReactionNetworkImporters
-using RuntimeGeneratedFunctions
-using SBML
-using SciMLBase
-using Setfield
-using SpecialFunctions
+using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback, add_tstop!
+#using DiffEqCallbacks
+using JumpProcesses: JumpProblem
+using PrecompileTools: @setup_workload
+using ReactionNetworkImporters: ParsedReactionNetwork
+using RuntimeGeneratedFunctions: RuntimeGeneratedFunctions, @RuntimeGeneratedFunction
+using SBML: SBML, readSBMLFromString
+import SciMLBase
+using Setfield: @set
+import SpecialFunctions
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
