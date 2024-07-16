@@ -12,6 +12,10 @@ end
     include("inline_assignment_rules.jl")
 end
 
+@safetestset "Ifelse to callback" begin
+    include("ifelse_to_callback.jl")
+end
+
 @safetestset "SBML large models" begin
     include("large_models.jl")
 end
