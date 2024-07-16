@@ -82,14 +82,14 @@ function check_test_case(test_case, solver)
                                                end)
         end
 
-        prnbng, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
+        prn, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
         if isempty(model_SBML.algebraic_rules)
-            osys = structural_simplify(convert(ODESystem, prnbng.rn))
+            osys = structural_simplify(convert(ODESystem, prn.rn))
         else
-            _sys = dae_index_lowering(convert(ODESystem, prnbng.rn))
+            _sys = dae_index_lowering(convert(ODESystem, prn.rn))
             osys = structural_simplify(_sys)
         end
-        oprob = ODEProblem(osys, prnbng.u₀, (0.0, tmax), prnbng.p, jac = true)
+        oprob = ODEProblem(osys, prn.u0, (0.0, tmax), prn.p, jac = true)
         sol = solve(oprob, solver, abstol = 1e-12, reltol = 1e-12, saveat = tsave,
                     callback = cb)
         model_parameters = string.(parameters(sol.prob.f.sys))
@@ -99,19 +99,19 @@ function check_test_case(test_case, solver)
             expected_res = results[!, Symbol(component_test)]
 
             if component_test in model_parameters
-                ip = findfirst(x -> x == component_test, model_parameters)
+                p = sol.prob.ps[Symbol(component_test)]
                 result_is_inf = all(isinf.(expected_res))
                 result_is_nan = all(isnan.(expected_res))
                 result_is_pos = all(expected_res .> 0)
 
                 if result_is_inf && result_is_pos
-                    @test isinf(sol.prob.p[ip]) && sol.prob.p[ip] > 0
+                    @test isinf(p) && sol.prob.p[ip] > 0
                 elseif result_is_inf && !result_is_pos
-                    @test isinf(sol.prob.p[ip]) && sol.prob.p[ip] < 0
+                    @test isinf(p) && sol.prob.p[ip] < 0
                 elseif result_is_nan
-                    @test isnan(sol.prob.p[ip])
+                    @test isnan(p)
                 else
-                    absdiff = abs.(sol.prob.p[ip] .- expected_res)
+                    absdiff = abs.(p .- expected_res)
                     @test all(absdiff .< abstol_test .+ reltol_test .* abs.(expected_res))
                 end
                 continue
@@ -124,7 +124,7 @@ function check_test_case(test_case, solver)
                 if unit == :Concentration && component_test ∉ species_test_amount
                     c = 1.0
                 elseif compartment_name in model_parameters
-                    c = sol.prob.p[findfirst(x -> x == compartment_name, model_parameters)]
+                    c = sol.prob.ps[Symbol(compartment_name)]
                 else
                     c = sol[Symbol(compartment_name)]
                 end

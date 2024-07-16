@@ -22,7 +22,7 @@ b2 = @elapsed prn, cb = load_SBML(path; inline_assignment_rules = true)
 # Test that SBMLImporter correctly enforces mass action
 path = joinpath(@__DIR__, "Models", "egfr_net.xml")
 b3 = @elapsed model, cb = load_SBML(path; massaction = true, inline_assignment_rules = true)
-dprob = DiscreteProblem(model.rn, model.u₀, (0.0, 0.0), model.p)
+dprob = DiscreteProblem(model.rn, model.u0, (0.0, 0.0), model.p)
 dprob = remake(dprob, u0 = Int64.(dprob.u0));
 jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions = (false, false))
 @test b3 ≤ 20
@@ -34,4 +34,4 @@ sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
 mdl, cb = load_SBML(sbml_string; inline_assignment_rules = false, ifelse_to_callback = true,
                     model_as_string = true)
 sys = structural_simplify(convert(ODESystem, mdl.rn))
-@test length(states(sys)) == 67
+@test length(unknowns(sys)) == 67

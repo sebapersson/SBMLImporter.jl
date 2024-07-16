@@ -178,3 +178,15 @@ mutable struct MathSBML
     has_reaction_ids::Bool
     has_rateOf::Bool
 end
+
+struct ParsedReactionNetwork
+    rn::ReactionSystem
+    u0::Any
+    p::Any
+    varstonames::Any
+    groupstosyms::Any
+end
+function ParsedReactionNetwork(rn::ReactionSystem; u0 = nothing, p = nothing,
+                               varstonames = nothing, groupstosyms = nothing)
+    ParsedReactionNetwork(rn, u0, p, varstonames, groupstosyms)
+end
