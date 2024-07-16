@@ -5,8 +5,7 @@ Parse SBML.jl math expression into a string with Julia syntax, and captures SBML
 
 It is important for performance to capture the IDs of SBML species and parameters, as
 these might be replaced later following the SBML specification. Therefore, the results
-are stored in a `MathSBML` struct that during parsing (which may involve recursion),
-this struct tracks math IDs.
+are stored in a `MathSBML` struct.
 
 ## Returns
 - A `MathSBML` struct with the following relevant fields:
@@ -15,7 +14,7 @@ this struct tracks math IDs.
   - `fns::Vector{String}`: Stores the functions applied to the expression
 """
 function parse_math(math_sbml::SBML.MathApply, libsbml_model::SBML.Model)::MathSBML
-    math_expression = MathSBML("", String[], "", String[], String[], String[], false, false)
+    math_expression = MathSBML("", String[], String[], String[], false, false)
     formula = _parse_math(math_sbml, math_expression, libsbml_model)
     unique!(math_expression.math_idents)
     unique!(math_expression.fns)
@@ -41,7 +40,7 @@ function parse_math(math_sbml::SBML.MathApply, libsbml_model::SBML.Model)::MathS
     return math_expression
 end
 function parse_math(math_sbml::SBMLMathVariables, libsbml_model::SBML.Model)::MathSBML
-    math_expression = MathSBML("", String[], "", String[], String[], String[], false, false)
+    math_expression = MathSBML("", String[], String[], String[], false, false)
     formula = _parse_math(math_sbml, math_expression, libsbml_model)
     math_expression.formula = formula
     for ident in math_expression.math_idents
@@ -53,7 +52,7 @@ function parse_math(math_sbml::SBMLMathVariables, libsbml_model::SBML.Model)::Ma
     return math_expression
 end
 function parse_math(math_sbml::Nothing, libsbml_model::SBML.Model)::MathSBML
-    return MathSBML("", String[], "", String[], String[], String[], false, false)
+    return MathSBML("", String[], String[], String[], false, false)
 end
 
 function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
@@ -71,10 +70,6 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
     # SBML MathML allows zero argument addition and multiplication.
     if fn in ["+", "*"] && nargs == 0
         return fn == "+" ? "0" : "1"
-    end
-    # Must Julia functions are of type fn(args...) except +, *, -, /, ^.
-    if fn in ["+", "-", "*", "/", "^"] && nargs == 2
-        return "(" * args[1] * ")" * fn * "(" * args[2] * ")"
     end
     # Julia does not have a root function, hence for two args this is needed
     if fn == "sqrt" && nargs == 2

@@ -171,8 +171,6 @@ end
 mutable struct MathSBML
     formula::String
     math_idents::Vector{String}
-    tmp_arg::String
-    args::Vector{String}
     fns::Vector{String}
     user_fns::Vector{String}
     has_reaction_ids::Bool
