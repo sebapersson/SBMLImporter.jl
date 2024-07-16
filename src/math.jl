@@ -61,7 +61,7 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
     push!(math_expression.fns, fn)
 
     nargs = length(math_sbml.args)
-    args = Vector{String}(undef, nargs)
+    args = fill("", nargs)
     for i in 1:nargs
         args[i] = _parse_math(math_sbml.args[i], math_expression, libsbml_model)
     end

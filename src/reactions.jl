@@ -72,7 +72,7 @@ function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML,
                                which_side::Symbol)::Vector{String}
     species = which_side == :reactants ? reaction.reactants : reaction.products
 
-    reaction_species = Vector{String}(undef, length(species))
+    reaction_species = fill("", length(species))
     for (i, specie) in pairs(species)
         id = specie.species
         if model_SBML.species[id].boundary_condition == true

@@ -68,7 +68,7 @@ end
 
 function _extract_function_calls(name, formula)
     inames = findall(Regex("\\b" * name * "\\("), formula)
-    out = Vector{String}(undef, length(inames))
+    out = fill("", length(inames))
     for i in eachindex(out)
         iname = inames[i]
         iend = _find_indices_outside_paranthesis(')', formula[iname[1]:end])

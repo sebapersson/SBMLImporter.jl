@@ -278,7 +278,7 @@ function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
     # If stoichiometries are integers, the system can be simulated with efficient massaction
     # simulators, hence, integer_S is checked
     integer_S::Bool = true
-    S = Vector{String}(undef, length(filter(x -> x != "nothing", unique(species_id))))
+    S = fill("", length(filter(x -> x != "nothing", unique(species_id))))
     species_parsed = fill("", length(S))
     k = 1
     for (i, specie_id) in pairs(species_id)

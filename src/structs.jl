@@ -120,14 +120,14 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
                            Dict{String, String}(), # Generated id:s
                            Dict{String, String}(), # Piecewise to ifelse_expressions
                            Dict{String, String}(), # Ifelse to bool expression
-                           Vector{String}(undef, 0), # Rate rule variables
-                           Vector{String}(undef, 0), # Assignment rule variables
-                           Vector{String}(undef, 0), # Algebraic rule variables
-                           Vector{String}(undef, 0), # Species_appearing in reactions
-                           Vector{String}(undef, 0),
+                           String[], # Rate rule variables
+                           String[], # Assignment rule variables
+                           String[], # Algebraic rule variables
+                           String[], # Species_appearing in reactions
+                           String[],
                            conversion_factor,
                            specie_reference_ids,
-                           Vector{String}(undef, 0),
+                           String[],
                            libsbml_rule_variables,
                            reactionids) # Variables with piecewise
     return model_SBML

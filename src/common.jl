@@ -236,7 +236,7 @@ end
 
 function _find_indices_outside_paranthesis(x::Char, formula::AbstractString;
                                            start_depth = 0)::Vector{Integer}
-    out = Vector{Int64}(undef, 0)
+    out = Int64[]
     paranthesis_depth = start_depth
     for (i, char) in pairs(formula)
         if char == '('
@@ -257,7 +257,7 @@ function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart = 1,
     isempty(str[istart:(end - iend)]) && return String[]
     length(indices) == 0 && return [str[istart:(end - iend)]]
 
-    out = Vector{String}(undef, length(indices) + 1)
+    out = fill("", length(indices) + 1)
     for (j, index) in pairs(indices)
         out[j] = str[istart:(index - 1)]
         istart = index + 1
