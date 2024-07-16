@@ -185,6 +185,6 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
         end
     end
     event = SBMLImporter.EventSBML(id, condition, assignments, false, false, false, false,
-                                   false, false, false, false)
+                                   false, false, false, true)
     return event
 end

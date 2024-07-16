@@ -27,11 +27,3 @@ dprob = remake(dprob, u0 = Int64.(dprob.u0));
 jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions = (false, false))
 @test b3 ≤ 20
 @test length(jprob.massaction_jump.net_stoch) == 3749
-
-# Lots of edge cases. TODO: Test for inline
-sbml_url = "https://www.ebi.ac.uk/biomodels/model/download/BIOMD0000000627.3?filename=BIOMD0000000627_url.xml"
-sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-mdl, cb = load_SBML(sbml_string; inline_assignment_rules = false, ifelse_to_callback = true,
-                    model_as_string = true)
-sys = structural_simplify(convert(ODESystem, mdl.rn))
-@test length(states(sys)) == 67

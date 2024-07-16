@@ -107,44 +107,47 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
                 break
             end
         end
+    end
 
-        # Need to inline into rate-rules
-        for rule_id in model_SBML.rate_rule_variables
-            if haskey(model_SBML.compartments, rule_id)
-                raterule = model_SBML.compartments[rule_id]
-            elseif haskey(model_SBML.parameters, rule_id)
-                raterule = model_SBML.parameters[rule_id]
-            elseif haskey(model_SBML.species, rule_id)
-                raterule = model_SBML.species[rule_id]
+    # Need to inline into rate-rules
+    for rule_id in model_SBML.rate_rule_variables
+        raterule = _get_model_variable(rule_id, model_SBML)
+        # Assignment rule can be nested so must go via recursion here
+        while true
+            _kinetic_math = deepcopy(raterule.formula)
+            for variable in model_SBML.assignment_rule_variables
+                if !occursin(variable, raterule.formula)
+                    continue
+                end
+                if haskey(model_SBML.species, variable)
+                    formula = model_SBML.species[variable].formula
+                elseif haskey(model_SBML.parameters, variable)
+                    formula = model_SBML.parameters[variable].formula
+                elseif haskey(model_SBML.compartments, variable)
+                    formula = model_SBML.compartments[variable].formula
+                end
+                raterule.formula = _replace_variable(raterule.formula, variable,
+                                                     formula)
             end
-            # Assignment rule can be nested so must go via recursion here
-            while true
-                _kinetic_math = deepcopy(raterule.formula)
-                for variable in model_SBML.assignment_rule_variables
-                    if !occursin(variable, raterule.formula)
-                        continue
-                    end
+            if raterule.formula == _kinetic_math
+                break
+            end
+        end
+    end
 
-                    if haskey(model_SBML.species, variable)
-                        formula = model_SBML.species[variable].formula
-                    elseif haskey(model_SBML.parameters, variable)
-                        formula = model_SBML.parameters[variable].formula
-                    elseif haskey(model_SBML.compartments, variable)
-                        formula = model_SBML.compartments[variable].formula
-                    end
-                    raterule.formula = _replace_variable(reaction.kinetic_math, variable,
-                                                         formula)
-                end
-                if raterule.formula == _kinetic_math
-                    break
-                end
-            end
+    # Need to inline into parameter assignments
+    for (parameter_id, parameter) in model_SBML.parameters
+        parameter.rate_rule && continue
+        parameter.assignment_rule && continue
+        if parameter.formula in model_SBML.assignment_rule_variables
+            variable = _get_model_variable(parameter.formula, model_SBML)
+            parameter.formula = variable.formula
+            parameter.initial_value = variable.formula
         end
     end
 
     # As assignment rule variables have been inlined they can be removed from the model
     filter!(isempty, model_SBML.assignment_rule_variables)
-
     return nothing
 end
 
