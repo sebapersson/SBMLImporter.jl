@@ -7,7 +7,7 @@ html.theme--documenter-dark code {
   font-family: "JuliaMono";}
 
 html:not(.theme--documenter-dark) body #documenter a {
-  color: #800080; }
+  color: #a10ca1; }
 
 html:not(.theme--documenter-dark) body #documenter a:hover, html:not(.theme--documenter-dark) body #documenter a:focus {
   color: #703D6F; }

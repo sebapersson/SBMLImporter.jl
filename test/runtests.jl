@@ -4,6 +4,18 @@ using SafeTestsets
     include("aqua.jl")
 end
 
+@safetestset "Currated jump simulation test" begin
+    include("curated_jump_test.jl")
+end
+
+@safetestset "Inline assignment rules" begin
+    include("inline_assignment_rules.jl")
+end
+
+@safetestset "Ifelse to callback" begin
+    include("ifelse_to_callback.jl")
+end
+
 @safetestset "SBML large models" begin
     include("large_models.jl")
 end
@@ -18,8 +30,4 @@ end
 
 @safetestset "SBML stochastic test-suite" begin
     include("stochastic_sbml_tests.jl")
-end
-
-@safetestset "Currated jump simulation test" begin
-    include("curated_jump_test.jl")
 end

@@ -55,6 +55,48 @@ If a parameter is set to have `constant="false"`, the importer must treat the pa
 <parameter id="c" value="1.0" constant="true"/>
 ```
 
+## Why does my simulation fail with `DomainError` while the model imports fine?
+
+This typically happens due to two reasons. Firstly, the model might contain a function call where the argument must be positive, such as:
+
+```julia
+log(specie)
+```
+
+Even though the model might be written such that `specie` should never go below 0 (e.g., the model follows mass action kinetics), numerical errors can cause `specie` to go below zero. Therefore, instead of encoding risky statements into the model such as `log(specie)`, it might be better to encode something like `log(specie + 1e-8)`.
+
+Secondly `DomainError` might arise due to how SBMLImporter parses SBML piecewise expressions. Piecewise expressions are parsed into `ifelse` functions:
+
+```julia
+ifelse(condition, x, y)
+```
+
+Which when `condition == true` evaluates to `x`, otherwise to `y`. In SBMLImporter `ifelse` expressions are rewritten to callbacks (events). Hence, in the model equations the `ifelse` is converted to:
+
+```julia
+(1 - condition_bool) * x + condition_bool * y
+```
+
+Here `condition_bool` is assigned via a callback (event) to be `1` when `condition` is `true`, and to `0` when `condition` if `false`. This has the same functionality as an `ifelse`, but is numerically more stable as with callbacks the integrator (e.g., ODE solver) stops at points `condition` changes, applies the change, and continues. Instead, with `ifelse`, the integrator does not know an event happens and thus must typically reduce its step size to handle the sudden change in models dynamics. This increases simulation time, and reduces simulation stability. However, sometimes the formulas in the `ifelse` might depend on the `condition`. For example, let's say we have:
+
+```julia
+ifelse(t > 1, 0, log(t - 1))
+```
+
+With the `ifelse` formulation, `log(t - 1)` is never evaluated until `t > 1`. With the callback formulation:
+
+```julia
+(1 - condition_bool) * 0 + condition_bool * log(t-1)
+```
+
+`log(t-1)` is evaluated for time-points `t < 1` which causes `DomainError`. This can be solved by simply not rewriting `ifelse` to callback when importing the model:
+
+```julia
+prn, cb = load_SBML(path; ifelse_to_callback = false)
+```
+
+If neither of the above solutions work, please file an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).
+
 ## Why did I get the `SBMLSupport` error?
 
 You likely got this error because your SBML model contains an SBML feature that SBMLImporter does not support yet. An extensive list of supported features can be found [here](@ref support). If SBMLImporter lacks support for a feature you would like to have, please file an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).

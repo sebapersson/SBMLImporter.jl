@@ -1,0 +1,1129 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" layout:required="false" level="3" render:required="false" version="1" xmlns:layout="http://www.sbml.org/sbml/level3/version1/layout/version1" xmlns:render="http://www.sbml.org/sbml/level3/version1/render/version1">
+  <model areaUnits="area" extentUnits="substance" id="EDES1_0" lengthUnits="length" metaid="COPASI0" name="EDES1.0 Eindhoven Diabetes Simulator" substanceUnits="substance" timeUnits="time" volumeUnits="volume">
+    <notes>
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <p>First version (1.0) of the Eindhoven Diabetes Simulator (EDES) model, describing postprandial glucose and insulin dynamics for a healthy human. Model can also be used to simulate insulin resistance (pre-diabetes, Metabolic Syndrome) and Type 2 Diabetes Mellitus (T2DM). Next to simulating a meal, the model can simulate oral glucose tolerance tests (OGTT's).</p>
+      </body>
+    </notes>
+    <annotation>
+      <copasi:COPASI xmlns:copasi="http://www.copasi.org/static/sbml">
+        <rdf:RDF xmlns:CopasiMT="http://www.copasi.org/RDF/MiriamTerms#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+          <rdf:Description rdf:about="#COPASI0">
+            <bqbiol:hasProperty>
+              <rdf:Bag>
+                <rdf:li rdf:resource="https://identifiers.org/mamo:MAMO_0000046"/>
+              </rdf:Bag>
+            </bqbiol:hasProperty>
+            <dcterms:bibliographicCitation>
+              <rdf:Bag>
+                <rdf:li>
+                  <rdf:Description>
+                    <CopasiMT:isDescribedBy rdf:resource="https://identifiers.org/doi:10.1177/1932296814562607"/>
+                  </rdf:Description>
+                </rdf:li>
+              </rdf:Bag>
+            </dcterms:bibliographicCitation>
+            <dcterms:created>
+              <rdf:Description>
+                <dcterms:W3CDTF>2024-01-23T18:09:04Z</dcterms:W3CDTF>
+              </rdf:Description>
+            </dcterms:created>
+            <dcterms:modified>
+              <rdf:Description>
+                <dcterms:W3CDTF>2024-01-23T18:09:04Z</dcterms:W3CDTF>
+              </rdf:Description>
+            </dcterms:modified>
+            <CopasiMT:is>
+              <rdf:Bag>
+                <rdf:li rdf:resource="https://identifiers.org/biomodels.db:MODEL2403070001"/>
+              </rdf:Bag>
+            </CopasiMT:is>
+          </rdf:Description>
+        </rdf:RDF>
+      </copasi:COPASI>
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+        <rdf:Description rdf:about="#COPASI0">
+	<dcterms:created rdf:parseType="Resource">
+	<dcterms:W3CDTF>2024-01-23T18:09:04Z</dcterms:W3CDTF>
+	</dcterms:created>
+	<dcterms:modified rdf:parseType="Resource">
+	<dcterms:W3CDTF>2024-01-23T18:09:04Z</dcterms:W3CDTF>
+	</dcterms:modified>
+	<bqmodel:isDescribedBy>
+	<rdf:Bag>
+	<rdf:li rdf:resource="https://identifiers.org/doi:10.1177/1932296814562607"/>
+	</rdf:Bag>
+	</bqmodel:isDescribedBy>
+	<bqbiol:is>
+	<rdf:Bag>
+	<rdf:li rdf:resource="http://identifiers.org/biomodels.db/MODEL2403070001"/>
+	</rdf:Bag>
+	</bqbiol:is>
+	<bqbiol:hasProperty>
+	<rdf:Bag>
+	<rdf:li rdf:resource="http://identifiers.org/mamo/MAMO_0000046"/>
+	</rdf:Bag>
+	</bqbiol:hasProperty>
+	<bqbiol:isDescribedBy>
+	<rdf:Bag>
+	<rdf:li rdf:resource="http://identifiers.org/doi/10.1177/1932296814562607"/>
+	</rdf:Bag>
+	</bqbiol:isDescribedBy>
+	<bqmodel:is>
+	<rdf:Bag>
+	<rdf:li rdf:resource="https://identifiers.org/biomodels.db:MODEL2403070001"/>
+	</rdf:Bag>
+	</bqmodel:is>
+	</rdf:Description>
+      </rdf:RDF>
+    </annotation>
+    <listOfUnitDefinitions>
+      <unitDefinition id="unit_0" name="mmol/l/min">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-3"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_1" name="1/min">
+        <listOfUnits>
+          <unit exponent="-1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_2" name="mmol/l">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-3"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_3" name="mmol/mg">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-3"/>
+          <unit exponent="-1" kind="gram" multiplier="1" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_4" name="l/kg">
+        <listOfUnits>
+          <unit exponent="-1" kind="gram" multiplier="1" scale="3"/>
+          <unit exponent="1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_6" name="mg">
+        <listOfUnits>
+          <unit exponent="1" kind="gram" multiplier="1" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_7" name="kg">
+        <listOfUnits>
+          <unit exponent="1" kind="gram" multiplier="1" scale="3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_8" name="mg/min">
+        <listOfUnits>
+          <unit exponent="1" kind="gram" multiplier="1" scale="-3"/>
+          <unit exponent="-1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_9" name="mmol/(l*min)">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-3"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+          <unit exponent="-1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_10" name="mg/dl">
+        <listOfUnits>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="-1"/>
+          <unit exponent="1" kind="gram" multiplier="1" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_11" name="pmol/l">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-12"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="time" name="time">
+        <listOfUnits>
+          <unit exponent="1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_12" name="10*mg/l">
+        <listOfUnits>
+          <unit exponent="1" kind="gram" multiplier="10" scale="-3"/>
+          <unit exponent="-1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="length" name="length">
+        <listOfUnits>
+          <unit exponent="1" kind="metre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="area" name="area">
+        <listOfUnits>
+          <unit exponent="2" kind="metre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="volume" name="volume">
+        <listOfUnits>
+          <unit exponent="1" kind="litre" multiplier="1" scale="0"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="substance" name="substance">
+        <listOfUnits>
+          <unit exponent="1" kind="mole" multiplier="1" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="unit_5" name="min">
+        <listOfUnits>
+          <unit exponent="1" kind="second" multiplier="60" scale="-3"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment constant="true" id="plasma" metaid="COPASI1" name="plasma" size="1" spatialDimensions="3" units="volume"/>
+      <compartment constant="true" id="gut" metaid="COPASI2" name="gut" size="1" spatialDimensions="3" units="volume"/>
+      <compartment constant="true" id="ISF" metaid="COPASI3" name="ISF" size="1" spatialDimensions="3" units="volume"/>
+      <compartment constant="true" id="default" metaid="COPASI4" name="default" size="1" spatialDimensions="3" units="volume"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="M_G_gut" initialConcentration="0" metaid="COPASI5" name="M_G_gut" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>glucose mass in gut (mg)
+dM_G_gut/dt  = G_meal - k2*M_G_gut;</pre>
+          </body>
+        </notes>
+      </species>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="G_PL" initialConcentration="5" metaid="COPASI6" name="G_PL" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>plasma glucose concentration (mmol/l)
+dG_PL/dt = G_liv + G_gut - U_ii - U_id - U_ren;</pre>
+          </body>
+        </notes>
+      </species>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="I_PL" initialConcentration="18" metaid="COPASI7" name="I_PL" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>plasma insulin concentration (mU/L)
+dI_PL/dt = I_pnc - I_liv - i_rem;</pre>
+          </body>
+        </notes>
+      </species>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="I_d1" initialConcentration="0" metaid="COPASI8" name="I_d1" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>delayed/remote insulin concentration (interstitial fluid)
+dI_dl/dt = k9*(I_PL -I_PL_b) - k10*I_dl;
+dI_dl/dt = k9*i_rem - k10*I_dl;</pre>
+          </body>
+        </notes>
+      </species>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="Gint" initialConcentration="0" metaid="COPASI9" name="Gint" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>integrated plasma glucose increase (int (G_PL)) [mmol/L]
+
+dGint/dt = (Gpl-Gb) - (Gpl_lowerbound-Gb);</pre>
+          </body>
+        </notes>
+      </species>
+      <species boundaryCondition="true" compartment="default" constant="false" hasOnlySubstanceUnits="false" id="Raint" initialConcentration="0" metaid="COPASI10" name="Raint" substanceUnits="substance">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Glucose rate of appearance (Ra) from gut to plasma [mg].
+ʃRa(t)dt
+In principle equal to ʃG_gut(t)dt, but this has unit [mmol/L] and meal glucose dose is in [mg].</pre>
+          </body>
+        </notes>
+      </species>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter constant="false" id="G_liv" metaid="COPASI11" name="G_liv" units="unit_9" value="0.043">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>net glucose flux across liver
+G_liv = G_liv_b - k4.*f_I.*I_d1 - k3.*(G_PL-G_b);</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="G_liv_b" metaid="COPASI12" name="G_liv_b" units="unit_9" value="0.043">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>basal hepatic glucose production [mmol/L/min]
+Maas 2015: G_liv_b = 0.043
+
+Ref. 63. Dalla Man C, Rizza RA, Cobelli C. Meal simulation model
+of the glucose-insulin system. IEEE Trans Biomed Eng.
+2007;54(10):1740-1749.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k04" metaid="COPASI13" name="k04" units="unit_1" value="0.000235">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of EGP suppression by delayed insulin [1/min].
+rate constant for suppression of hepatic glucose release by delayed (remote) insulin
+Maas 2015: k4 = 1e-3 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k4 = 2.35e-4
+Erdos 2021:         k4 = 1e-3
+Pasveer 2024:     k4 = 2.35e-4</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="f_I" metaid="COPASI14" name="f_I" value="1">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>conversion factor insulin to glucose [(mmol/L)/(microU/mL)]
+
+This parameter is called β in Maas et al 2015.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k03" metaid="COPASI15" name="k03" units="unit_1" value="0.00607">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of ΔG suppression of EGP [1/min].
+rate constant for suppresstion of hepatic glucose release by change of plasma glucose
+Maas 2015: k3 = 5e-05 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k3 = 0.00607
+Erdos 2021:         k3 = 5e-05
+Pasveer 2024:     k3 = 0.00607</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="G_b" metaid="COPASI16" name="G_b" units="unit_2" value="5">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>basal plasma glucose [mmol/l]. Glucose setpoint.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="f_G" metaid="COPASI17" name="f_G" units="unit_3" value="0.005551">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>conversion factor glucose - convert glucose from mg/l to mmol/l
+mmol/L mg/dL 0.05551</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="V_G" metaid="COPASI18" name="V_G" units="unit_4" value="0.2">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>volume of distribution for glucose per kg body weight  
+Maas 2015: Glucose distribution volume in plasma [L/kg] V_G = 17/BW = 17/70 = 0.24
+
+V_G = (260/sqrt( {Values[BW]} /70) ) / 1000
+For BW = 70 kg: 0.26 [l/kg]
+
+Ref.65. Wallace TM, Levy JC, Matthews DR. Use and abuse of HOMA
+modeling. Diabetes Care. 2004;27(6):1487-1495.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="tau_i" metaid="COPASI19" name="tau_i" units="unit_5" value="31"/>
+      <parameter constant="true" id="tau_d" metaid="COPASI20" name="tau_d" units="unit_5" value="3"/>
+      <parameter constant="true" id="G_th_PL" metaid="COPASI21" name="G_th_PL" units="unit_2" value="9">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Renal threshold
+
+Ref.64. Lawrence RD. Renal threshold for glucose: normal and in dia-
+betics. Br Med J. 1940;1(4140):766-768</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="c1" metaid="COPASI22" name="c1" units="unit_1" value="0.1">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of glomerular filtration [1/min]
+c1 = 0.1
+
+Ref. 67. Lehmann ED, Deutsch T. A physiological model of glucose-
+insulin interaction in type-1 diabetes mellitus. J Biomed Eng.
+1992;14(3):235-242.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="D_meal_G" metaid="COPASI23" name="D_meal_G" units="unit_6" value="75000">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Glucose mass from meal [mg]
+
+Oral Glucose Tolerance Test (OGTT) Data Used for Parameter Estimation: glucose dose D = 75 gram (Table 2 in Maas et al, 2015).</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="BW" metaid="COPASI24" name="BW" units="unit_7" value="85">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>body weight (body mass) [kg]
+
+The paper Maas et al (2015) does not report a specific value for body mass (Mb). Tables 2 and 3 report BMI.
+
+Adding notes and then Commit often does NOT work in Copasi! (So always check.)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="M_G_0" metaid="COPASI25" name="M_G_0" units="unit_6" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>initial condition M_G. Intial mass of glucose in digestive tract (assume 0 as fasting).</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="G_PL_0" metaid="COPASI26" name="G_PL_0" units="unit_2" value="5">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>initial condition G_PL [mmol/L]. Can be taken as the fasting plasma glucose concentration.
+typical value: 5 mmol/L</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="I_PL_0" metaid="COPASI27" name="I_PL_0" value="18">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>initial condition I_PL [uIU/mL]. Can be taken as the fasting plasma insulin concentration.
+
+typical value: 8 mU/L
+increased value: 18</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="I_d1_0" metaid="COPASI28" name="I_d1_0" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>initial value for Interstitial fluid insulin concentration
+unit: mU/L (µU/mL)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k01" metaid="COPASI29" name="k01" units="unit_1" value="0.0135">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of glucose appearance in the gut [1/min].
+rate constant for glucose stomach emptying
+Maas 2015: k1 = 0.0135 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k1 = 0.0212 (Note: Rozendaal used an extended / modified equation for glucose apperance in the gut.)
+Erdos 2021:         k1 = 0.011 (NGT)
+Pasveer 2024:     k1 = 0.0106
+
+k1 is a sensitive parameter.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k02" metaid="COPASI30" name="k02" units="unit_1" value="0.28">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of gut emptying [1/min].
+rate constant for glucose appearence from gut
+Maas 2015: k2 = 0.633 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k2 = 0.28
+Erdos 2021:         k2 = 0.633
+Pasveer 2024:     k2 = 0.028 *)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k05" metaid="COPASI31" name="k05" units="unit_1" value="0.08">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of insulin-dependent glucose uptake [1/min].
+rate constant for delayed insulin dependent uptake of glucose. A measure for insulin sensitivity.
+Maas 2015: k5 = 3.78e-03 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k5 = 0.0174
+Erdos 2021:         k5 = 0.0026
+Pasveer 2024:     k5 = 0.1762
+
+k5 is a sensitive parameter.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k06" metaid="COPASI32" name="k06" units="unit_1" value="0.582">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of ΔG-dependant insulin production  [1/min].
+rate constant for stimulation of insulin production by the difference between plasma glucose concentration and its setpoint
+Maas 2015: k6 = 0.582 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k6 = 4.6237
+Erdos 2021:         k6 = 0.6407
+Pasveer 2024:     k6 = 1.007
+
+k6 is a sensitive parameter.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k07" metaid="COPASI33" name="k07" units="unit_1" value="0.022">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of ∫G-dependant insulin production  [1/min].
+rate constant for integral of glucose on insulin production (beta cell function)
+Maas 2015: k7 = 2.20e-02 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k7 = 1.15
+Erdos 2021:         k7 = 0.022
+Pasveer 2024:     k7 = 0.8626</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k08" metaid="COPASI34" name="k08" units="unit_1" value="4">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of dG/dt-dependant insulin production [1/min].
+rate constant for the simulation of insulin production by the rate of change in plasma glucose concentration (beta cell function)
+Maas 2015: k8 = 4.71 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: k8 = 7.27
+Erdos 2021:         k8 = 4.4961
+
+k8 is a sensitive parameter.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k09" metaid="COPASI35" name="k09" units="unit_1" value="0.0383">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant for outflow of insulin from plasma to interstitial space (remote compartment) [1/min].
+k9 = 1.08e-02 [1/min] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+NOTE In this implementation k9 is the same as k11 in Maas 2015!! (In Maas 2015: k9 is the Rate constant of short-acting insulin appearance in plasma.)
+
+Rozendaal 2018: k9 = 0.0383
+Erdos 2021:         k9 = 0.0108
+Pasveer 2024:     k9 = 0.0383</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="k10" metaid="COPASI36" name="k10" units="unit_1" value="0.284">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant for degradation of insulin in remote compartment [1/min].
+
+Rozendaal 2018: k10 = 0.284
+Erdos 2021:         k10 = 2.6
+Pasveer 2024:     k10 = 0.284
+
+NOTE: In this implementation k10 is the same as k12 in Maas 2015.
+(In Maas 2015: k10 is the Rate constant of short acting insulin appearance in subcutaneous compartment.)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="k11" metaid="COPASI37" name="k11" units="unit_1" value="0.0383">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of insulin outflow from plasma to remote compartment [1/min].
+k11 = k09 in this implementation</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="k12" metaid="COPASI38" name="k12" units="unit_1" value="0.284">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Rate constant of interstitial fluid (remote compartment) insulin utilization [1/min]
+k12 = k10 in this implementation</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="sigma" metaid="COPASI39" name="sigma" value="1.4">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>σ Shape factor (appearance of meal)
+Maas 2015: σ = 1.35 [-] (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+Rozendaal 2018: σ = 1.4
+Erdos 2021:         σ = 1.35
+Pasveer 2024:     σ = 1.34</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="KM" metaid="COPASI40" name="KM" units="unit_2" value="13.2">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Michaelis-Menten coefficient for glucose uptake [mmol/l] (both insulin dependent, e.g. GLUT4, and non-insulin dependent e.g. GLUT1, GLUT3)
+Maas 2015: KM = 0.627 (mmol/L) (Table 13 Parameter values for healthy subjects, Chapter 5. PhD Thesis A. Maas, 2017)
+
+KM = 2.36E+02 (mg/dl)
+Rozendaal 2018:  Km = 13.2
+Erdos 2021:          Km = 0.63
+Pasveer 2024:      Km = 13.2</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="G_meal" metaid="COPASI41" name="G_meal" units="unit_8" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>appearance of glucose from meal as a function of time
+G_meal  = sigma*(k1.^sigma)*t.^(sigma-1) .* exp(-(k1.*(t)).^sigma).* D_meal_G;</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="I_PL_b" metaid="COPASI42" name="I_PL_b" value="18">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>basal plasma insulin. Insulin setpoint. (µIU/mL)
+Can be set equal to measured basal plasma insulin I_PL_b = I_PL_0 (default).</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="U_id" metaid="COPASI43" name="U_id" units="unit_9" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Insulin dependent glucose utilisation (liver, muscle, adipose)
+U_id = k5.*f_I.*I_d1.*(G_PL./(KM + G_PL)); [mmol/L/min]</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="G_gut" metaid="COPASI44" name="G_gut" units="unit_9" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>glucose absorption flux from gut to plasma [mmol/L/min]
+Including unit conversion from glucose mass in gut [mg/L] to glucose concentration in plasma [mmol/L].
+Also called glucose rate of appearance (Ra) in studies with isotope tracers.</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="U_ii" metaid="COPASI45" name="U_ii" units="unit_9" value="0.043">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>insulin independent glucose utilisation (brain, erythrocytes etc.)
+U_ii = G_liv_b*((KM + G_b)./G_b).*(G_PL./(KM + G_PL)) [mmol/(l*min)]</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="U_ren" metaid="COPASI46" name="U_ren" units="unit_9" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>renal extraction of plasma glucose
+U_ren = ( c1./(V_G*BW).*(G_PL - G_th_PL) ) * (G_PL > G_th_PL); [mmol/(l*min)]</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="I_liv" metaid="COPASI47" name="I_liv" value="0.00354838709677419">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Insulin uptake by the liver 
+unit: mU/L/min</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="I_pnc" metaid="COPASI48" name="I_pnc" value="0.00354838709677419">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>production/release of insulin by pancreas (beta cell funtion)
+based PID controller (proportional - integral - derivative controller)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="I_rem" metaid="COPASI49" name="I_rem" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>transport of insulin from plasma to remote compartment
+i_rem = k9*(I_PL - I_PL_b);</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="G_PL__mg_dL" metaid="COPASI50" name="G_PL [mg/dL]" units="unit_12" value="90.0738605656638">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>plasma glucose in [mg/dL]
+conversion from G_PL(t) in [mmol/L] to [mg/dL]</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="I_PL__pmol_L" metaid="COPASI51" name="I_PL [pmol/L]" units="unit_11" value="124.9992">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>1 uIU/mL = 6.9444 pmol/L
+https://unitslab.com/node/124</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="true" id="Tmeal" metaid="COPASI52" name="Tmeal" units="unit_5" value="60">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>Time when meal is consumed (or start of OGTT)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="Iprop" metaid="COPASI53" name="Iprop" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>production/release of insulin by pancreas
+based PID controller (proportional - integral - derivative controller)
+ Iprop=k6*(G_PL - G_b)
+
+Matlab: Iprop=k6.*(G_PL - G_b)</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="Iint" metaid="COPASI54" name="Iint" value="0.00354838709677419">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>production/release of insulin by pancreas
+based PID controller (proportional - integral - derivative controller)
+Iint = (k7/tau_i).*(G_b + ʃG_PLdt)
+
+Matlab: Iint =  (k7/taui).*Gint + (k7/taui).*Gb.*t_integralwindow</pre>
+          </body>
+        </notes>
+      </parameter>
+      <parameter constant="false" id="Ider" metaid="COPASI55" name="Ider" value="0">
+        <notes>
+          <body xmlns="http://www.w3.org/1999/xhtml">
+            <pre>production/release of insulin by pancreas
+based PID controller (proportional - integral - derivative controller)
+Ider = k8*tau_d*(dG_PL/dt)
+
+Matlab: Ider = (k8.*tau_d).*D.G_PL</pre>
+          </body>
+        </notes>
+      </parameter>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="M_G_gut">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> M_G_0 </ci>
+        </math>
+            </initialAssignment>
+      <initialAssignment symbol="G_PL">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> G_PL_0 </ci>
+        </math>
+            </initialAssignment>
+      <initialAssignment symbol="I_PL">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> I_PL_0 </ci>
+        </math>
+            </initialAssignment>
+      <initialAssignment symbol="I_d1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> I_d1_0 </ci>
+        </math>
+            </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
+      <assignmentRule variable="G_b">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> G_PL_0 </ci>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="V_G">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <divide/>
+            <cn> 17 </cn>
+            <ci> BW </ci>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="k11">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> k09 </ci>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="k12">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> k10 </ci>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="G_meal">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <piecewise>
+            <piece>
+              <cn> 0 </cn>
+              <apply>
+                <lt/>
+                <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                <ci> Tmeal </ci>
+              </apply>
+            </piece>
+            <otherwise>
+              <apply>
+                <times/>
+                <ci> sigma </ci>
+                <apply>
+                  <power/>
+                  <ci> k01 </ci>
+                  <ci> sigma </ci>
+                </apply>
+                <apply>
+                  <power/>
+                  <apply>
+                    <minus/>
+                    <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                    <ci> Tmeal </ci>
+                  </apply>
+                  <apply>
+                    <minus/>
+                    <ci> sigma </ci>
+                    <cn> 1 </cn>
+                  </apply>
+                </apply>
+                <apply>
+                  <exp/>
+                  <apply>
+                    <minus/>
+                    <apply>
+                      <power/>
+                      <apply>
+                        <times/>
+                        <ci> k01 </ci>
+                        <apply>
+                          <minus/>
+                          <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+                          <ci> Tmeal </ci>
+                        </apply>
+                      </apply>
+                      <ci> sigma </ci>
+                    </apply>
+                  </apply>
+                </apply>
+                <ci> D_meal_G </ci>
+              </apply>
+            </otherwise>
+          </piecewise>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="I_PL_b">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <ci> I_PL_0 </ci>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="U_id">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k05 </ci>
+            <ci> f_I </ci>
+            <ci> I_d1 </ci>
+            <apply>
+              <divide/>
+              <ci> G_PL </ci>
+              <apply>
+                <plus/>
+                <ci> KM </ci>
+                <ci> G_PL </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="G_gut">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k02 </ci>
+            <apply>
+              <divide/>
+              <ci> f_G </ci>
+              <apply>
+                <times/>
+                <ci> V_G </ci>
+                <ci> BW </ci>
+              </apply>
+            </apply>
+            <ci> M_G_gut </ci>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="U_ii">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> G_liv_b </ci>
+            <apply>
+              <divide/>
+              <apply>
+                <plus/>
+                <ci> KM </ci>
+                <ci> G_b </ci>
+              </apply>
+              <ci> G_b </ci>
+            </apply>
+            <apply>
+              <divide/>
+              <ci> G_PL </ci>
+              <apply>
+                <plus/>
+                <ci> KM </ci>
+                <ci> G_PL </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="U_ren">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <piecewise>
+            <piece>
+              <cn> 0 </cn>
+              <apply>
+                <lt/>
+                <ci> G_PL </ci>
+                <ci> G_th_PL </ci>
+              </apply>
+            </piece>
+            <otherwise>
+              <apply>
+                <times/>
+                <apply>
+                  <divide/>
+                  <ci> c1 </ci>
+                  <apply>
+                    <times/>
+                    <ci> V_G </ci>
+                    <ci> BW </ci>
+                  </apply>
+                </apply>
+                <apply>
+                  <minus/>
+                  <ci> G_PL </ci>
+                  <ci> G_th_PL </ci>
+                </apply>
+              </apply>
+            </otherwise>
+          </piecewise>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="I_liv">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k07 </ci>
+            <apply>
+              <divide/>
+              <ci> G_b </ci>
+              <apply>
+                <times/>
+                <ci> f_I </ci>
+                <ci> tau_i </ci>
+                <ci> I_PL_b </ci>
+              </apply>
+            </apply>
+            <ci> I_PL </ci>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="I_rem">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k09 </ci>
+            <apply>
+              <minus/>
+              <ci> I_PL </ci>
+              <ci> I_PL_b </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="G_PL__mg_dL">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <divide/>
+            <ci> G_PL </ci>
+            <apply>
+              <times/>
+              <cn> 10 </cn>
+              <ci> f_G </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="I_PL__pmol_L">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> I_PL </ci>
+            <cn> 6.9444 </cn>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="Iprop">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k06 </ci>
+            <apply>
+              <minus/>
+              <ci> G_PL </ci>
+              <ci> G_b </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="Iint">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <apply>
+              <divide/>
+              <ci> k07 </ci>
+              <ci> tau_i </ci>
+            </apply>
+            <apply>
+              <plus/>
+              <ci> G_b </ci>
+              <ci> Gint </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="G_liv">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <apply>
+              <minus/>
+              <ci> G_liv_b </ci>
+              <apply>
+                <times/>
+                <ci> k04 </ci>
+                <ci> f_I </ci>
+                <ci> I_d1 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k03 </ci>
+              <apply>
+                <minus/>
+                <ci> G_PL </ci>
+                <ci> G_b </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="Ider">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k08 </ci>
+            <ci> tau_d </ci>
+            <apply>
+              <minus/>
+              <apply>
+                <minus/>
+                <apply>
+                  <minus/>
+                  <apply>
+                    <plus/>
+                    <ci> G_liv </ci>
+                    <ci> G_gut </ci>
+                  </apply>
+                  <ci> U_id </ci>
+                </apply>
+                <ci> U_ii </ci>
+              </apply>
+              <ci> U_ren </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <assignmentRule variable="I_pnc">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <apply>
+              <divide/>
+              <cn> 1 </cn>
+              <ci> f_I </ci>
+            </apply>
+            <apply>
+              <plus/>
+              <ci> Iprop </ci>
+              <ci> Iint </ci>
+              <ci> Ider </ci>
+            </apply>
+          </apply>
+        </math>
+            </assignmentRule>
+      <rateRule variable="M_G_gut">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <ci> G_meal </ci>
+            <apply>
+              <times/>
+              <ci> k02 </ci>
+              <ci> M_G_gut </ci>
+            </apply>
+          </apply>
+        </math>
+            </rateRule>
+      <rateRule variable="G_PL">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <apply>
+              <minus/>
+              <apply>
+                <minus/>
+                <apply>
+                  <plus/>
+                  <ci> G_liv </ci>
+                  <ci> G_gut </ci>
+                </apply>
+                <ci> U_id </ci>
+              </apply>
+              <ci> U_ii </ci>
+            </apply>
+            <ci> U_ren </ci>
+          </apply>
+        </math>
+            </rateRule>
+      <rateRule variable="I_PL">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <apply>
+              <minus/>
+              <ci> I_pnc </ci>
+              <ci> I_liv </ci>
+            </apply>
+            <ci> I_rem </ci>
+          </apply>
+        </math>
+            </rateRule>
+      <rateRule variable="I_d1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <ci> I_rem </ci>
+            <apply>
+              <times/>
+              <ci> k10 </ci>
+              <ci> I_d1 </ci>
+            </apply>
+          </apply>
+        </math>
+            </rateRule>
+      <rateRule variable="Gint">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <minus/>
+            <ci> G_PL </ci>
+            <ci> G_b </ci>
+          </apply>
+        </math>
+            </rateRule>
+      <rateRule variable="Raint">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">        
+          <apply>
+            <times/>
+            <ci> k02 </ci>
+            <ci> M_G_gut </ci>
+          </apply>
+        </math>
+            </rateRule>
+    </listOfRules>
+  </model>
+</sbml>

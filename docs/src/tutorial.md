@@ -81,12 +81,12 @@ To perform ODE simulations, convert the reaction system (`prn.rn`) into an `ODEP
 ```@example 1
 using ModelingToolkit, OrdinaryDiffEq
 tspan = (0.0, 10.0)
-sys = convert(ODESystem, prn.rn)
+sys = structural_simplify(convert(ODESystem, prn.rn))
 oprob = ODEProblem(sys, prn.u0, tspan, prn.p, jac=true)
 nothing # hide
 ```
 
-Here `jac=true` means that the ODE Jacobian is computed symbolically which can help with simulation performance. The `ODEProblem` can be simulated with any solver from the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) package, such as the `Rodas5P` solver:
+Here we call `structural_simplify` to inline any potential assignment rules into the model equations. Additionally, setting `jac=true` means that the ODE Jacobian is computed symbolically, which often improves simulation performance. The `ODEProblem` can be simulated with any solver from the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) package, such as the `Rodas5P` solver:
 
 ```@example 1
 sol = solve(oprob, Rodas5P(), callback=cb)

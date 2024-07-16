@@ -114,7 +114,8 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
 
     # Note, init for events can only be triggered if the SBML event has
     # trigger_initial_value (which is encoded by default for SBML piecewise)
-    if event.trigger_initial_value == true || discrete_callback == true
+    skip_init = (discrete_callback && event.is_ifelse == false)
+    if event.trigger_initial_value == true || skip_init
         init *= "\nend"
         return init
     end

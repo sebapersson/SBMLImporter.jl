@@ -1,6 +1,6 @@
 # Other SBML related Julia packages
 
-There are currently three additional SBML related packages in Julia. [SBML.jl](https://github.com/LCSB-BioCore/SBML.jl) wraps a subset of the [libSBML](https://sbml.org/software/libsbml/) functionality and is used by SBMLImporter and other packages for parsing SBML models. [COBREXA.jl](https://github.com/COBREXA/COBREXA.jl) is designed for constraint-based metabolic modeling. Constraint-based, or as it is often called flux-balance analysis (FBA), is not supported by SBMLImporter, thus FBA models recommend COBREXA.
+There are currently three additional SBML related packages in Julia. [SBML.jl](https://github.com/LCSB-BioCore/SBML.jl) wraps a subset of the [libSBML](https://sbml.org/software/libsbml/) functionality and is used by SBMLImporter and other packages for parsing SBML models. [COBREXA.jl](https://github.com/COBREXA/COBREXA.jl) is designed for constraint-based metabolic modeling. Constraint-based models, or as they are often referred to flux-balance analysis (FBA) models, are not supported by SBMLImporter, thus for FBA models we recommend COBREXA.
 
 Lastly, [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl) similarly to SBMLImporter imports dynamic models into a `ReactionSystem`. However, we recommend SBMLImporter due to the following key differences:
 
