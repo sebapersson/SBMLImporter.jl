@@ -86,7 +86,7 @@ function _replace_reactionid(formula::String, model_SBML::ModelSBML, ::SBML.Mode
 end
 
 function _get_rateOf_insert(function_call::String, model_SBML::ModelSBML)::String
-    arg = _extract_args_insert(function_call, true)[1]
+    arg = _extract_args_insert(function_call)[1]
 
     is_number(arg) && return "0.0"
     if haskey(model_SBML.parameters, arg)

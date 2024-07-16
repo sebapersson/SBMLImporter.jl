@@ -1,7 +1,7 @@
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
 function piecewise_to_ifelse(formula::String)::String
-    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES; piecewise = true)
+    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES)
 end
 
 function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
@@ -34,7 +34,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
 
         # If !=, ==, false, true, ifelse is in condition rewriting to event is not possible.
         # This rarely happens outside SBML test-suite
-        condition, arg1, arg2 = _extract_args_insert(ifelse_call, true)
+        condition, arg1, arg2 = _extract_args_insert(ifelse_call)
         condition = _trim_paranthesis(condition)
         if any(occursin.(["!=", "==", "false", "true", "ifelse"], condition))
             continue
