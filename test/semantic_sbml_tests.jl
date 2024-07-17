@@ -346,3 +346,8 @@ function run_semantic_tests(irun)
     end
     return nothing
 end
+
+run_semantic_tests(1:500)
+run_semantic_tests(500:1000)
+run_semantic_tests(1000:1500)
+run_semantic_tests(1500:1821)

@@ -24,20 +24,8 @@ end
     include("write_model.jl")
 end
 
-@safetestset "SBML semantic test-suite p1" begin
-    include("semantic_sbml_tests_p1.jl")
-end
-
-@safetestset "SBML semantic test-suite p2" begin
-    include("semantic_sbml_tests_p2.jl")
-end
-
-@safetestset "SBML semantic test-suite p3" begin
-    include("semantic_sbml_tests_p3.jl")
-end
-
-@safetestset "SBML semantic test-suite p4" begin
-    include("semantic_sbml_tests_p4.jl")
+@safetestset "SBML semantic test-suite" begin
+    include("semantic_sbml_tests.jl")
 end
 
 @safetestset "SBML stochastic test-suite" begin
