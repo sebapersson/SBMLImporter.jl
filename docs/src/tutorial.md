@@ -21,10 +21,10 @@ nothing # hide
 
 Here, `massaction=true` informs the importer that the model follows chemical [mass action](https://en.wikipedia.org/wiki/Law_of_mass_action) kinetics. This is required for efficient jump (Gillespie type) simulations.
 
-`load_SBML` returns two outputs: a `ParsedReactionSystem` (`prn`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes the reaction system (`prn.rn`), a map for the initial condition values of each species (`prn.u0`), and a map for setting the model parameter values (`prn.p`). The `CallbackSet` holds any potential SBML events, along with SBML piecewise functions that have been parsed into events.
+`load_SBML` returns two outputs: a `ParsedReactionSystem` (`prn`) and a `CallbackSet` (`cb`). The `ParsedReactionSystem` includes a [Catalyst](https://github.com/SciML/Catalyst.jl) `ReactionSystem` (`prn.rn`), a map for the initial condition values of each species (`prn.u0`), and a map for setting the model parameter values (`prn.p`). The `CallbackSet` holds any potential SBML events, along with SBML piecewise functions that have been parsed into events.
 
-!!! info
-    The `massaction` argument is only relevant for jump simulations. If you import the model as a `SDEProblem` or an `ODEProblem`, you can (and should) ignore this keyword argument.
+!!! note
+    The `massaction` keyword argument is only relevant for jump simulations. If you import the model as a `SDEProblem` or an `ODEProblem`, you can (and should) ignore this keyword argument.
 
 ## Jump simulations
 

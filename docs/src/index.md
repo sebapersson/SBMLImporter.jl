@@ -1,10 +1,10 @@
-# SBMLImporter.jl 
+# SBMLImporter.jl
 
-SBMLImporter.jl is a Julia package for importing dynamic [Systems Biology Markup Language (SBML)](https://sbml.org/) models into either a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations, or an `ODEProblem` for deterministic simulations.
+SBMLImporter is a Julia package for importing dynamic [Systems Biology Markup Language (SBML)](https://sbml.org/) models into either a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations, or an `ODEProblem` for deterministic simulations.
 
 ## Major highlights
 
-* Import of SBML models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or an `ODEProblem`.
+* Imports an SBML models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or an `ODEProblem`.
 * Support for a majority of SBML features, such as dynamic compartments, events, rules, piecewise (`ifelse`) expressions, and units. An extensive feature list can be found [here](@ref support).
 * Thoroughly tested against both the [SBML test suite](https://github.com/sbmlteam/sbml-test-suite) and a large collection of published models.
 * Integrates with [PEtab.jl](https://github.com/sebapersson/PEtab.jl) for fitting SBML models to data.
@@ -30,7 +30,7 @@ SBMLImporter is compatible with Julia version 1.10 and above. For best performan
 
 ## Getting help
 
-If you have any problems using SBMLImporter, here are some relevant actions:
+If you have any problems using SBMLImporter, here are some helpful tips:
 
 * Read the [FAQ](@ref FAQ) section in the online documentation.
 * Post your questions in the `#sciml-sysbio` channel on the [Julia Slack](https://julialang.org/slack/).
