@@ -247,7 +247,8 @@ end
 function _get_reaction_stoichiometry(stoichiometry::String)::Tuple{String, Bool}
     # stoichiometry can be a parameter or float, but, if it is an Int this means that
     # we can treat the reaction as an efficient mass-action reaction
-    try eval(Meta.parse(stoichiometry))
+    try
+        eval(Meta.parse(stoichiometry))
         S = eval(Meta.parse(stoichiometry))
         try
             return string(Int64(S)), true
