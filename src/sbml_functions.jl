@@ -93,5 +93,5 @@ const PIECEWISE_FN = Dict("gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y_
                           "piecewise2" => _F2,
                           "piecewise4" => _F3,
                           "__BSUM__" => _F4)
-const SBML_FN_NAMES::Vector{String} = getfield.(values(SBMLImporter.SBML_FN_INFO), :fn)
+const SBML_FN_NAMES::Vector{String} = getfield.(values(SBML_FN_INFO), :fn)
 const PIECEWISE_FN_NAMES::Vector{String} = collect(keys(PIECEWISE_FN))

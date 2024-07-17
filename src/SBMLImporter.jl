@@ -1,10 +1,10 @@
 module SBMLImporter
 
-using Catalyst: Catalyst, ModelingToolkit, Symbolics, setmetadata, parameters, states,
-                @unpack
-using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback, add_tstop!
-using JumpProcesses: DiscreteProblem, JumpProblem, reset_aggregated_jumps!
+using Catalyst: Catalyst, Symbolics, setmetadata, parameters, states, @unpack
+using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
+using JumpProcesses: reset_aggregated_jumps!
 using PrecompileTools: @setup_workload
+import ModelingToolkit
 using ReactionNetworkImporters: ParsedReactionNetwork
 using RuntimeGeneratedFunctions: RuntimeGeneratedFunctions, @RuntimeGeneratedFunction
 using SBML: SBML, readSBMLFromString

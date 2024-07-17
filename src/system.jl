@@ -46,8 +46,8 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
             Catalyst.addreaction!(rn, r)
         else
             Catalyst.reset_networkproperties!(rn)
-            push!(Catalyst.get_eqs(rn), r)
-            sort(Catalyst.get_eqs(rn); by = Catalyst.eqsortby)
+            push!(ModelingToolkit.get_eqs(rn), r)
+            sort(ModelingToolkit.get_eqs(rn); by = Catalyst.eqsortby)
         end
     end
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))

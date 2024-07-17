@@ -99,7 +99,7 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String},
 
     # Needed for events to work with JumpProblem for Gillespie type simulations
     if only_body == false
-        affect_f *= "\tif integrator.sol.prob isa DiscreteProblem\n"
+        affect_f *= "\tif integrator.sol.prob isa SciMLBase.DiscreteProblem\n"
         affect_f *= "\t\treset_aggregated_jumps!(integrator)\n\tend\n"
         affect_f *= "end"
     end
@@ -116,7 +116,7 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
         init *= "\t_tstops = " * tstops * "\n"
         init *= "tstops = _tstops[@.((integrator.tdir * _tstops > integrator.tdir * integrator.sol.prob.tspan[1])*(integrator.tdir *_tstops < integrator.tdir * integrator.sol.prob.tspan[2]))]\n"
         init *= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
-        init *= "\tadd_tstop!.((integrator,), tstops)"
+        init *= "\tSciMLBase.add_tstop!.((integrator,), tstops)"
     end
 
     # Note, init for events can only be triggered if the SBML event has
