@@ -142,11 +142,11 @@ function check_test_case(test_case, solver)
     end
 end
 
-function run_semantic_tests()
-    # To run this you might have to add Catalyst into the SBMLImporter.jl file
+# To run this you might have to add Catalyst into the SBMLImporter.jl file
+function run_semantic_tests(irun)
     solver = Rodas4P()
     @testset "Catalyst" begin
-        for i in 1:1821
+        for i in irun
             test_case = repeat("0", 5 - length(string(i))) * string(i)
 
             delay_cases = ["00937", "00938", "00939", "00940", "00941", "00942", "00943",
@@ -344,6 +344,5 @@ function run_semantic_tests()
             check_test_case(test_case, solver)
         end
     end
+    return nothing
 end
-
-run_semantic_tests()
