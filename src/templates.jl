@@ -37,7 +37,7 @@ end
 
 function _template_stoichiometry(s::String, c_scaling::String)::String
     s == "nothing" && return "nothing"
-    return s * c_scaling
+    return _apply(*, s, c_scaling)
 end
 
 function _template_ode_reaction(s::String, c_scaling::String, propensity::String,

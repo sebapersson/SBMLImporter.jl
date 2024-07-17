@@ -170,7 +170,7 @@ function _get_amount_formula(specie::SpecieSBML, V::String)::String
     if specie.boundary_condition == true
         return "0.0"
     end
-    return isempty(specie.formula) ? "0.0" : _apply(*, specie.formual, V)
+    return isempty(specie.formula) ? "0.0" : _apply(*, specie.formula, V)
 end
 
 function add_conversion_factor_ode!(model_SBML::ModelSBML,

@@ -291,11 +291,12 @@ function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
         # is the case, the stoichiometry is no longer an integer
         _S, _integer_S = _get_reaction_stoichiometry(stoichiometries[i])
         cf_scaling = _get_cf_scaling(model_SBML.species[specie_id], model_SBML)
-        _S = isempty(cf_scaling) ? _S : _S * "*" * cf_scaling
+        _S = isempty(cf_scaling) ? _S : _apply(*, _S, cf_scaling)
         _integer_S *= isempty(cf_scaling)
 
         if specie_id in species_parsed
-            S[findfirst(x -> x == specie_id, species_parsed)] *= "+" * _S
+            is = findfirst(x -> x == specie_id, species_parsed)
+            S[is] = _apply(+, S[is], _S)
         else
             species_parsed[k] = specie_id
             S[k] = _S

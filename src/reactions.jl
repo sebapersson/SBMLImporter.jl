@@ -107,23 +107,23 @@ function _get_compartment_scalings(species::Vector{String}, propensity::String,
     for (i, specie) in pairs(species)
         if isempty(propensity)
             # Likelly specie is given by algebraic rule
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if specie == "nothing"
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if model_SBML.species[specie].only_substance_units == true
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if model_SBML.species[specie].unit == :Amount
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         @assert model_SBML.species[specie].unit==:Concentration "Problem parsing compartment for reactions"
-        compartment_scalings[i] = "/" * model_SBML.species[specie].compartment
+        compartment_scalings[i] = _apply(/, "1.0", model_SBML.species[specie].compartment)
     end
     return compartment_scalings
 end
