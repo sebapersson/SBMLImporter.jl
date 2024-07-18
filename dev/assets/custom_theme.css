@@ -4,7 +4,7 @@
 
 html.theme--documenter-dark pre,
 html.theme--documenter-dark code {
-  font-family: "JuliaMono";}
+  font-family: "JuliaMono"; }
 
 html:not(.theme--documenter-dark) body #documenter a {
   color: #a10ca1; }
@@ -14,17 +14,17 @@ html:not(.theme--documenter-dark) body #documenter a:hover, html:not(.theme--doc
 
 html:not(.theme--documenter-dark) body #documenter .docs-sidebar {
   box-shadow: none;
-  color: #FFFFFF;
+  color: #FAFAFA;
   background-color: #703D6F; }
   html:not(.theme--documenter-dark) body #documenter .docs-sidebar .docs-package-name a, html:not(.theme--documenter-dark) body #documenter .docs-sidebar .docs-package-name a:hover {
-    color: #FFFFFF; }
+    color: #FAFAFA; }
   html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu {
     border-top: none; }
     html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem:hover, html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu li.is-active .tocitem:hover, html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu li.is-active .tocitem, html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu .tocitem:hover {
-      color: #FFFFFF;
+      color: #FAFAFA;
       background-color: #706482; }
     html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu .tocitem {
-      color: #FFFFFF;
+      color: #FAFAFA;
       background: none; }
     html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu li.is-active {
       border-top: none;
@@ -36,7 +36,7 @@ html:not(.theme--documenter-dark) body #documenter .docs-sidebar {
           margin-top: 0; }
         html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem {
           color: #703D6F;
-          background-color: #FFFFFF;
+          background-color: #FAFAFA;
           padding: 0.5em;
           padding-left: 1em; }
 
@@ -51,25 +51,11 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
   html:not(.theme--documenter-dark) body #documenter pre .hljs-keyword, html:not(.theme--documenter-dark) body #documenter code .hljs-keyword {
     color: #703D6F; }
 
-.admonition.is-category-terminology {
-  background-color: #FFFEDD;
-  border-color: #FFEC8B; }
-  .admonition.is-category-terminology > .admonition-header {
-    background-color: #FFEC8B;
-    color: black; }
-    .admonition.is-category-terminology > .admonition-header:before {
-      content: "Terminology: ";
-      font-family: inherit;
-      font-weight: bold; }
-
-html.theme--documenter-dark .admonition.is-category-terminology {
-  border-color: #FFEC8B; }
-
 details {
   padding-left: 1rem;
   padding-right: 1rem;
   padding-bottom: 1rem;
-  background: #703D6F; }
+  background: aliceblue; }
 
 html.theme--documenter-dark details {
   background: #282f2f; }
