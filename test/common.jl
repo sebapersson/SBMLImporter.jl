@@ -1,7 +1,7 @@
 function get_sbml_urls(base_url::String)
     levels = ["2", "3"]
     sublevels = ["1", "2", "3", "4", "5"]
-    sbml_urls = Vector{String}(undef, 0)
+    sbml_urls = String[]
     for level in levels
         for sublevel in sublevels
             sbml_url = base_url * "-sbml-l" * level * "v" * sublevel * ".xml"

@@ -72,7 +72,7 @@ function _get_reaction_species(reaction::SBML.Reaction, model_SBML::ModelSBML,
                                which_side::Symbol)::Vector{String}
     species = which_side == :reactants ? reaction.reactants : reaction.products
 
-    reaction_species = Vector{String}(undef, length(species))
+    reaction_species = fill("", length(species))
     for (i, specie) in pairs(species)
         id = specie.species
         if model_SBML.species[id].boundary_condition == true
@@ -107,23 +107,23 @@ function _get_compartment_scalings(species::Vector{String}, propensity::String,
     for (i, specie) in pairs(species)
         if isempty(propensity)
             # Likelly specie is given by algebraic rule
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if specie == "nothing"
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if model_SBML.species[specie].only_substance_units == true
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         if model_SBML.species[specie].unit == :Amount
-            compartment_scalings[i] = ""
+            compartment_scalings[i] = "1.0"
             continue
         end
         @assert model_SBML.species[specie].unit==:Concentration "Problem parsing compartment for reactions"
-        compartment_scalings[i] = "/" * model_SBML.species[specie].compartment
+        compartment_scalings[i] = _apply(/, "1.0", model_SBML.species[specie].compartment)
     end
     return compartment_scalings
 end
@@ -171,7 +171,12 @@ end
 
 function _update_ode!(specie::SpecieSBML, s::String, c_scaling::String, propensity::String,
                       which_side::Symbol)::Nothing
-    specie.formula *= _template_ode_reaction(s, c_scaling, propensity, which_side)
+    ode_formula = _template_ode_reaction(s, c_scaling, propensity, which_side)
+    if isempty(specie.formula)
+        specie.formula = ode_formula
+    else
+        specie.formula = _apply(+, specie.formula, ode_formula)
+    end
     return nothing
 end
 

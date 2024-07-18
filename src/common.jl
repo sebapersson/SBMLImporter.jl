@@ -30,7 +30,7 @@ function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML;
         specie.only_substance_units && continue
         specie_id ∉ math_expression.math_idents && continue
         c = specie.compartment
-        formula = _replace_variable(formula, specie_id, "(" * specie_id * "/" * c * ")")
+        formula = _replace_variable(formula, specie_id, _apply(/, specie_id, c))
     end
     return formula
 end
@@ -149,7 +149,7 @@ end
 
 function _adjust_for_unit(formula::String, specie::SpecieSBML)::String
     if specie.unit == :Amount && specie.only_substance_units == false
-        formula = '(' * formula * ") * " * specie.compartment
+        formula = _apply(*, formula, specie.compartment)
     end
     return formula
 end
@@ -236,7 +236,7 @@ end
 
 function _find_indices_outside_paranthesis(x::Char, formula::AbstractString;
                                            start_depth = 0)::Vector{Integer}
-    out = Vector{Int64}(undef, 0)
+    out = Int64[]
     paranthesis_depth = start_depth
     for (i, char) in pairs(formula)
         if char == '('
@@ -257,7 +257,7 @@ function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart = 1,
     isempty(str[istart:(end - iend)]) && return String[]
     length(indices) == 0 && return [str[istart:(end - iend)]]
 
-    out = Vector{String}(undef, length(indices) + 1)
+    out = fill("", length(indices) + 1)
     for (j, index) in pairs(indices)
         out[j] = str[istart:(index - 1)]
         istart = index + 1

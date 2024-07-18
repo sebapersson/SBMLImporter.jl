@@ -1,7 +1,7 @@
 # Handles piecewise functions that are to be redefined with ifelse speciements in the model
 # equations to allow MKT symbolic calculations.
 function piecewise_to_ifelse(formula::String)::String
-    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES; piecewise = true)
+    return insert_functions(formula, PIECEWISE_FN, PIECEWISE_FN_NAMES)
 end
 
 function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
@@ -34,7 +34,7 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
 
         # If !=, ==, false, true, ifelse is in condition rewriting to event is not possible.
         # This rarely happens outside SBML test-suite
-        condition, arg1, arg2 = _extract_args_insert(ifelse_call, true)
+        condition, arg1, arg2 = _extract_args_insert(ifelse_call)
         condition = _trim_paranthesis(condition)
         if any(occursin.(["!=", "==", "false", "true", "ifelse"], condition))
             continue
@@ -90,12 +90,12 @@ function _get_side_activated_with_time(lhs_condition::String, rhs_condition::Str
 end
 
 function _split_condition(formula::String)::Tuple{String, String, String}
-    gt_operators = [">", "≥", ">="]
-    lt_operators = ["<", "≤", "<="]
-    igt = findfirst(x -> occursin(x, formula), gt_operators)
-    ilt = findfirst(x -> occursin(x, formula), lt_operators)
+    gt_applys = [">", "≥", ">="]
+    lt_applys = ["<", "≤", "<="]
+    igt = findfirst(x -> occursin(x, formula), gt_applys)
+    ilt = findfirst(x -> occursin(x, formula), lt_applys)
     @assert !all(isnothing.([igt, ilt])) "Error splitting ifelse condition"
-    operator = isnothing(igt) ? lt_operators[ilt] : gt_operators[igt]
+    operator = isnothing(igt) ? lt_applys[ilt] : gt_applys[igt]
     lhs, rhs = string.(split(formula, operator))
     return lhs, rhs, operator
 end
@@ -184,7 +184,7 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
             condition = replace(condition, r"≥|>=|>" => "≤")
         end
     end
-    event = SBMLImporter.EventSBML(id, condition, assignments, false, false, false, false,
-                                   false, false, false, true)
+    event = EventSBML(id, condition, assignments, false, false, false, false, false, false,
+                      false, true)
     return event
 end

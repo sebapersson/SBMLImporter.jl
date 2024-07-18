@@ -2,7 +2,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     # The ReactionSystem must be built via eval, as creating a function that returns
     # the rn fails for large models
     eval(Meta.parse("ModelingToolkit.@variables t"))
-    eval(Meta.parse("D = Differential(t)"))
+    eval(Meta.parse("D = ModelingToolkit.Differential(t)"))
     # A model must have either variables or species, which dictates the sps call to
     # the reaction system
     if model_SBML_sys.has_species == true
@@ -46,8 +46,8 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
             Catalyst.addreaction!(rn, r)
         else
             Catalyst.reset_networkproperties!(rn)
-            push!(Catalyst.get_eqs(rn), r)
-            sort(Catalyst.get_eqs(rn); by = Catalyst.eqsortby)
+            push!(ModelingToolkit.get_eqs(rn), r)
+            sort(ModelingToolkit.get_eqs(rn); by = Catalyst.eqsortby)
         end
     end
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))
@@ -90,7 +90,7 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
     frn *= "\tModelingToolkit.@variables t\n"
     frn *= "\tD = Differential(t)\n"
     frn *= sps * "\n"
-    frn *= "\tvs = " * vs * "\n"
+    frn *= vs * "\n"
     frn *= "\tsps_arg = " * sps_arg * "\n"
     frn *= ps * "\n\n"
     frn *= reactions * "\n"
@@ -247,15 +247,18 @@ end
 function _get_reaction_stoichiometry(stoichiometry::String)::Tuple{String, Bool}
     # stoichiometry can be a parameter or float, but, if it is an Int this means that
     # we can treat the reaction as an efficient mass-action reaction
-    if !isnothing(tryparse(Float64, stoichiometry))
-        _stoichiometry = parse(Float64, stoichiometry)
+    try
+        eval(Meta.parse(stoichiometry))
+        S = eval(Meta.parse(stoichiometry))
         try
-            return string(Int64(_stoichiometry)), true
+            return string(Int64(S)), true
         catch
-            return string(_stoichiometry), false
+            S = string(S)
+            return replace(S, "(t)" => ""), false
         end
+    catch
+        return stoichiometry, false
     end
-    return stoichiometry, false
 end
 
 function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
@@ -278,7 +281,7 @@ function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
     # If stoichiometries are integers, the system can be simulated with efficient massaction
     # simulators, hence, integer_S is checked
     integer_S::Bool = true
-    S = Vector{String}(undef, length(filter(x -> x != "nothing", unique(species_id))))
+    S = fill("", length(filter(x -> x != "nothing", unique(species_id))))
     species_parsed = fill("", length(S))
     k = 1
     for (i, specie_id) in pairs(species_id)
@@ -291,11 +294,12 @@ function _get_reaction_system_info(r::ReactionSBML, model_SBML::ModelSBML,
         # is the case, the stoichiometry is no longer an integer
         _S, _integer_S = _get_reaction_stoichiometry(stoichiometries[i])
         cf_scaling = _get_cf_scaling(model_SBML.species[specie_id], model_SBML)
-        _S = isempty(cf_scaling) ? _S : _S * "*" * cf_scaling
+        _S = isempty(cf_scaling) ? _S : _apply(*, _S, cf_scaling)
         _integer_S *= isempty(cf_scaling)
 
         if specie_id in species_parsed
-            S[findfirst(x -> x == specie_id, species_parsed)] *= "+" * _S
+            is = findfirst(x -> x == specie_id, species_parsed)
+            S[is] = _apply(+, S[is], _S)
         else
             species_parsed[k] = specie_id
             S[k] = _S

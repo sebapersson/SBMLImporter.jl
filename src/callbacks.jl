@@ -5,7 +5,7 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
     specie_ids = replace.(string.(states(system)), "(t)" => "")
 
     n_callbacks = length(keys(model_SBML.events))
-    callbacks = Vector{Any}(undef, n_callbacks)
+    callbacks = Vector{Union{DiscreteCallback, ContinuousCallback}}(undef, n_callbacks)
 
     # To reduce the number of returned functions by load_SBML tstops for any potential
     # DiscreteCallback are computed via a get_tstops functions, which is executed in the
@@ -130,7 +130,7 @@ function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
         end
 
         # In this case we can solve for the event time via Symbolics
-        variables = "@variables t, "
+        variables = "ModelingToolkit.@variables t, "
         variables *= prod(parameter_ids .* ", ")[1:(end - 2)] * " "
         variables *= prod(specie_ids .* ", ")[1:(end - 2)] * " "
         variables_symbolic = eval(Meta.parse(variables))

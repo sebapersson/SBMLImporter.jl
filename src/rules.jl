@@ -199,7 +199,7 @@ function _isassigned(variable::VariableSBML)::Bool
 end
 
 function _get_sbml_rules_variables(libsbml_model::SBML.Model)::Vector{String}
-    out = Vector{String}(undef, length(libsbml_model.rules))
+    out = fill("", length(libsbml_model.rules))
     for (i, rule) in pairs(libsbml_model.rules)
         if rule isa SBML.AlgebraicRule
             out[i] = ""

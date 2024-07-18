@@ -86,7 +86,7 @@ function _replace_reactionid(formula::String, model_SBML::ModelSBML, ::SBML.Mode
 end
 
 function _get_rateOf_insert(function_call::String, model_SBML::ModelSBML)::String
-    arg = _extract_args_insert(function_call, true)[1]
+    arg = _extract_args_insert(function_call)[1]
 
     is_number(arg) && return "0.0"
     if haskey(model_SBML.parameters, arg)
@@ -100,7 +100,7 @@ function _get_rateOf_insert(function_call::String, model_SBML::ModelSBML)::Strin
     # If specie unit is amount, as SBML formulas are given in conc., a scaling is performed
     specie = _get_specie_rateOf(arg, model_SBML)
     if specie.unit == :Amount && specie.only_substance_units == false
-        return "(" * specie.formula * ") / " * specie.compartment
+        return _apply(/, specie.formula, specie.compartment)
     else
         return specie.formula
     end
@@ -110,9 +110,9 @@ function _get_specie_rateOf(arg::String, model_SBML::ModelSBML)::SpecieSBML
     if haskey(model_SBML.species, arg)
         return model_SBML.species[arg]
     end
-    arg = filter(x -> x ∉ ['(', ')'], arg)
-    arg = occursin('/', arg) ? arg[1:(findfirst(x -> x == '/', arg) - 1)] : arg
-    arg = occursin('*', arg) ? arg[1:(findfirst(x -> x == '*', arg) - 1)] : arg
+    # Account for arg being given as *(S, c) or /(S, c) due to specie being scaled by
+    # compartment size
+    arg = arg[1] in ['/', '*'] ? _extract_args_insert(arg)[1] : arg
     @assert haskey(model_SBML.species, arg) "rateOf arg $arg is not a model specie"
     return model_SBML.species[arg]
 end

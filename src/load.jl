@@ -11,6 +11,11 @@ the most efficient `JumpProblem` (Gillespie) simulators require mass action jump
 details see [here](https://docs.sciml.ai/JumpProcesses/stable/jump_types/). For how to
 check if a model follows mass action kinetics, see the FAQ in the documentation.
 
+!!! note
+    The `massaction` keyword argument is only relevant for jump simulations. If you import
+    the model as a `SDEProblem` or an `ODEProblem`, you can (and should) ignore this
+    keyword argument.
+
 ## Keyword arguments
 - `ifelse_to_callback::Bool=true`: Rewrite `ifelse` (SBML piecewise) expressions to
   [callbacks](https://github.com/SciML/DiffEqCallbacks.jl). This improves

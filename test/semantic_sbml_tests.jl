@@ -82,14 +82,14 @@ function check_test_case(test_case, solver)
                                                end)
         end
 
-        prnbng, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
+        prn, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
         if isempty(model_SBML.algebraic_rules)
-            osys = structural_simplify(convert(ODESystem, prnbng.rn))
+            osys = structural_simplify(convert(ODESystem, prn.rn))
         else
-            _sys = dae_index_lowering(convert(ODESystem, prnbng.rn))
+            _sys = dae_index_lowering(convert(ODESystem, prn.rn))
             osys = structural_simplify(_sys)
         end
-        oprob = ODEProblem(osys, prnbng.u₀, (0.0, tmax), prnbng.p, jac = true)
+        oprob = ODEProblem(osys, prn.u₀, (0.0, tmax), prn.p, jac = true)
         sol = solve(oprob, solver, abstol = 1e-12, reltol = 1e-12, saveat = tsave,
                     callback = cb)
         model_parameters = string.(parameters(sol.prob.f.sys))
@@ -191,10 +191,10 @@ solver = Rodas4P()
                           "01705", "01714", "01212", "01213", "01214", "01215", "00952",
                           "00930", "00997", "01262", "01286", "01330", "01772"]
         fast_reactions = ["00870", "00871", "00872", "00873", "00874", "00875", "00986",
-                          "00987", "00988", "01051", "01052", "01053", "01396", "01397",
-                          "01398", "01399", "01544", "01545", "01546", "01547", "01548",
-                          "01549", "01550", "01551", "01558", "01559", "01560", "01565",
-                          "01567", "01568", "01569", "01570", "01571", "01572"]
+                         "00987", "00988", "01051", "01052", "01053", "01396", "01397",
+                         "01398", "01399", "01544", "01545", "01546", "01547", "01548",
+                         "01549", "01550", "01551", "01558", "01559", "01560", "01565",
+                         "01567", "01568", "01569", "01570", "01571", "01572"]
         imply_cases = ["01274", "01279", "01497"]
         three_arugment_and_xor = ["00198", "00200", "00201", "00276", "00279", "01282"]
         piecewise_algebraic_rules = ["01503"]
@@ -209,7 +209,7 @@ solver = Rodas4P()
                           ["01" * string(i) for i in 606:625],
                           ["01627", "01628", "01629", "01630"])
         bad_names = ["01810", "01811", "01812", "01813", "01814", "01815", "01816",
-                     "01817", "01818", "01819", "01820", "01821",]
+                    "01817", "01818", "01819", "01820", "01821",]
 
         if test_case in fba_models
             @test_throws SBMLImporter.SBMLSupport begin

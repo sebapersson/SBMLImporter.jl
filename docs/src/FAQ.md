@@ -11,7 +11,7 @@ var = assignment # var ~ assignment in ModelingToolkit syntax
 To be able to simulate the model assignment rules must be inlined into the model equations. This can be done with the `structural_simplify` function from [ModelingToolkit](https://github.com/SciML/ModelingToolkit.jl). For example, for an ODE model do:
 
 ```julia
-using ModelingToolkit
+using SBMLImporter, ModelingToolkit
 prn, cb = load_SBML(path)
 sys = structural_simplify(convert(ODESystem, prn.rn))
 oprob = ODEProblem(sys, prn.u0, tspan, prn.p)
@@ -26,9 +26,9 @@ Warning: That the system is massaction was provided, however, the reaction r is 
 ```
 
 !!! note
-    The `massaction` argument is only relevant for jump simulations. If you import the model as a `SDEProblem` or an `ODEProblem`, you can (and should) ignore this keyword argument.
+    The `massaction` keyword argument is only relevant for jump simulations. If you import the model as a `SDEProblem` or an `ODEProblem`, you can (and should) ignore this keyword argument.
 
-## Why does one of the model parameters not appear among the system parameters?
+## Why does one of the SBML model parameters not appear among the system parameters?
 
 If one of the model parameters does not appear among the system parameters:
 
@@ -49,7 +49,7 @@ this is likely because the parameter is not set as constant in the SBML file, e.
 <parameter id="c" value="1.0" constant="false"/>
 ```
 
-If a parameter is set to have `constant="false"`, the importer must treat the parameter as a variable since it can change over time (explicitly depend on time), because `ReactionSystem` parameters are assumed to time invariant. If the parameter should indeed be constant, change the parameter in the model file:
+If a parameter is set to have `constant="false"`, the importer must treat the parameter as a variable since it can change over time (explicitly depend on time), as Julia `ReactionSystem` parameters are assumed to time invariant. If the parameter should indeed be constant (e.g. at most be changed by an event), change the parameter in the model file:
 
 ```SBML
 <parameter id="c" value="1.0" constant="true"/>
@@ -65,19 +65,19 @@ log(specie)
 
 Even though the model might be written such that `specie` should never go below 0 (e.g., the model follows mass action kinetics), numerical errors can cause `specie` to go below zero. Therefore, instead of encoding risky statements into the model such as `log(specie)`, it might be better to encode something like `log(specie + 1e-8)`.
 
-Secondly `DomainError` might arise due to how SBMLImporter parses SBML piecewise expressions. Piecewise expressions are parsed into `ifelse` functions:
+Secondly `DomainError` might arise due to how SBMLImporter parses SBML piecewise expressions. Piecewise expressions are first parsed into `ifelse` functions:
 
 ```julia
 ifelse(condition, x, y)
 ```
 
-Which when `condition == true` evaluates to `x`, otherwise to `y`. In SBMLImporter `ifelse` expressions are rewritten to callbacks (events). Hence, in the model equations the `ifelse` is converted to:
+Which when `condition == true` evaluates to `x`, otherwise to `y`. In SBMLImporter `ifelse` expressions are further rewritten to callbacks (events). Hence, in the model equations the `ifelse` is converted to:
 
 ```julia
 (1 - condition_bool) * x + condition_bool * y
 ```
 
-Here `condition_bool` is assigned via a callback (event) to be `1` when `condition` is `true`, and to `0` when `condition` if `false`. This has the same functionality as an `ifelse`, but is numerically more stable as with callbacks the integrator (e.g., ODE solver) stops at points `condition` changes, applies the change, and continues. Instead, with `ifelse`, the integrator does not know an event happens and thus must typically reduce its step size to handle the sudden change in models dynamics. This increases simulation time, and reduces simulation stability. However, sometimes the formulas in the `ifelse` might depend on the `condition`. For example, let's say we have:
+Here `condition_bool` is assigned via a callback (event) to be `1` when `condition` is `true`, and to `0` when `condition` if `false`. This has the same functionality as an `ifelse`, but is numerically more stable because the integrator (e.g., ODE solver) actually stops at points `condition` changes. Instead, with `ifelse`, the integrator does not know an event happens and thus must typically reduce its step size to handle the sudden change in models dynamics. This increases simulation time, and reduces simulation stability (e.g. ODE solvers fail more frequently). However, sometimes the formulas in the `ifelse` might depend on the `condition`. For example, let's say we have:
 
 ```julia
 ifelse(t > 1, 0, log(t - 1))

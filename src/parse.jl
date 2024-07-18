@@ -18,8 +18,8 @@ function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = t
     else
         libsbml_model = readSBMLFromString(model_str,
                                            doc -> begin
-                                               set_level_and_version(3, 2)(doc)
-                                               convert_promotelocals_expandfuns(doc)
+                                               SBML.set_level_and_version(3, 2)(doc)
+                                               SBML.convert_promotelocals_expandfuns(doc)
                                            end)
     end
 

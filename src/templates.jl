@@ -1,3 +1,8 @@
+function _apply(operator::Function, x::String, y::String)::String
+    @assert operator in [+, -, *, /, ^] "$operator is not allowed for building math expression"
+    return string(operator) * '(' * x * ", " * y * ')'
+end
+
 function _template_value_map(id::String, value::String)::String
     return "\t" * id * " =>" * value * ",\n"
 end
@@ -32,7 +37,7 @@ end
 
 function _template_stoichiometry(s::String, c_scaling::String)::String
     s == "nothing" && return "nothing"
-    return s * c_scaling
+    return _apply(*, s, c_scaling)
 end
 
 function _template_ode_reaction(s::String, c_scaling::String, propensity::String,
@@ -41,7 +46,9 @@ function _template_ode_reaction(s::String, c_scaling::String, propensity::String
     @assert which_side in [:reactant, :product] "$(which_side) is an invalid reaction side"
     sign = which_side == :product ? '+' : '-'
     # c_scaling either "" or "/...", hence the 1
-    return sign * s * "*1" * c_scaling * "*(" * propensity * ")"
+    p1 = _apply(*, c_scaling, propensity)
+    p2 = _apply(*, "1", p1)
+    return _apply(*, sign * s, p2)
 end
 
 function _template_tstops(tstops::Vector{String})::String
@@ -92,7 +99,7 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String},
 
     # Needed for events to work with JumpProblem for Gillespie type simulations
     if only_body == false
-        affect_f *= "\tif integrator.sol.prob isa DiscreteProblem\n"
+        affect_f *= "\tif integrator.sol.prob isa SciMLBase.DiscreteProblem\n"
         affect_f *= "\t\treset_aggregated_jumps!(integrator)\n\tend\n"
         affect_f *= "end"
     end
@@ -109,7 +116,7 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
         init *= "\t_tstops = " * tstops * "\n"
         init *= "tstops = _tstops[@.((integrator.tdir * _tstops > integrator.tdir * integrator.sol.prob.tspan[1])*(integrator.tdir *_tstops < integrator.tdir * integrator.sol.prob.tspan[2]))]\n"
         init *= "\ttstops = isempty(tstops) ? tstops : vcat(minimum(tstops) / 2.0, tstops)\n"
-        init *= "\tadd_tstop!.((integrator,), tstops)"
+        init *= "\tSciMLBase.add_tstop!.((integrator,), tstops)"
     end
 
     # Note, init for events can only be triggered if the SBML event has
@@ -125,4 +132,20 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
     init *= "\t" * affect_body * "\n\tend"
     init *= "\nend"
     return init
+end
+
+function _template_conc_dynamic_c(dndt::String, V::String, n_id::String,
+                                  dVdt::String)::String
+    # Math expressions are built via, e.g., +(1, 2) to avoid paranthesis problems
+    V2 = _apply(^, V, "2")
+    p1 = _apply(/, dndt, V)
+    p2 = _apply(*, _apply(/, n_id, V2), dVdt)
+    return _apply(-, p1, p2)
+end
+
+function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String,
+                                    dVdt::String)::String
+    p1 = _apply(*, dcdt, V)
+    p2 = _apply(*, specie_id, _apply(/, dVdt, V))
+    return _apply(+, p1, p2)
 end
