@@ -100,7 +100,7 @@ function _get_rateOf_insert(function_call::String, model_SBML::ModelSBML)::Strin
     # If specie unit is amount, as SBML formulas are given in conc., a scaling is performed
     specie = _get_specie_rateOf(arg, model_SBML)
     if specie.unit == :Amount && specie.only_substance_units == false
-        return "(" * specie.formula * ") / " * specie.compartment
+        return _apply(/, specie.formula, specie.compartment)
     else
         return specie.formula
     end

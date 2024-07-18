@@ -171,7 +171,12 @@ end
 
 function _update_ode!(specie::SpecieSBML, s::String, c_scaling::String, propensity::String,
                       which_side::Symbol)::Nothing
-    specie.formula *= _template_ode_reaction(s, c_scaling, propensity, which_side)
+    ode_formula = _template_ode_reaction(s, c_scaling, propensity, which_side)
+    if isempty(specie.formula)
+        specie.formula = ode_formula
+    else
+        specie.formula = _apply(+, specie.formula, ode_formula)
+    end
     return nothing
 end
 
