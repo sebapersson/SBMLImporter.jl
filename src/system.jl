@@ -2,7 +2,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     # The ReactionSystem must be built via eval, as creating a function that returns
     # the rn fails for large models
     eval(Meta.parse("ModelingToolkit.@variables t"))
-    eval(Meta.parse("D = Catalyst.Differential(t)"))
+    eval(Meta.parse("D = ModelingToolkit.Differential(t)"))
     # A model must have either variables or species, which dictates the sps call to
     # the reaction system
     if model_SBML_sys.has_species == true
@@ -253,7 +253,8 @@ function _get_reaction_stoichiometry(stoichiometry::String)::Tuple{String, Bool}
         try
             return string(Int64(S)), true
         catch
-            return string(S), false
+            S = string(S)
+            return replace(S, "(t)" => ""), false
         end
     catch
         return stoichiometry, false

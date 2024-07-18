@@ -110,9 +110,9 @@ function _get_specie_rateOf(arg::String, model_SBML::ModelSBML)::SpecieSBML
     if haskey(model_SBML.species, arg)
         return model_SBML.species[arg]
     end
-    arg = filter(x -> x ∉ ['(', ')'], arg)
-    arg = occursin('/', arg) ? arg[1:(findfirst(x -> x == '/', arg) - 1)] : arg
-    arg = occursin('*', arg) ? arg[1:(findfirst(x -> x == '*', arg) - 1)] : arg
+    # Account for arg being given as *(S, c) or /(S, c) due to specie being scaled by
+    # compartment size
+    arg = arg[1] in ['/', '*'] ? _extract_args_insert(arg)[1] : arg
     @assert haskey(model_SBML.species, arg) "rateOf arg $arg is not a model specie"
     return model_SBML.species[arg]
 end
