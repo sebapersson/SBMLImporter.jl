@@ -363,7 +363,7 @@ function _get_dir_save(write_to_file::Bool, model_as_string::Bool,
     return dir_save
 end
 
-function _addreaction!(network::ReactionSystem, rx::Reaction)
+function _addreaction!(network::Catalyst.ReactionSystem, rx::Catalyst.Reaction)
     Catalyst.reset_networkproperties!(network)
     push!(Catalyst.get_eqs(network), rx)
     sort(Catalyst.get_eqs(network); by = Catalyst.eqsortby)

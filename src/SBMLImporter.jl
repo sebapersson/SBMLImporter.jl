@@ -1,6 +1,6 @@
 module SBMLImporter
 
-using Catalyst: Catalyst, Symbolics, setmetadata, parameters, states, @unpack
+using Catalyst: Catalyst, Symbolics, setmetadata, parameters, unknowns, @unpack
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
 using JumpProcesses: reset_aggregated_jumps!
 using PrecompileTools: @setup_workload

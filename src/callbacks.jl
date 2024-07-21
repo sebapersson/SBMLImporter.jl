@@ -169,7 +169,7 @@ function _ids_to_callback_syntax(formula::String, ids::Vector{String}, id_type::
                                  integrator::Bool = true, utmp::Bool = false)::String
     @assert id_type in [:specie, :parameter] "Invalid id type $id_type when parsing to callback syntax"
     if id_type == :parameter
-        @assert integrator == true "Parameter not given via integrator in callback"
+        @assert integrator==true "Parameter not given via integrator in callback"
     end
     for (i, id) in pairs(ids)
         if id_type == :specie
