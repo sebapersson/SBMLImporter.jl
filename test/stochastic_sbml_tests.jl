@@ -73,7 +73,7 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         prn, cb = load_SBML(sbml_string, model_as_string = true, massaction = ma,
                                   inline_assignment_rules = false)
         tspan = (0.0, tmax)
-        dprob = DiscreteProblem(prn.rn, prn.u₀, tspan, prn.p)
+        dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
         jprob = JumpProblem(prn.rn, dprob, Direct(); save_positions = (false, false))
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
@@ -87,7 +87,7 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         for to_check in species_test
             to_check_no_whitespace = replace(string(to_check), " " => "")
             i_specie = findfirst(x -> x == to_check_no_whitespace,
-                                 replace.(string.(states(jprob.prob.f.sys)), "(t)" => ""))
+                                 replace.(string.(unknowns(jprob.prob.f.sys)), "(t)" => ""))
             sim_mean, sim_var = SciMLBase.EnsembleAnalysis.timepoint_meanvar(sol, t_save)
             sim_mean = sim_mean[i_specie, :]
             sim_sd = sqrt.(sim_var[i_specie, :])

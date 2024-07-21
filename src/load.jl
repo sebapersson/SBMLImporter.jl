@@ -17,6 +17,10 @@ check if a model follows mass action kinetics, see the FAQ in the documentation.
     keyword argument.
 
 ## Keyword arguments
+- `complete::Bool=true`: Whether or not to mark the returned Catalyst `ReactionSystem` as
+    complete. Only a complete system can be used for simulations, while only an incomplete
+    system can be composed with other systems. For more details, see the Catalyst.jl
+    [documentation](https://docs.sciml.ai/Catalyst/stable/).
 - `ifelse_to_callback::Bool=true`: Rewrite `ifelse` (SBML piecewise) expressions to
   [callbacks](https://github.com/SciML/DiffEqCallbacks.jl). This improves
   simulation runtime and stability. Strongly recomended to set to `true`.
@@ -61,7 +65,7 @@ oprob = ODEProblem(prn.rn, prn.u0, tspan, prn.p)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
-function load_SBML(path::AbstractString; massaction::Bool = false,
+function load_SBML(path::AbstractString; massaction::Bool = false, complete::Bool = true,
                    ifelse_to_callback::Bool = true, write_to_file::Bool = false,
                    inline_assignment_rules::Bool = false,
                    model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
@@ -80,6 +84,10 @@ function load_SBML(path::AbstractString; massaction::Bool = false,
     elseif write_to_file == true
         dirsave = _get_dir_save(write_to_file, model_as_string, path)
         write_reactionsystem(model_SBML_sys, dirsave, model_SBML)
+    end
+
+    if complete == true
+        rn = Catalyst.complete(rn)
     end
     prn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
     return prn, cbset
