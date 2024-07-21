@@ -81,6 +81,7 @@ function load_SBML(path::AbstractString; massaction::Bool = false,
         dirsave = _get_dir_save(write_to_file, model_as_string, path)
         write_reactionsystem(model_SBML_sys, dirsave, model_SBML)
     end
+    rn = Catalyst.complete(rn)
     prn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
     return prn, cbset
 end

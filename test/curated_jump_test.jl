@@ -7,7 +7,7 @@ using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEq, Test
 # Creates models.
 prn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)
 rn_sbml = prn.rn
-u0_sbml = prn.u₀
+u0_sbml = prn.u0
 ps_sbml = prn.p
 
 rn_catalyst = @reaction_network $(rn_sbml.name) begin
@@ -18,6 +18,7 @@ rn_catalyst = @reaction_network $(rn_sbml.name) begin
     B * compartment, X --> Y
     1 * compartment, X --> ∅
 end
+rn_catalyst = Catalyst.complete(rn_catalyst)
 u0_catalyst = [:X => 2.0, :Y => 10.0]
 ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
 

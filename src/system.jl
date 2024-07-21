@@ -1,8 +1,8 @@
 function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
     # The ReactionSystem must be built via eval, as creating a function that returns
     # the rn fails for large models
-    eval(Meta.parse("ModelingToolkit.@variables t"))
-    eval(Meta.parse("D = ModelingToolkit.Differential(t)"))
+    eval(Meta.parse("t = Catalyst.default_t()"))
+    eval(Meta.parse("D = Catalyst.default_time_deriv()"))
     # A model must have either variables or species, which dictates the sps call to
     # the reaction system
     if model_SBML_sys.has_species == true
@@ -43,7 +43,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
         # addreaction! (much easier)
         r = eval(Meta.parse(reactions[i]))
         if occursin("Reaction", reactions[i])
-            Catalyst.addreaction!(rn, r)
+            _addreaction!(rn, r)
         else
             Catalyst.reset_networkproperties!(rn)
             push!(ModelingToolkit.get_eqs(rn), r)
@@ -361,4 +361,12 @@ function _get_dir_save(write_to_file::Bool, model_as_string::Bool,
         mkdir(dir_save)
     end
     return dir_save
+end
+
+function _addreaction!(network::ReactionSystem, rx::Reaction)
+    Catalyst.reset_networkproperties!(network)
+    push!(Catalyst.get_eqs(network), rx)
+    sort(Catalyst.get_eqs(network); by = Catalyst.eqsortby)
+    push!(Catalyst.get_rxs(network), rx)
+    length(Catalyst.get_rxs(network))
 end

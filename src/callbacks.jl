@@ -1,8 +1,10 @@
 function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
                           convert_stpan::Bool = false)::CallbackSet
     model_name = replace(model_name, "-" => "_")
+    specie_ids = replace.(string.(unknowns(system)), "(t)" => "")
+    # If parameters(system) is empty Any[] is returned with string.(...)
     parameter_ids = string.(parameters(system))
-    specie_ids = replace.(string.(states(system)), "(t)" => "")
+    parameter_ids = parameter_ids == Any[] ? String[] : parameter_ids
 
     n_callbacks = length(keys(model_SBML.events))
     callbacks = Vector{Union{DiscreteCallback, ContinuousCallback}}(undef, n_callbacks)
@@ -162,14 +164,18 @@ function _condition_has_species(condition::String, specie_ids::Vector{String})::
     return false
 end
 
+# TODO: When work also use interface for species in assignment
 function _ids_to_callback_syntax(formula::String, ids::Vector{String}, id_type::Symbol;
                                  integrator::Bool = true, utmp::Bool = false)::String
     @assert id_type in [:specie, :parameter] "Invalid id type $id_type when parsing to callback syntax"
+    if id_type == :parameter
+        @assert integrator == true "Parameter not given via integrator in callback"
+    end
     for (i, id) in pairs(ids)
         if id_type == :specie
             replace_with = utmp ? "utmp[" * string(i) * "]" : "u[" * string(i) * "]"
         elseif id_type == :parameter
-            replace_with = "p[" * string(i) * "]"
+            replace_with = "ps[:" * id * "]"
         end
         if integrator == true
             replace_with = "integrator." * replace_with
