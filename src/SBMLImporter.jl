@@ -42,7 +42,6 @@ include("species.jl")
 include("system.jl")
 include("templates.jl")
 
-#=
 @setup_workload begin
     dirmodels = joinpath(@__DIR__, "..", "test", "Models")
     # Model without events
@@ -52,7 +51,6 @@ include("templates.jl")
     path = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
     prn, cb = load_SBML(path)
 end
-=#
 
 export load_SBML
 
