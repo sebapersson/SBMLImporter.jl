@@ -76,7 +76,7 @@
       <parameter id="B" name="B" value="4" constant="true"/>
     </listOfParameters>
     <listOfReactions>
-      <reaction id="r2" name="r2" reversible="false">
+      <reaction id="r2_id" name="r2_name" reversible="false">
         <listOfReactants>
           <speciesReference species="Y" stoichiometry="1"/>
           <speciesReference species="X" stoichiometry="2"/>
@@ -103,7 +103,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="r3" name="r3" reversible="false">
+      <reaction id="r3_id" name="r3_name" reversible="false">
         <listOfReactants>
           <speciesReference species="X" stoichiometry="1"/>
         </listOfReactants>
@@ -121,7 +121,7 @@
           </math>
         </kineticLaw>
       </reaction>
-      <reaction id="r4" name="r4" reversible="false">
+      <reaction id="r4_id" name="r4_name" reversible="false">
         <listOfReactants>
           <speciesReference species="X" stoichiometry="1"/>
         </listOfReactants>
@@ -139,7 +139,7 @@
           </listOfParameters>
         </kineticLaw>
       </reaction>
-      <reaction id="r1" name="r1" reversible="false">
+      <reaction id="r1_id" name="r1_name" reversible="false">
         <listOfProducts>
           <speciesReference species="X" stoichiometry="1"/>
         </listOfProducts>

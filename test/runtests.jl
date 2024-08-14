@@ -24,6 +24,10 @@ end
     include("write_model.jl")
 end
 
+@safetestset "Reaction metadata" begin
+    include("metadata.jl")
+end
+
 @safetestset "SBML semantic test-suite" begin
     include("semantic_sbml_tests.jl")
 end
