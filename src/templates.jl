@@ -16,7 +16,8 @@ function _template_assignment_rule(id::String, formula::String)::String
 end
 
 function _template_reaction(reactants::String, products::String, r_S::String, p_S::String,
-                            propensity::String, is_massaction::Bool)::String
+                            propensity::String, name::String, id::String,
+                            is_massaction::Bool)::String
     reaction = "\t\t"
     if is_massaction
         reaction *= "SBMLImporter.update_rate_reaction("
@@ -27,10 +28,12 @@ function _template_reaction(reactants::String, products::String, r_S::String, p_
                 products * ", " *
                 r_S * ", " *
                 p_S
+    metadata = "[:name => \"$(name)\", :id => \"$(id)\"]"
+    reaction *= "; metadata = $(metadata), "
     if is_massaction
-        reaction *= "; only_use_rate=false)),\n"
+        reaction *= "only_use_rate=false)),\n"
     else
-        reaction *= "; only_use_rate=true),\n"
+        reaction *= "only_use_rate=true),\n"
     end
     return reaction
 end

@@ -55,6 +55,17 @@ If a parameter is set to have `constant="false"`, the importer must treat the pa
 <parameter id="c" value="1.0" constant="true"/>
 ```
 
+## How do I access SBML reaction ID and reaction name?
+
+SBML reactions have both an `ID` and a `name` that can differ. When importing an SBML model, SBMLImporter stores these as `metadata` in every `Catalyst.Reaction`. This `metadata` can be accessed with the Catalyst `getmetadata` function. For example, to retrieve both the ID and name for the first reaction in a model, do:
+
+```julia
+prn, cb = load_SBML(path_SBML)
+sbml_reactions = reactions(prn.rn)
+getmetadata(sbml_reactions[1], :id)
+getmetadata(sbml_reactions[1], :name)
+```
+
 ## Why does my simulation fail with `DomainError` while the model imports fine?
 
 This typically happens due to two reasons. Firstly, the model might contain a function call where the argument must be positive, such as:

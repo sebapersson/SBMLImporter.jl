@@ -63,6 +63,7 @@ end
 
 mutable struct ReactionSBML
     const name::String
+    const id::String
     kinetic_math::String
     const products::Vector{String}
     const products_stoichiometry::Vector{String}

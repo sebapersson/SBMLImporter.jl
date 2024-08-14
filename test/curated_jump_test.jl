@@ -26,26 +26,20 @@ ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
 @test issetequal(species(rn_sbml), species(rn_catalyst))
 @test issetequal(parameters(rn_sbml), parameters(rn_catalyst))
 @test isequal(reactions(rn_sbml)[1], reactions(rn_catalyst)[1])
-@test isequal(reactions(rn_sbml)[2], reactions(rn_catalyst)[2])
-@test isequal(reactions(rn_sbml)[3], reactions(rn_catalyst)[3])
-@test isequal(reactions(rn_sbml)[4], reactions(rn_catalyst)[4])
+@test isequal(reactions(rn_sbml)[2], reactions(rn_catalyst)[4])
+@test isequal(reactions(rn_sbml)[3], reactions(rn_catalyst)[2])
+@test isequal(reactions(rn_sbml)[4], reactions(rn_catalyst)[3])
 
-# Makes and tests jump simulations.
+# Makes and tests jump simulations. Note that tests need to account for reactions not
+# appearing in the same order
 dprob_sbml = DiscreteProblem(rn_sbml, u0_sbml, (0.0, 100.0), ps_sbml)
 jprob_sbml = JumpProblem(rn_sbml, dprob_sbml, Direct())
-sol_sbml = solve(jprob_sbml, SSAStepper(); seed = 1234)
-
 dprob_catalyst = DiscreteProblem(rn_catalyst, u0_catalyst, (0.0, 100.0), ps_catalyst)
 jprob_catalyst = JumpProblem(rn_catalyst, dprob_catalyst, Direct())
-sol_catalyst = solve(jprob_catalyst, SSAStepper(); seed = 1234)
-
-@test sol_sbml == sol_catalyst
-
-# Tests that both generates mass actions jumps.
-@test jprob_sbml.massaction_jump.scaled_rates == jprob_catalyst.massaction_jump.scaled_rates
-@test jprob_sbml.massaction_jump.reactant_stoch ==
-      jprob_catalyst.massaction_jump.reactant_stoch
-@test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch
+imap = [1, 4, 2, 3]
+@test jprob_sbml.massaction_jump.scaled_rates == jprob_catalyst.massaction_jump.scaled_rates[imap]
+@test jprob_sbml.massaction_jump.reactant_stoch == jprob_catalyst.massaction_jump.reactant_stoch[imap]
+@test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch[imap]
 
 # Check consistent simulations when model is imported with and without rewriting to
 # Catalyst mass-action format

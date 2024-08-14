@@ -204,7 +204,7 @@ function _get_system_reactions(model_SBML::ModelSBML, massaction::Bool)::Tuple{S
                   "can negative impact simulation times."
         end
         catalyst_reactions *= _template_reaction(reactants, products, r_S, p_S, propensity,
-                                                 is_massaction)
+                                                 r.name, r.id, is_massaction)
 
         # For creating the reaction system we need to know if only integer stoichiometry
         # holds for all reactions

@@ -35,8 +35,9 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
         have_rateOf = "rateOf" in math_expression.fns
         have_specieref = _has_specieref(math_expression.math_idents, model_SBML)
         stoichiometry_massaction = all([reactants_massaction, products_massaction])
-        model_SBML.reactions[id] = ReactionSBML(id, propensity, products, products_s,
-                                                reactants, reactants_s,
+        name = _parse_variable(reaction.name)
+        model_SBML.reactions[id] = ReactionSBML(name, id, propensity, products,
+                                                products_s, reactants, reactants_s,
                                                 stoichiometry_massaction, assignment_rules,
                                                 have_ridents, have_rateOf, have_specieref)
         for specie in Iterators.flatten((reactants, products))
