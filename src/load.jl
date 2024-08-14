@@ -27,7 +27,13 @@ check if a model follows mass action kinetics, see the FAQ in the documentation.
 - `inline_assignment_rules::Bool=false`: Inline SBML assignment rules into model equations.
     Recommended for importing large models. **However**, if set to `true`, it is
     not possible to access assignment rule variables via `sol[:var]`.
-- `write_to_file::Bool=false`: Write the parsed SBML model to a Julia file in the same
+- `inline_kineticlaw_parameters::Bool=true`: Inline (hardcode) SBML kinetic law parameter
+    values into the model equations. Kinetic law parameters are parameters defined only in
+    the kinetic law field of an SBML reaction. It is recommended to inline them as there
+    might be duplicate IDs, e.g., the same kinetic law parameter redefined for different
+    reactions. If they are not inlined, they are promoted to model parameters (with the
+    same status as parameters in the SBML file).
+- `write_to_file=false`: Write the parsed SBML model to a Julia file in the same
     directory as the SBML file.
 - `model_as_string::Bool=false`: Whether the model (`path`) is provided as a string.
 
@@ -68,10 +74,12 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 function load_SBML(path::AbstractString; massaction::Bool = false, complete::Bool = true,
                    ifelse_to_callback::Bool = true, write_to_file::Bool = false,
                    inline_assignment_rules::Bool = false,
+                   inline_kineticlaw_parameters::Bool = true,
                    model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
     model_SBML = parse_SBML(path, massaction; ifelse_to_callback = ifelse_to_callback,
                             model_as_string = model_as_string,
-                            inline_assignment_rules = inline_assignment_rules)
+                            inline_assignment_rules = inline_assignment_rules,
+                            inline_kineticlaw_parameters = inline_kineticlaw_parameters)
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
 

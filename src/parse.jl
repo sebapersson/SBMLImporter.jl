@@ -7,7 +7,8 @@ to create a ReactionSystem.
 For testing path can be the model as a string if model_as_string=true.
 """
 function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = true,
-                    model_as_string = true, inline_assignment_rules::Bool = true)::ModelSBML
+                    model_as_string = true, inline_assignment_rules::Bool = true,
+                    inline_kineticlaw_parameters::Bool = true)::ModelSBML
     model_str = _get_model_as_str(path, model_as_string)
     check_support(path)
 
@@ -24,11 +25,12 @@ function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = t
     end
 
     return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules,
-                       massaction)
+                       inline_kineticlaw_parameters, massaction)
 end
 
 function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
-                     inline_assignment_rules::Bool, massaction::Bool)::ModelSBML
+                     inline_assignment_rules::Bool, inline_kineticlaw_parameters::Bool,
+                     massaction::Bool)::ModelSBML
     model_SBML = ModelSBML(libsbml_model)
 
     parse_species!(model_SBML, libsbml_model, massaction)
@@ -45,7 +47,7 @@ function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     parse_initial_assignments!(model_SBML, libsbml_model)
 
-    parse_reactions!(model_SBML, libsbml_model)
+    parse_reactions!(model_SBML, libsbml_model, inline_kineticlaw_parameters)
 
     # Following the SBML standard reaction ids can appear in formulas, where they correspond
     # to the reaction kinetic_math expression
