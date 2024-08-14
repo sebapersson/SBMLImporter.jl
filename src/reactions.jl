@@ -1,7 +1,9 @@
-function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
+function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
+                          inline_kineticlaw_parameters::Bool)::Nothing
     for (id, reaction) in libsbml_model.reactions
         propensity, math_expression = _parse_reaction_formula(reaction, model_SBML,
-                                                              libsbml_model)
+                                                              libsbml_model,
+                                                              inline_kineticlaw_parameters)
 
         reactants = _get_reaction_species(reaction, model_SBML, :reactants)
         reactants_cs = _get_compartment_scalings(reactants, propensity, model_SBML)
@@ -56,12 +58,31 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Not
 end
 
 function _parse_reaction_formula(reaction::SBML.Reaction, model_SBML::ModelSBML,
-                                 libsbml_model::SBML.Model)::Tuple{String, MathSBML}
+                                 libsbml_model::SBML.Model,
+                                 inline_kineticlaw_parameters::Bool)::Tuple{String,
+                                                                            MathSBML}
     math_expression = parse_math(reaction.kinetic_math, libsbml_model)
     formula = math_expression.formula
-    # SBML where statements, that can occur in reaction
-    for (parameter_id, parameter) in reaction.kinetic_parameters
-        formula = _replace_variable(formula, parameter_id, string(parameter.value))
+    # SBML kineticlaw expressions can define their own parameters. These are by default
+    # inlined as they can have the same id as other model parameters. If the user
+    # want to they promote these to full model parameters, it is only allowed if we do not
+    # have any duplicates (parameters with the same id but different values)
+    if inline_kineticlaw_parameters == true
+        for (parameter_id, parameter) in reaction.kinetic_parameters
+            formula = _replace_variable(formula, parameter_id, string(parameter.value))
+        end
+    else
+        for (parameter_id, parameter) in reaction.kinetic_parameters
+            p = _parse_parameter(parameter_id, parameter)
+            if !haskey(model_SBML.parameters, parameter_id)
+                model_SBML.parameters[parameter_id] = p
+            elseif !_isequal(p, model_SBML.parameters[parameter_id])
+                throw(SBMLSupport("Cannont inline kinetic law parameter $(parameter_id) " *
+                                  "as this parameter ID is used by another parameter " *
+                                  "in the model (probably another kinetic law parameter) " *
+                                  "that takes a different value"))
+            end
+        end
     end
 
     math_expression.formula = formula

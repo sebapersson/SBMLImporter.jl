@@ -12,6 +12,10 @@ end
     include("inline_assignment_rules.jl")
 end
 
+@safetestset "Kinetic law parameters" begin
+    include("kineticlaw_parameters.jl")
+end
+
 @safetestset "Ifelse to callback" begin
     include("ifelse_to_callback.jl")
 end

@@ -1,3 +1,8 @@
+function _isequal(x1::T, x2::T)::Bool where {T <: VariableSBML}
+    f = fieldnames(T)
+    return getfield.(Ref(x1), f) == getfield.(Ref(x2), f)
+end
+
 function _replace_variable(formula::AbstractString, to_replace::String,
                            replace_with::String)::String
     if !occursin(to_replace, formula)
