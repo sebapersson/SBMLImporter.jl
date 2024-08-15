@@ -60,6 +60,7 @@ If a parameter is set to have `constant="false"`, the importer must treat the pa
 SBML reactions have both an `ID` and a `name` that can differ. When importing an SBML model, SBMLImporter stores these as `metadata` in every `Catalyst.Reaction`. This `metadata` can be accessed with the Catalyst `getmetadata` function. For example, to retrieve both the ID and name for the first reaction in a model, do:
 
 ```julia
+using SBMLImporter, Catalyst
 prn, cb = load_SBML(path_SBML)
 sbml_reactions = reactions(prn.rn)
 getmetadata(sbml_reactions[1], :id)
