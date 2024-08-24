@@ -41,6 +41,7 @@ include("support.jl")
 include("species.jl")
 include("system.jl")
 include("templates.jl")
+include("util.jl")
 
 @setup_workload begin
     dirmodels = joinpath(@__DIR__, "..", "test", "Models")
@@ -52,6 +53,6 @@ include("templates.jl")
     prn, cb = load_SBML(path)
 end
 
-export load_SBML
+export load_SBML, getcompartment
 
 end

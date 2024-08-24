@@ -1,4 +1,5 @@
-function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
+function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::ModelSBML)
+    name = model_SBML.name
     # The ReactionSystem must be built via eval, as creating a function that returns
     # the rn fails for large models
     eval(Meta.parse("t = Catalyst.default_t()"))
@@ -9,6 +10,9 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, name::String)
         sps = eval(Meta.parse(model_SBML_sys.species))
     else
         sps = Any[]
+    end
+    for (i, s) in pairs(sps)
+        sps[i] = _set_compartment(s, model_SBML)
     end
     if model_SBML_sys.variables != "\tvs = ModelingToolkit.@variables "
         vs = eval(Meta.parse(model_SBML_sys.variables))
@@ -369,4 +373,14 @@ function _addreaction!(network::Catalyst.ReactionSystem, rx::Catalyst.Reaction)
     sort(Catalyst.get_eqs(network); by = Catalyst.eqsortby)
     push!(Catalyst.get_rxs(network), rx)
     length(Catalyst.get_rxs(network))
+end
+
+function ModelingToolkit.setmetadata(var::Symbolics.Num, ::CompartmentSBML, val)
+    return val
+end
+
+function _set_compartment(s, model_SBML::ModelSBML)
+    sid = replace(s |> string, "(t)" => "")
+    c = model_SBML.species[sid].compartment
+    return setmetadata(s, CompartmentSBML, c)
 end
