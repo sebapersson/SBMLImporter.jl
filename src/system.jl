@@ -375,7 +375,7 @@ function _addreaction!(network::Catalyst.ReactionSystem, rx::Catalyst.Reaction)
     length(Catalyst.get_rxs(network))
 end
 
-function ModelingToolkit.setmetadata(var, ::CompartmentSBML, val)
+function ModelingToolkit.setmetadata(var::Symbolics.Num, ::CompartmentSBML, val)
     return val
 end
 
