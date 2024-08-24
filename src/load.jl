@@ -81,7 +81,7 @@ function load_SBML(path::AbstractString; massaction::Bool = false, complete::Boo
                             inline_assignment_rules = inline_assignment_rules,
                             inline_kineticlaw_parameters = inline_kineticlaw_parameters)
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
-    rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML.name)
+    rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML)
 
     # Build callback functions
     cbset = create_callbacks(rn, model_SBML, model_SBML.name)

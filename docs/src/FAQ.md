@@ -67,6 +67,10 @@ getmetadata(sbml_reactions[1], :id)
 getmetadata(sbml_reactions[1], :name)
 ```
 
+## How do I get the compartment of an SBML specie?
+
+Every SBML `specie` has a `compartment`. SBMLImporter stores the compartment as `Catalyst.Species` metadata, which can be accessed via the `getcompartment` function. For more details, see the [API](@ref API).
+
 ## Why does my simulation fail with `DomainError` while the model imports fine?
 
 This typically happens due to two reasons. Firstly, the model might contain a function call where the argument must be positive, such as:

@@ -2,4 +2,5 @@
 
 ```@docs; canonical=true
 load_SBML
+getcompartment
 ```
