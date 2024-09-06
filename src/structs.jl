@@ -107,30 +107,30 @@ struct ModelSBML
     reactionids::Vector{String}
 end
 function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[],
-                   conversion_factor::String = "",
+                   conversion_factor::String = "", events = Dict{String, EventSBML}(),
                    libsbml_rule_variables::Vector{String} = String[],
                    reactionids::Vector{String} = String[])::ModelSBML
     model_SBML = ModelSBML(name,
                            Dict{String, SpecieSBML}(),
                            Dict{String, ParameterSBML}(),
                            Dict{String, CompartmentSBML}(),
-                           Dict{String, EventSBML}(),
+                           events,
                            Dict{String, ReactionSBML}(),
-                           Dict{String, FunctionSBML}(), # SBML reactions
-                           Dict{String, String}(), # Algebraic rules
-                           Dict{String, String}(), # Generated id:s
-                           Dict{String, String}(), # Piecewise to ifelse_expressions
-                           Dict{String, String}(), # Ifelse to bool expression
-                           String[], # Rate rule variables
-                           String[], # Assignment rule variables
-                           String[], # Algebraic rule variables
-                           String[], # Species_appearing in reactions
+                           Dict{String, FunctionSBML}(),
+                           Dict{String, String}(),
+                           Dict{String, String}(),
+                           Dict{String, String}(),
+                           Dict{String, String}(),
+                           String[],
+                           String[],
+                           String[],
+                           String[],
                            String[],
                            conversion_factor,
                            specie_reference_ids,
                            String[],
                            libsbml_rule_variables,
-                           reactionids) # Variables with piecewise
+                           reactionids)
     return model_SBML
 end
 function ModelSBML(libsbml_model::SBML.Model)::ModelSBML

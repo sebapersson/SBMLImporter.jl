@@ -54,11 +54,18 @@ function _template_ode_reaction(s::String, c_scaling::String, propensity::String
     return _apply(*, sign * s, p2)
 end
 
-function _template_tstops(tstops::Vector{String})::String
+function _template_tstops(tstops::Vector{String}, float_tspan::Bool)::String
     if isempty(tstops)
-        tstops_vec = "Float64[]"
+        return "Float64[]"
+    end
+    tstops_vec = float_tspan ? "_to_float.([" : "["
+    if !isempty(tstops)
+        tstops_vec *= prod([t * ", " for t in tstops])
+    end
+    if float_tspan
+        tstops_vec *= "])"
     else
-        tstops_vec = "Float64[" .* prod([t * ", " for t in tstops]) * "]"
+        tstops_vec *= "]"
     end
     return tstops_vec
 end
@@ -82,7 +89,9 @@ function _template_condition(condition::String, discrete_callback::Bool,
 end
 
 function _template_affect(event::EventSBML, specie_ids::Vector{String},
-                          parameter_ids::Vector{String}; only_body::Bool = false)::String
+                          parameter_ids::Vector{String},
+                          p_PEtab::Union{Vector{String}, Nothing};
+                          only_body::Bool = false)::String
     if only_body == false
         affect_f = "function affect_" * event.name * "!(integrator)\n"
     else
@@ -92,11 +101,12 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String},
 
     for affect in event.formulas
         affect_lhs, affect_rhs = string.(split(affect, "="))
-        affect_lhs = _ids_to_callback_syntax(affect_lhs, specie_ids, :specie)
-        affect_rhs = _ids_to_callback_syntax(affect_rhs, specie_ids, :specie;
+        affect_lhs = _ids_to_cb_syntax(affect_lhs, specie_ids, :specie)
+        affect_rhs = _ids_to_cb_syntax(affect_rhs, specie_ids, :specie;
                                              integrator = false, utmp = true)
         affect_eq = affect_lhs * "=" * affect_rhs
-        affect_eq = _ids_to_callback_syntax(affect_eq, parameter_ids, :parameter)
+        affect_eq = _ids_to_cb_syntax(affect_eq, parameter_ids, :parameter;
+                                      p_PEtab = p_PEtab)
         affect_f *= "\t" * affect_eq * "\n"
     end
 

@@ -6,15 +6,17 @@ end
 
 function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
     variables = Iterators.flatten((model_SBML.species, model_SBML.parameters))
+    ifelse_parameter_names = String[]
     for (_, variable) in variables
         !occursin("ifelse", variable.formula) && continue
-        variable.formula = _time_dependent_ifelse_to_bool(variable.formula, model_SBML)
+        variable.formula = _time_dependent_ifelse_to_bool(variable.formula, model_SBML,
+                                                          ifelse_parameter_names)
     end
     return nothing
 end
 
-function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
-                                        ifelse_parameter_names = String[])::String
+function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML,
+                                        ifelse_parameter_names::Vector{String})::String
     if !occursin("ifelse", formula)
         return formula
     end
@@ -63,8 +65,8 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML;
     end
 
     if ifelse_with_time == true
-        formula = _time_dependent_ifelse_to_bool(formula, model_SBML;
-                                                 ifelse_parameter_names = ifelse_parameter_names)
+        formula = _time_dependent_ifelse_to_bool(formula, model_SBML,
+                                                 ifelse_parameter_names)
     end
     return formula
 end
@@ -114,8 +116,8 @@ end
 
 function _template_bool_picewise(bool_name::String, ifelse_arg1::String,
                                  ifelse_arg2::String, side_activated::String)::String
-    activated = side_activated == "left" ? ifelse_arg1 : ifelse_arg2
-    deactivated = side_activated == "left" ? ifelse_arg2 : ifelse_arg1
+    activated = side_activated == "right" ? ifelse_arg1 : ifelse_arg2
+    deactivated = side_activated == "right" ? ifelse_arg2 : ifelse_arg1
     formula = "((1 - 1" * bool_name * ") * (" * deactivated * ") + " *
               bool_name * "*(" * activated * "))"
     return formula
@@ -176,12 +178,19 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
     # we activate the event when the ifelse condition goes from true to false. Reverse for
     # side_activated = "left". Thus, for side_activated = "right" we need to invert the
     # condition, as otherwise we mess up callback initialisation where the bool variable
-    # is set to 1 if the condition is true
-    if side_activated == "right"
+    # is set to 1 if the condition is true. It is also important to work with strict
+    # inequality here to handle any edge-cases where the trigger time is t = 0
+    if side_activated == "left"
         if any(occursin.(["<", "≤", "<="], condition))
             condition = replace(condition, r"≤|<=|<" => "≥")
         else
             condition = replace(condition, r"≥|>=|>" => "≤")
+        end
+    else
+        if any(occursin.(["<", "≤", "<="], condition))
+            condition = replace(condition, r"<=|<" => "≤")
+        else
+            condition = replace(condition, r">=|>" => "≥")
         end
     end
     event = EventSBML(id, condition, assignments, false, false, false, false, false, false,
