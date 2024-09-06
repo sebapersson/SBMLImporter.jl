@@ -172,8 +172,8 @@ end
 
 # TODO: When work also use interface for species in assignment
 function _ids_to_cb_syntax(formula::String, ids::Vector{String}, id_type::Symbol;
-                            integrator::Bool = true, utmp::Bool = false,
-                            p_PEtab::Union{Vector{String}, Nothing} = nothing)::String
+                           integrator::Bool = true, utmp::Bool = false,
+                           p_PEtab::Union{Vector{String}, Nothing} = nothing)::String
     @assert id_type in [:specie, :parameter] "Invalid id type $id_type when parsing to callback syntax"
     if id_type == :parameter
         @assert integrator==true "Parameter not given via integrator in callback"

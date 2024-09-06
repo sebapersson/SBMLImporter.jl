@@ -103,7 +103,7 @@ function _template_affect(event::EventSBML, specie_ids::Vector{String},
         affect_lhs, affect_rhs = string.(split(affect, "="))
         affect_lhs = _ids_to_cb_syntax(affect_lhs, specie_ids, :specie)
         affect_rhs = _ids_to_cb_syntax(affect_rhs, specie_ids, :specie;
-                                             integrator = false, utmp = true)
+                                       integrator = false, utmp = true)
         affect_eq = affect_lhs * "=" * affect_rhs
         affect_eq = _ids_to_cb_syntax(affect_eq, parameter_ids, :parameter;
                                       p_PEtab = p_PEtab)
