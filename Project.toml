@@ -1,10 +1,11 @@
 name = "SBMLImporter"
 uuid = "210efffb-c3c8-456d-a807-6f55560b12fe"
-version = "2.2.0"
+version = "2.3.0"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
@@ -15,6 +16,12 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
+[weakdeps]
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+
+[extensions]
+SBMLImporterForwardDiffExt = ["ForwardDiff"]
+
 [compat]
 Aqua = "0.8"
 CSV = "0.10"
@@ -22,6 +29,7 @@ Catalyst = "14"
 DataFrames = "1.6"
 DiffEqBase = "6"
 Downloads = "1"
+ForwardDiff = "0.10"
 JumpProcesses = "9"
 ModelingToolkit = "9"
 OrdinaryDiffEq = "6"
