@@ -115,7 +115,9 @@ function _inline_assignment_rules(formula::String, model_SBML::ModelSBML)::Strin
         for ruleid in model_SBML.assignment_rule_variables
             !occursin(ruleid, formula) && continue
             variable = _get_model_variable(ruleid, model_SBML)
-            formula = _replace_variable(formula, ruleid, variable.formula)
+            # The extra paranthesis around is needed for this to work with PEtab.jl
+            # which does not use the tree structure for SBMLImporter
+            formula = _replace_variable(formula, ruleid, "($(variable.formula))")
         end
         if formula_start == formula
             break

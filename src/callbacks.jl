@@ -40,7 +40,7 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
             callbacks[k] = ContinuousCallback(condition_f, affect_f!, nothing,
                                               initialize = _init_f!,
                                               save_positions = (false, false))
-        else
+        elseif discrete_callback == false && event_direction == :none
             callbacks[k] = ContinuousCallback(condition_f, affect_f!, initialize = _init_f!,
                                               save_positions = (false, false))
         end
@@ -62,7 +62,7 @@ function _get_callback_condition(event::EventSBML, specie_ids::Vector{String},
         if discrete_callback == true
             condition = replace(condition, r"<=|>=|>|<|≤|≥" => "==")
         else
-            condition = replace(condition, r"<=|>=|>|<|≤|≥" => "-")
+            condition = replace(condition, r"<=|>=|>|<|≤|≥|==" => "-")
         end
     end
     condition = _ids_to_cb_syntax(condition, specie_ids, :specie; integrator = false)

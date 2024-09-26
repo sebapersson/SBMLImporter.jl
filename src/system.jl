@@ -60,7 +60,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
 end
 
 function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
-                              model_SBML::ModelSBML)::String
+                              model_SBML::ModelSBML; write_to_file::Bool = true)::String
     # If model is written to file save it in the same directory as the SBML-file. Only
     # save if model is not provided as a string (as then there is not file)
     pathsave = joinpath(dirsave, model_SBML.name * ".jl")
@@ -104,8 +104,10 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
     frn *= model_SBML_sys.parameter_map * "\n"
     frn *= "\treturn rn, specie_map, parameter_map\nend"
 
-    open(pathsave, "w") do f
-        write(f, frn)
+    if write_to_file == true
+        open(pathsave, "w") do f
+            write(f, frn)
+        end
     end
     return frn
 end

@@ -82,7 +82,7 @@ function _template_condition(condition::String, discrete_callback::Bool,
         condition *= "\t\treturn cond"
     elseif discrete_callback == false
         condition_f = "\nfunction condition_" * name * "(u, t, integrator)\n"
-        condition = replace(condition, r"<=|>=|>|<|≤|≥" => "-")
+        condition = replace(condition, r"<=|>=|>|<|≤|≥|==" => "-")
     end
     condition_f *= condition * "\nend"
     return condition_f
