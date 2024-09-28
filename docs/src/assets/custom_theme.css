@@ -15,7 +15,7 @@ html:not(.theme--documenter-dark) body #documenter a:hover, html:not(.theme--doc
 html:not(.theme--documenter-dark) body #documenter .docs-sidebar {
   box-shadow: none;
   color: #FAFAFA;
-  background-color: #703D6F; }
+  background-color: #5a2a5c; }
   html:not(.theme--documenter-dark) body #documenter .docs-sidebar .docs-package-name a, html:not(.theme--documenter-dark) body #documenter .docs-sidebar .docs-package-name a:hover {
     color: #FAFAFA; }
   html:not(.theme--documenter-dark) body #documenter .docs-sidebar ul.docs-menu {
@@ -49,7 +49,7 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
   html:not(.theme--documenter-dark) body #documenter pre .hljs-meta, html:not(.theme--documenter-dark) body #documenter code .hljs-meta {
     color: #706482; }
   html:not(.theme--documenter-dark) body #documenter pre .hljs-keyword, html:not(.theme--documenter-dark) body #documenter code .hljs-keyword {
-    color: #703D6F; }
+    color: #5a2a5c; }
 
 details {
   padding-left: 1rem;
