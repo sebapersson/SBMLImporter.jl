@@ -34,4 +34,4 @@ If you have any problems using SBMLImporter, here are some helpful tips:
 
 * Read the [FAQ](@ref FAQ) section in the online documentation.
 * Post your questions in the `#sciml-sysbio` channel on the [Julia Slack](https://julialang.org/slack/).
-* If you believe you have encountered unexpected behavior or a bug, please open an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).
+* If you have encountered unexpected behavior or a bug, please open an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).

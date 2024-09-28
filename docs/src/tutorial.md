@@ -45,10 +45,8 @@ The `JumpProblem` can be simulated with any solver from the [JumpProcesses.jl](h
 ```@example 1
 using Plots
 sol = solve(jprob, SSAStepper(), callback=cb)
-default(left_margin=12.5Plots.Measures.mm, bottom_margin=12.5Plots.Measures.mm) # hide
-plot_args = (titlefontsize=12, guidefontsize=12, tickfontsize=12, legendfontsize=12, size=(600*1.2, 400*1.2), lw = 3, xlabel = "Time [s]", ylabel = "Protein amount") # hide
-plot(sol; lw = 3, xlabel = "Time [s]", ylabel = "Protein amount")
-plot(sol; plot_args...) # hide
+default(left_margin=12.5Plots.Measures.mm, bottom_margin=12.5Plots.Measures.mm, size = (600*1.1, 400 * 1.1), palette = ["#CC79A7", "#009E73", "#0072B2", "#D55E00", "#999999", "#E69F00", "#56B4E9", "#F0E442"], linewidth=3.0) # hide
+plot(sol; xlabel = "Time [s]", ylabel = "Protein amount")
 ```
 
 For more information on jump simulations, see [JumpProcesses.jl's documentation](https://github.com/SciML/JumpProcesses.jl).
@@ -68,8 +66,7 @@ The `SDEProblem` can be simulated with any solver from the [StochasticDiffEq.jl]
 
 ```@example 1
 sol = solve(sprob, LambaEM(), callback=cb)
-plot(sol; lw = 3, xlabel = "Time [s]", ylabel = "Protein amount")
-plot(sol; plot_args...) # hide
+plot(sol; xlabel = "Time [s]", ylabel = "Protein amount")
 ```
 
 For more information on SDE simulations, see [StochasticDiffEq.jl's documentation](https://github.com/SciML/StochasticDiffEq.jl).
@@ -90,8 +87,7 @@ Here we call `structural_simplify` to inline any potential assignment rules into
 
 ```@example 1
 sol = solve(oprob, Rodas5P(), callback=cb)
-plot(sol; lw = 3, xlabel = "Time [s]", ylabel = "Protein amount")
-plot(sol; plot_args...) # hide
+plot(sol; xlabel = "Time [s]", ylabel = "Protein amount")
 ```
 
 For more information on ODE simulations, see [OrdinaryDiffEq.jl's documentation](https://github.com/SciML/OrdinaryDiffEq.jl).
