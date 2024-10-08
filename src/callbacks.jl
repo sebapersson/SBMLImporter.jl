@@ -147,8 +147,9 @@ function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
         condition_symbolic = eval(Meta.parse(condition))
         local tstop
         try
-            tstop = string.(Symbolics.solve_for(condition_symbolic, variables_symbolic[1],
-                                                simplify = true))
+            tstop = string.(Symbolics.symbolic_linear_solve(condition_symbolic,
+                                                            variables_symbolic[1],
+                                                            simplify = true))
         catch
             throw(SBMLSupport("Not possible to solve for time event $(event.name) is activated"))
         end
