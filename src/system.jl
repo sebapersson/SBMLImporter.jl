@@ -163,7 +163,7 @@ function _get_system_variables(model_SBML::ModelSBML,
         end
         mtk_variables *= variable_id * "(t) "
         if !(variable_id in model_SBML.algebraic_rule_variables) &&
-             variable.assignment_rule == false
+           variable.assignment_rule == false
             specie_map *= _template_value_map(variable_id, variable.initial_value)
         end
     end
