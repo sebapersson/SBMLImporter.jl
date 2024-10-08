@@ -152,7 +152,7 @@ function force_include_event_variables!(model_SBML::ModelSBML)::Nothing
         variable.algebraic_rule == true && continue
         !is_number(variable.formula) && continue
         parse(Float64, variable.formula) ≈ π && continue # To pass test case 957
-
+        variable.assignment_rule = false
         variable.rate_rule = true
         variable.initial_value = variable.formula
         variable.formula = "0.0"
