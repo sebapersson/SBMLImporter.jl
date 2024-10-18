@@ -9,7 +9,6 @@ sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
 
 b1 = @elapsed prn, cb = load_SBML(sbml_string; model_as_string = true,
                                   inline_assignment_rules = true)
-
 # Usually takes around 4s locally, but better to brace for GitHub CI
 @test b1 ≤ 40
 
