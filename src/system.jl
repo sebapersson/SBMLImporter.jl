@@ -33,27 +33,15 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
         ps = Any[]
     end
 
-    # Build reaction system from its components. The reactions must be parsed sequentially
-    # to avoid any stackoverflow error for very large models with more than 10^4 reactions
-    # TODO: This is going to be a pain with with Catalyst v14... (maybe can then add vector)
     reactions = _reaction_str_to_vec(model_SBML_sys)
-    r1 = eval(Meta.parse(reactions[1]))
-    r1 = isnothing(r1) ? Catalyst.Reaction[] : [r1]
-    rn = Catalyst.ReactionSystem(r1, t, sps_arg, ps; name = Symbol(name),
-                                 combinatoric_ratelaws = model_SBML_sys.all_integer_S)
-    for i in eachindex(reactions)
-        i == 1 && continue
-        # Adding a reaction and equation differs, as with reaction we can simply add via
-        # addreaction! (much easier)
-        r = eval(Meta.parse(reactions[i]))
-        if occursin("Reaction", reactions[i])
-            _addreaction!(rn, r)
-        else
-            Catalyst.reset_networkproperties!(rn)
-            push!(ModelingToolkit.get_eqs(rn), r)
-            sort(ModelingToolkit.get_eqs(rn); by = Catalyst.eqsortby)
-        end
+    reactions_rn = Vector{Union{ModelingToolkit.Equation, Catalyst.Reaction}}(undef, 0)
+    for reaction in reactions
+        _r = eval(Meta.parse(reaction))
+        isnothing(_r) && continue
+        push!(reactions_rn, _r)
     end
+    rn = Catalyst.ReactionSystem(reactions_rn, t, sps_arg, ps; name = Symbol(name),
+                                 combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))
     parameter_map = eval(Meta.parse(model_SBML_sys.parameter_map))
     return rn, specie_map, parameter_map
@@ -368,14 +356,6 @@ function _get_dir_save(write_to_file::Bool, model_as_string::Bool,
         mkdir(dir_save)
     end
     return dir_save
-end
-
-function _addreaction!(network::Catalyst.ReactionSystem, rx::Catalyst.Reaction)
-    Catalyst.reset_networkproperties!(network)
-    push!(Catalyst.get_eqs(network), rx)
-    sort(Catalyst.get_eqs(network); by = Catalyst.eqsortby)
-    push!(Catalyst.get_rxs(network), rx)
-    length(Catalyst.get_rxs(network))
 end
 
 function ModelingToolkit.setmetadata(var::Symbolics.Num, ::CompartmentSBML, val)
