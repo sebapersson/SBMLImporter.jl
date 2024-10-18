@@ -34,14 +34,13 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
     end
 
     reactions = _reaction_str_to_vec(model_SBML_sys)
-    if isempty(reactions)
-        reactions_rn = Catalyst.Reaction[]
-    else
-        reactions_rn = Any[]
-    end
+    reactions_rn = Vector{Union{ModelingToolkit.Equation, Catalyst.Reaction}}(undef, 0)
     for reaction in reactions
-        push!(reactions_rn, eval(Meta.parse(reaction)))
+        _r = eval(Meta.parse(reaction))
+        isnothing(_r) && continue
+        push!(reactions_rn, _r)
     end
+    println("reactions_rn = ", reactions_rn)
     rn = Catalyst.ReactionSystem(reactions_rn, t, sps_arg, ps; name = Symbol(name),
                                  combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))
