@@ -40,7 +40,6 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
         isnothing(_r) && continue
         push!(reactions_rn, _r)
     end
-    println("reactions_rn = ", reactions_rn)
     rn = Catalyst.ReactionSystem(reactions_rn, t, sps_arg, ps; name = Symbol(name),
                                  combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))
