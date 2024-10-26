@@ -79,8 +79,8 @@ function write_reactionsystem(model_SBML_sys::ModelSBMLSystem, dirsave::String,
                "combinatoric_ratelaws=comb_ratelaws)"
 
     frn = "function get_reaction_system(foo)\n"
-    frn *= "\tModelingToolkit.@variables t\n"
-    frn *= "\tD = Differential(t)\n"
+    frn *= "\tt = Catalyst.default_t()\n"
+    frn *= "\tD = Catalyst.default_time_deriv()\n"
     frn *= sps * "\n"
     frn *= vs * "\n"
     frn *= "\tsps_arg = " * sps_arg * "\n"
