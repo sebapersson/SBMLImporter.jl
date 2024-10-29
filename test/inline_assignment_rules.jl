@@ -23,7 +23,6 @@ oprob = ODEProblem(mdl.rn, mdl.u0, (0.0, 10.0), mdl.p)
 @test length(oprob.u0) == 66
 
 # Another published model with lots of edge cases.
-#=
 path_SBML = joinpath(@__DIR__, "Models", "EDES_1_0.xml")
 prn1, cb1 = load_SBML(path_SBML; inline_assignment_rules = true, ifelse_to_callback = false)
 oprob1 = ODEProblem(prn1.rn, prn1.u0, (0.0, 10.0), prn1.p)
@@ -36,4 +35,3 @@ sol2 = solve(oprob2, Rodas5P(), abstol=1e-3, reltol=1e-8, saveat=1:10)
 for name in unknowns(sys)
     @test all(.≈(sol1[name], sol2[name], atol = 1e-9))
 end
-=#
