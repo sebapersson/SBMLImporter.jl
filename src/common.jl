@@ -93,6 +93,11 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
         raterule.formula = _inline_assignment_rules(raterule.formula, model_SBML)
     end
 
+    for specie in values(model_SBML.species)
+        specie.assignment_rule && continue
+        specie.formula = _inline_assignment_rules(specie.formula, model_SBML)
+    end
+
     # Via InitialAssignments a parameter can take value of an assignment rule
     for parameter in values(model_SBML.parameters)
         parameter.rate_rule && continue
@@ -102,6 +107,13 @@ function inline_assignment_rules!(model_SBML::ModelSBML)::Nothing
             parameter.formula = variable.formula
             parameter.initial_value = variable.formula
         end
+    end
+
+    # Filter out species which are assignment rules, as since they are inlined they should
+    # no longer be in the ODE
+    for (id, specie) in model_SBML.species
+        !specie.assignment_rule && continue
+        delete!(model_SBML.species, id)
     end
 
     filter!(isempty, model_SBML.assignment_rule_variables)

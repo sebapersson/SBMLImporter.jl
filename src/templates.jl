@@ -162,3 +162,30 @@ function _template_amount_dynamic_c(dcdt::String, V::String, specie_id::String,
     p2 = _apply(*, specie_id, _apply(/, dVdt, V))
     return _apply(+, p1, p2)
 end
+
+function _template_u0_odeproblem(model_SBML_prob, model_SBML)::String
+    @unpack umap, ps = model_SBML_prob
+    nu0 = length(umap)
+    fu0 = "function u0_$(model_SBML.name)(p::ComponentArray, t)::Nothing\n"
+    fu0 *= "\t@unpack " * prod(ps .* ", ") * " = p\n"
+    fu0 *= "\tu0 = zeros(eltype(p), $(nu0))\n"
+    for (i, formula) in pairs(last.(umap))
+        fu0 *= "\tu0[$i] = $(formula)\n"
+    end
+    fu0 *= "\treturn u0\n"
+    fu0 *= "end"
+    return fu0
+end
+
+function _template_odeproblem(model_SBML_prob, model_SBML)::String
+    @unpack umodel, ps, odes = model_SBML_prob
+    fode = "function f_$(model_SBML.name)(du, u, p, t)::Nothing\n"
+    fode *= "\t" * prod(umodel .* ", ") * " = u\n"
+    fode *= "\t@unpack " * prod(ps .* ", ") * " = p\n\n"
+    for ode in odes
+        fode *= "\t" * ode * "\n"
+    end
+    fode *= "\treturn nothing\n"
+    fode *= "end"
+    return fode
+end

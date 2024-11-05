@@ -177,3 +177,11 @@ mutable struct MathSBML
     has_reaction_ids::Bool
     has_rateOf::Bool
 end
+
+struct ModelSBMLProb
+    umodel::Vector{String}
+    umap::Vector{Pair{String, String}}
+    ps::Vector{String}
+    psmap::Vector{Pair{String, String}}
+    odes::Vector{String}
+end

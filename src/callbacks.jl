@@ -1,10 +1,15 @@
 function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
                           p_PEtab::Union{Vector{String}, Nothing} = nothing,
-                          float_tspan::Bool = true)::CallbackSet
+                          float_tspan::Bool = true, _specie_ids::Union{Nothing, Vector{String}} = nothing)::CallbackSet
     model_name = replace(model_name, "-" => "_")
-    specie_ids = replace.(string.(unknowns(system)), "(t)" => "")
     # If parameters(system) is empty Any[] is returned with string.(...)
-    parameter_ids = string.(parameters(system))
+    if system isa SciMLBase.ODEProblem
+        specie_ids = _specie_ids
+        parameter_ids = string.(propertynames(system.p)) |> collect
+    else
+        specie_ids = replace.(string.(unknowns(system)), "(t)" => "")
+        parameter_ids = string.(parameters(system))
+    end
     parameter_ids = parameter_ids == Any[] ? String[] : parameter_ids
 
     n_callbacks = length(keys(model_SBML.events))
