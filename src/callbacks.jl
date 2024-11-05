@@ -1,6 +1,7 @@
 function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
                           p_PEtab::Union{Vector{String}, Nothing} = nothing,
-                          float_tspan::Bool = true, _specie_ids::Union{Nothing, Vector{String}} = nothing)::CallbackSet
+                          float_tspan::Bool = true,
+                          _specie_ids::Union{Nothing, Vector{String}} = nothing)::CallbackSet
     model_name = replace(model_name, "-" => "_")
     # If parameters(system) is empty Any[] is returned with string.(...)
     if system isa SciMLBase.ODEProblem
