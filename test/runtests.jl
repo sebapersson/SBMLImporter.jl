@@ -32,6 +32,10 @@ end
     include("metadata.jl")
 end
 
+@safetestset "Import as ODEProblem" begin
+    include("odeproblem_import.jl")
+end
+
 @safetestset "SBML semantic test-suite" begin
     include("semantic_sbml_tests.jl")
 end

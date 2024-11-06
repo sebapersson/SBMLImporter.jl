@@ -1,6 +1,7 @@
 module SBMLImporter
 
 using Catalyst: Catalyst, Symbolics, setmetadata, parameters, unknowns, @unpack
+using ComponentArrays: ComponentArray
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
 using JumpProcesses: reset_aggregated_jumps!
 using PrecompileTools: @setup_workload
@@ -30,6 +31,7 @@ include("functions.jl")
 include("initial_assignments.jl")
 include("load.jl")
 include("math.jl")
+include("odeproblem.jl")
 include("parameters.jl")
 include("parse.jl")
 include("piecewise.jl")
