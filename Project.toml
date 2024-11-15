@@ -44,7 +44,7 @@ SciMLBase = "2.39"
 Setfield = "1"
 SpecialFunctions = "2"
 Test = "1"
-julia = "1"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
