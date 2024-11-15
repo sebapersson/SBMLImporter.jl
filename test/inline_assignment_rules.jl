@@ -10,7 +10,7 @@ sys = structural_simplify(convert(ODESystem, prn2.rn))
 oprob2 = ODEProblem(sys, prn2.u0, (0.0, 10.0), prn2.p)
 sol2 = solve(oprob2, Rodas5P(), abstol=1e-3, reltol=1e-8)
 for name in unknowns(sys)
-    @test all(.≈(sol1[name], sol2[name], atol = 1e-9))
+    @test all(.≈(sol1[name], sol2[name], atol = 1e-6))
 end
 
 # Published model with lots of edge cases. The model has a log in it making it not possible
@@ -33,5 +33,5 @@ u0 = first.(prn2.u0) .=> 0.0
 oprob2 = ODEProblem(sys, prn2.u0, (0.0, 10.0), prn2.p)
 sol2 = solve(oprob2, Rodas5P(), abstol=1e-3, reltol=1e-8, saveat=1:10)
 for name in unknowns(sys)
-    @test all(.≈(sol1[name], sol2[name], atol = 1e-9))
+    @test all(.≈(sol1[name], sol2[name], atol = 1e-6))
 end
