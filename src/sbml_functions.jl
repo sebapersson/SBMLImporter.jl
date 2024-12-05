@@ -10,7 +10,7 @@ const SBML_FN_INFO = Dict("*" => (fn = "*", nallowed_args = [0, 1, 2]),
                           "power" => (fn = "^", nallowed_args = [2]),
                           "quotient" => (fn = "div", nallowed_args = [2]),
                           "root" => (fn = "sqrt", nallowed_args = [2]),
-                          "piecewise" => (fn = "piecewise", nallowed_args = [2, 3, 4]),
+                          "piecewise" => (fn = "piecewise", nallowed_args = [2, 3, 4, 5]),
                           "lt" => (fn = "lt", nallowed_args = [2]),
                           "gt" => (fn = "gt", nallowed_args = [2]),
                           "leq" => (fn = "leq", nallowed_args = [2]),
@@ -67,7 +67,10 @@ const _F1 = FunctionSBML(["__x__", "__cond__", "__y__"], "ifelse(__cond__, __x__
 const _F2 = FunctionSBML(["__x__", "__cond__"], "ifelse(__cond__, __x__, 0)")
 const _F3 = FunctionSBML(["__x__", "__cond__", "__y__", "__z__"],
                          "ifelse(__cond__, __x__, __y__)")
-const _F4 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0) + ifelse(__y__, 1, 0)")
+const _F4 = FunctionSBML(["__x__", "__cond1__", "__y__", "__cond2__", "__z__"],
+                         "ifelse(__cond1__, __x__, ifelse(__cond2__, __y__, __z__))")
+
+const _F5 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0) + ifelse(__y__, 1, 0)")
 const _G1 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0)*ifelse(__y__, 1, 0) == 1")
 const _G2 = FunctionSBML(["__x__", "__y__"], "sign(__BSUM__(__x__, __y__)) == 1")
 const _G3 = FunctionSBML(["__x__", "__y__"],
@@ -92,6 +95,7 @@ const PIECEWISE_FN = Dict("gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y_
                           "piecewise" => _F1,
                           "piecewise2" => _F2,
                           "piecewise4" => _F3,
-                          "__BSUM__" => _F4)
+                          "piecewise5" => _F4,
+                          "__BSUM__" => _F5)
 const SBML_FN_NAMES::Vector{String} = getfield.(values(SBML_FN_INFO), :fn)
 const PIECEWISE_FN_NAMES::Vector{String} = collect(keys(PIECEWISE_FN))
