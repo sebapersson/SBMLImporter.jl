@@ -84,8 +84,8 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
     if fn in ["and", "or", "if", "xor"] && nargs != 2
         fn *= string(nargs)
     end
-    if fn == "piecewise" && nargs in [2, 4]
-        @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended."
+    if fn == "piecewise" && nargs in [2, 4, 5]
+        @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended." maxlog=1
         fn *= string(nargs)
     end
     return fn * "(" * prod(args .* ", ")[1:(end - 2)] * ")"
