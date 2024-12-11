@@ -18,7 +18,7 @@ makedocs(; modules = [SBMLImporter],
              "Home" => "index.md",
              "Tutorial" => "tutorial.md",
              "API" => "API.md",
-             "Supported SBML featuers" => "support.md",
+             "Supported SBML features" => "support.md",
              "Other SBML related Julia packages" => "differences.md",
              "FAQs" => "FAQ.md",
          ],)
