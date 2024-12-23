@@ -65,11 +65,11 @@
       </unitDefinition>
     </listOfUnitDefinitions>
     <listOfCompartments>
-      <compartment id="compartment" name="compartment" spatialDimensions="3" size="1" constant="true"/>
+      <compartment id="C" name="C" spatialDimensions="3" size="1" constant="true"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="X" name="X" compartment="compartment" hasOnlySubstanceUnits="true" initialAmount="2" boundaryCondition="false" constant="false"/>
-      <species id="Y" name="Y" compartment="compartment" hasOnlySubstanceUnits="true" initialAmount="10" boundaryCondition="false" constant="false"/>
+      <species id="X" name="X" compartment="C" hasOnlySubstanceUnits="true" initialAmount="2" boundaryCondition="false" constant="false"/>
+      <species id="Y" name="Y" compartment="C" hasOnlySubstanceUnits="true" initialAmount="10" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
       <parameter id="A" name="A" value="1" constant="true"/>
@@ -88,7 +88,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> compartment </ci>
+              <ci> C </ci>
               <ci> k1 </ci>
               <apply>
                 <power/>
@@ -114,7 +114,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> compartment </ci>
+              <ci> C </ci>
               <ci> B </ci>
               <ci> X </ci>
             </apply>
@@ -129,7 +129,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> compartment </ci>
+              <ci> C </ci>
               <ci> k1 </ci>
               <ci> X </ci>
             </apply>
@@ -147,7 +147,7 @@
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply>
               <times/>
-              <ci> compartment </ci>
+              <ci> C </ci>
               <apply>
                 <ci> Constant_flux__irreversible </ci>
                 <ci> A </ci>
