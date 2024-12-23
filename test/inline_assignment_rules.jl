@@ -1,7 +1,6 @@
 using SBMLImporter, ModelingToolkit, OrdinaryDiffEq, Downloads, Test
 
 # Boehm published benchmark model
-@info "Testing Boehm"
 path_SBML = joinpath(@__DIR__, "Models", "model_Boehm_JProteomeRes2014.xml")
 prn1, cb1 = load_SBML(path_SBML; inline_assignment_rules = true)
 oprob1 = ODEProblem(prn1.rn, prn1.u0, (0.0, 10.0), prn1.p)
@@ -24,7 +23,6 @@ oprob = ODEProblem(mdl.rn, mdl.u0, (0.0, 10.0), mdl.p)
 @test length(oprob.u0) == 66
 
 # Another published model with lots of edge cases.
-@info "Testing EDES"
 path_SBML = joinpath(@__DIR__, "Models", "EDES_1_0.xml")
 prn1, cb1 = load_SBML(path_SBML; inline_assignment_rules = true, ifelse_to_callback = false)
 oprob1 = ODEProblem(prn1.rn, prn1.u0, (0.0, 10.0), prn1.p)
