@@ -13,14 +13,14 @@ ps_sbml = prn.p
 rn_catalyst = @reaction_network $(rn_sbml.name) begin
     @species Y(t) X(t) # SBMLImporter has flipped order of species and parameters.
     @parameters B A
-    A * compartment, ∅ --> X
-    2 * compartment, 2X + Y --> 3X
-    B * compartment, X --> Y
-    1 * compartment, X --> ∅
+    A * C, ∅ --> X
+    2 * C, 2X + Y --> 3X
+    B * C, X --> Y
+    1 * C, X --> ∅
 end
 rn_catalyst = Catalyst.complete(rn_catalyst)
 u0_catalyst = [:X => 2.0, :Y => 10.0]
-ps_catalyst = [:B => 4.0, :A => 1.0, :compartment => 1.0]
+ps_catalyst = [:B => 4.0, :A => 1.0, :C => 1.0]
 
 # Tests model properties.
 @test issetequal(species(rn_sbml), species(rn_catalyst))
