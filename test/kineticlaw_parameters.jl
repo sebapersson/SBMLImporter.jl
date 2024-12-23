@@ -23,7 +23,7 @@ sol2 = solve(oprob2, Rodas5P())
 # the model can be imported
 path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
 prn, cb = load_SBML(path_SBML; inline_kineticlaw_parameters = false)
-@test string.(parameters(prn.rn)) == ["B", "A", "k1", "compartment"]
+@test string.(parameters(prn.rn)) == ["B", "A", "k1", "C"]
 @test string(prn.p[3]) == "k1 => 1.0"
 
 # With duplicate id parameters, wherse the parameters have the same value and therefore
