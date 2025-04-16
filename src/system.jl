@@ -110,8 +110,8 @@ function _to_system_syntax(model_SBML::ModelSBML, inline_assignment_rules::Bool,
                                                    false, false, false, false)
     end
 
-    species, variables, specie_map = _get_system_variables(model_SBML,
-                                                           inline_assignment_rules)
+    (species, variables,
+     specie_map) = _get_system_variables(model_SBML, inline_assignment_rules)
     parameters, parameter_map = _get_system_parameters(model_SBML)
 
     reactions, all_integer_S = _get_system_reactions(model_SBML, massaction)

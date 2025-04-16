@@ -1,14 +1,15 @@
 function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
                           inline_kineticlaw_parameters::Bool)::Nothing
     for (id, reaction) in libsbml_model.reactions
-        propensity, math_expression = _parse_reaction_formula(reaction, model_SBML,
-                                                              libsbml_model,
-                                                              inline_kineticlaw_parameters)
+        (propensity,
+         math_expression) = _parse_reaction_formula(reaction, model_SBML, libsbml_model,
+                                                    inline_kineticlaw_parameters)
 
         reactants = _get_reaction_species(reaction, model_SBML, :reactants)
         reactants_cs = _get_compartment_scalings(reactants, propensity, model_SBML)
-        reactants_s, reactants_massaction = _get_stoichiometries(reaction, reactants,
-                                                                 model_SBML, :reactants)
+        (reactants_s,
+         reactants_massaction) = _get_stoichiometries(reaction, reactants, model_SBML,
+                                                      :reactants)
         for (i, reactant) in pairs(reactants)
             reactant == "nothing" && continue
             _update_ode!(model_SBML.species[reactant], reactants_s[i], reactants_cs[i],
@@ -19,8 +20,9 @@ function parse_reactions!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
 
         products = _get_reaction_species(reaction, model_SBML, :products)
         products_cs = _get_compartment_scalings(products, propensity, model_SBML)
-        products_s, products_massaction = _get_stoichiometries(reaction, products,
-                                                               model_SBML, :products)
+        (products_s,
+         products_massaction) = _get_stoichiometries(reaction, products, model_SBML,
+                                                     :products)
         for (i, product) in pairs(products)
             product == "nothing" && continue
             _update_ode!(model_SBML.species[product], products_s[i], products_cs[i],
