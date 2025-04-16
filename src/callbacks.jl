@@ -26,8 +26,9 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
         discrete_callback = !(_condition_has_species(event.trigger, specie_ids))
         condition_f = _get_callback_condition(event, specie_ids, parameter_ids, p_PEtab)
         affect_f! = _get_callback_affect(event, specie_ids, parameter_ids, p_PEtab)
-        init_f!, has_init_f = _get_callback_init(event, specie_ids, parameter_ids, tstops,
-                                                 first_callback, p_PEtab)
+        (init_f!,
+         has_init_f) = _get_callback_init(event, specie_ids, parameter_ids, tstops,
+                                          first_callback, p_PEtab)
         event_direction = _get_event_direction(event, discrete_callback)
 
         if has_init_f == false

@@ -7,8 +7,9 @@ end
 
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule,
                       libsbml_model::SBML.Model)::Nothing
-    id, math_expression = _parse_rule_formula(rule, model_SBML, libsbml_model;
-                                              assignment_rule = true)
+    (id,
+     math_expression) = _parse_rule_formula(rule, model_SBML, libsbml_model;
+                                            assignment_rule = true)
 
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
@@ -36,8 +37,9 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AssignmentRule,
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
                       libsbml_model::SBML.Model)::Nothing
-    id, math_expression = _parse_rule_formula(rule, model_SBML, libsbml_model;
-                                              rate_rule = true)
+    (id,
+     math_expression) = _parse_rule_formula(rule, model_SBML, libsbml_model;
+                                            rate_rule = true)
     if _is_model_variable(id, model_SBML)
         variable = _get_model_variable(id, model_SBML)
         _add_rule_info!(variable, math_expression, model_SBML; rate_rule = true)
@@ -59,8 +61,9 @@ function _parse_rule!(model_SBML::ModelSBML, rule::SBML.RateRule,
 end
 function _parse_rule!(model_SBML::ModelSBML, rule::SBML.AlgebraicRule,
                       libsbml_model::SBML.Model)::Nothing
-    _, math_expression = _parse_rule_formula(rule, model_SBML, libsbml_model;
-                                             algebraic_rule = true)
+    (_,
+     math_expression) = _parse_rule_formula(rule, model_SBML, libsbml_model;
+                                            algebraic_rule = true)
     # As an algebraic rule gives the equation for a specie/parameter/compartment variable
     # is just a place-holder name
     if isempty(model_SBML.algebraic_rules)

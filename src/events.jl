@@ -1,16 +1,15 @@
 function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     event_index = 1
     for (event_id, event) in libsbml_model.events
-        trigger, have_ridents1, have_rateOf1, have_specieref1 = _parse_trigger(event.trigger,
-                                                                               model_SBML,
-                                                                               libsbml_model)
+        (trigger, have_ridents1, have_rateOf1,
+         have_specieref1) = _parse_trigger(event.trigger, model_SBML, libsbml_model)
         if isempty(trigger)
             continue
         end
 
-        assignments, have_ridents2, have_rateOf2, have_specieref2 = _parse_assignments(event.event_assignments,
-                                                                                       model_SBML,
-                                                                                       libsbml_model)
+        (assignments, have_ridents2, have_rateOf2,
+         have_specieref2) = _parse_assignments(event.event_assignments, model_SBML,
+                                               libsbml_model)
 
         if !isnothing(event_id)
             name = event_id
