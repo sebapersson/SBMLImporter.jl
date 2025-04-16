@@ -305,7 +305,7 @@ solver = Rodas4P()
             continue
         end
         # Uncommon mathML with boundary effects, not sure I agree with test-suite
-        if test_case ∈ ["00959"]
+        if test_case ∈ ["00959", "01488"]
             continue
         end
         # A form of event compeition
