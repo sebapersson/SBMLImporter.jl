@@ -8,7 +8,7 @@ function _template_value_map(id::String, value::String)::String
 end
 
 function _template_rate_rule(id::String, formula::String)::String
-    return "\t\tD(" * id * ") ~ " * formula * ",\n"
+    return "\t\tDifferential(" * id * ") ~ " * formula * ",\n"
 end
 
 function _template_assignment_rule(id::String, formula::String)::String
