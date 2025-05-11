@@ -189,9 +189,10 @@ function _ids_to_cb_syntax(formula::String, ids::Vector{String}, id_type::Symbol
     # PEtab.jl cannot interact with SciMLStructures yet due to SciMLSensitivity. Therefore
     # for parameters the old integrator.p must be used (this will be fixed later for PEtab),
     # and the parameter order in p_PEtab must be used for correct mappings
-    for (i, id) in pairs(ids)
+    for id in ids
         if id_type == :specie
-            replace_with = utmp ? "utmp[" * string(i) * "]" : "u[" * string(i) * "]"
+            index = "ModelingToolkit.getu(integrator, :$id).idx"
+            replace_with = utmp ? "utmp[$index]" : "u[$index]"
         elseif id_type == :parameter && isnothing(p_PEtab)
             replace_with = "ps[:" * id * "]"
         elseif id_type == :parameter && !isnothing(p_PEtab)
