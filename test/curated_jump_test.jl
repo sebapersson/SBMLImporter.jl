@@ -2,7 +2,7 @@
 # reaction system it should be produced. Checks that simulations are correct and generates
 # mass action jumps.
 
-using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEq, Test
+using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEqRosenbrock, Test
 
 # Creates models.
 prn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)

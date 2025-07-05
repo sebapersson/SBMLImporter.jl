@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, SBMLImporter, ModelingToolkit, Catalyst, Test
+using OrdinaryDiffEqRosenbrock, SBMLImporter, ModelingToolkit, Catalyst, Test
 
 path_model = joinpath(@__DIR__, "Models", "SBML", "Boehm_JProteomeRes2014.jl")
 isfile(path_model) && rm(path_model)
