@@ -2,7 +2,7 @@
     Compare Catalyst vs ODEProblem import. The latter is needed by PEtab SciML, and
     rewrites a ModelSBML to an ODEProblem instead of rewriting to a ReactionSystem
 =#
-using SBMLImporter, ComponentArrays, OrdinaryDiffEq, Test
+using SBMLImporter, ComponentArrays, OrdinaryDiffEqRosenbrock, Test
 
 function test_odeproblem_import(path_SBML; atol = 1e-6)::Nothing
     model_SBML = SBMLImporter.parse_SBML(path_SBML, false; model_as_string = false,

@@ -1,4 +1,4 @@
-using SBMLImporter, ModelingToolkit, OrdinaryDiffEq, Downloads, Test
+using SBMLImporter, ModelingToolkit, OrdinaryDiffEqRosenbrock, Downloads, Test
 
 # Boehm published benchmark model
 path_SBML = joinpath(@__DIR__, "Models", "model_Boehm_JProteomeRes2014.xml")

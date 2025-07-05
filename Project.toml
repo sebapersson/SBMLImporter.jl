@@ -34,7 +34,8 @@ Downloads = "1"
 ForwardDiff = "0.10"
 JumpProcesses = "9"
 ModelingToolkit = "9.46.1"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEqBDF = "1"
+OrdinaryDiffEqRosenbrock = "1"
 PrecompileTools = "1"
 ReactionNetworkImporters = "0.16"
 RuntimeGeneratedFunctions = "0.5"
@@ -52,9 +53,10 @@ CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
-OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+OrdinaryDiffEqBDF = "6ad6398a-0878-4a85-9266-38940aa047c8"
+OrdinaryDiffEqRosenbrock = "43230ef6-c299-4910-a778-202eb28ce4ce"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Test", "CSV", "DataFrames", "Downloads", "SafeTestsets", "OrdinaryDiffEq"]
+test = ["Aqua", "Test", "CSV", "DataFrames", "Downloads", "SafeTestsets", "OrdinaryDiffEqBDF", "OrdinaryDiffEqRosenbrock"]

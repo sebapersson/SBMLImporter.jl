@@ -1,12 +1,5 @@
-using SBMLImporter
-using CSV
-using DataFrames
-using OrdinaryDiffEq
-using ModelingToolkit
-using SBML
-using Test
-using Downloads
-using Catalyst
+using Catalyst, CSV, DataFrames, Downloads, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock,
+    SBML, SBMLImporter, Test
 
 include(joinpath(@__DIR__, "common.jl"))
 
@@ -51,7 +44,7 @@ function check_test_case(test_case, solver)
     rename!(results, colnames)
 
     # Case for FBA models an exceptions should be thrown
-    if !("Time" ∈ names(results) || "time" ∈ names(results))
+    if !("Time" in names(results) || "time" in names(results))
         sbml_string = String(take!(Downloads.download(sbml_urls[1], IOBuffer())))
         SBMLImporter.parse_SBML(sbml_string, false; model_as_string = true)
     end
@@ -118,7 +111,7 @@ function check_test_case(test_case, solver)
             end
 
             is_sbml_specie = haskey(libsbml_model.species, component_test)
-            if component_test ∈ vcat(species_test_conc, species_test_amount) && is_sbml_specie
+            if component_test in vcat(species_test_conc, species_test_amount) && is_sbml_specie
                 compartment_name = libsbml_model.species[component_test].compartment
                 unit = model_SBML.species[component_test].unit
                 if unit == :Concentration && component_test ∉ species_test_amount
@@ -217,25 +210,25 @@ solver = Rodas4P()
             end
             continue
         end
-        if test_case ∈ piecewise_algebraic_rules
+        if test_case in piecewise_algebraic_rules
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ bad_names
+        if test_case in bad_names
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ hierarchical_models
+        if test_case in hierarchical_models
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ multiple_argument_inequality
+        if test_case in multiple_argument_inequality
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
@@ -247,49 +240,49 @@ solver = Rodas4P()
             end
             continue
         end
-        if test_case ∈ event_multiple_triggers
+        if test_case in event_multiple_triggers
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ delay_cases
+        if test_case in delay_cases
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ event_delay_cases
+        if test_case in event_delay_cases
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ event_priority
+        if test_case in event_priority
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ fast_reactions
+        if test_case in fast_reactions
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ imply_cases
+        if test_case in imply_cases
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ three_arugment_and_xor
+        if test_case in three_arugment_and_xor
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
             continue
         end
-        if test_case ∈ rem_div_parameters
+        if test_case in rem_div_parameters
             @test_throws SBMLImporter.SBMLSupport begin
                 check_test_case(test_case, Rodas4P())
             end
@@ -301,25 +294,25 @@ solver = Rodas4P()
             cases
         =#
         # Edge-cases where I think there is a bug in SBML.jl
-        if test_case ∈ ["01318", "01319", "01320"]
+        if test_case in ["01318", "01319", "01320"]
             continue
         end
         # Uncommon mathML with boundary effects, not sure I agree with test-suite
-        if test_case ∈ ["00959", "01488"]
+        if test_case in ["00959", "01488"]
             continue
         end
         # A form of event compeition
-        if test_case ∈ ["00953"]
+        if test_case in ["00953"]
             continue
         end
         # If user wants to add a random species, it must either be as a species,
         # initialAssignment, assignmentRule or by event, not by just random adding it
         # to equations. Cannot capture this error.
-        if test_case ∈ ["00974"]
+        if test_case in ["00974"]
             continue
         end
         # Bug in SBML.jl (parameter rateOf)
-        if test_case ∈ ["01321", "01322"]
+        if test_case in ["01321", "01322"]
             continue
         end
         # Even trigger cannot depend on algebraic rule
@@ -327,16 +320,16 @@ solver = Rodas4P()
             continue
         end
         # Inf or NaN in initial assignments
-        if test_case ∈ ["00950", "00951"]
+        if test_case in ["00950", "00951"]
             continue
         end
         # Subset of empty reactions. TODO: Add fix for
-        if test_case ∈ ["01304", "01305", "01306"]
+        if test_case in ["01304", "01305", "01306"]
             continue
         end
 
         # Simulations fail with Rodas4P, so FBDF is used
-        if test_case ∈ ["00028", "00173", "00269"]
+        if test_case in ["00028", "00173", "00269"]
             check_test_case(test_case, FBDF())
             continue
         end

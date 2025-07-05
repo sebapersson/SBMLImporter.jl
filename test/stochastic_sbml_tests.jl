@@ -1,13 +1,4 @@
-using SBMLImporter
-using CSV
-using DataFrames
-using OrdinaryDiffEq
-using ModelingToolkit
-using SBML
-using Test
-using Downloads
-using Catalyst
-using JumpProcesses
+using Catalyst, CSV, DataFrames, Downloads, JumpProcesses, SBML, SBMLImporter, Test
 
 include(joinpath(@__DIR__, "common.jl"))
 
@@ -92,13 +83,13 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
             sim_mean = sim_mean[i_specie, :]
             sim_sd = sqrt.(sim_var[i_specie, :])
 
-            if to_check_no_whitespace * "-mean" ∈ names(results)
+            if to_check_no_whitespace * "-mean" in names(results)
                 reference_sol = results[!, to_check_no_whitespace * "-mean"]
                 @test all(reference_sol .+ mean_range[1] .< sim_mean .<
                           reference_sol .+ mean_range[2])
             end
 
-            if to_check_no_whitespace * "-sd" ∈ names(results)
+            if to_check_no_whitespace * "-sd" in names(results)
                 reference_sol = results[!, to_check_no_whitespace * "-sd"]
                 @test all(reference_sol .+ sd_range[1] .< sim_sd .<
                           reference_sol .+ sd_range[2])
@@ -112,7 +103,7 @@ end
 
         # 19 has assignment rule
         # 33 has continous callback
-        if i ∈ [19, 33]
+        if i in [19, 33]
             continue
         end
 

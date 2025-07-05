@@ -1,4 +1,4 @@
-using SBMLImporter, Catalyst, OrdinaryDiffEq, Test
+using SBMLImporter, Catalyst, OrdinaryDiffEqRosenbrock, Test
 
 #=
     Test that if kinetic law parameters are inlined correctly if the user selects that

@@ -1,4 +1,4 @@
-using SBMLImporter, ModelingToolkit, OrdinaryDiffEq, Test
+using SBMLImporter, ModelingToolkit, OrdinaryDiffEqRosenbrock, Test
 
 # With callback
 path_SBML = joinpath(@__DIR__, "Models", "model_Brannmark_JBC2010.xml")

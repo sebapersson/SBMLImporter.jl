@@ -1,5 +1,7 @@
 using SafeTestsets
 
+core_only = get(ENV, "CORE_ONLY", "false") == "true"
+
 @safetestset "Aqua Quality Check" begin
     include("aqua.jl")
 end
@@ -20,10 +22,6 @@ end
     include("ifelse_to_callback.jl")
 end
 
-@safetestset "SBML large models" begin
-    include("large_models.jl")
-end
-
 @safetestset "Test write parsed model to file" begin
     include("write_model.jl")
 end
@@ -32,14 +30,20 @@ end
     include("metadata.jl")
 end
 
-@safetestset "Import as ODEProblem" begin
-    include("odeproblem_import.jl")
-end
+if !core_only
+    @safetestset "Import as ODEProblem" begin
+        include("odeproblem_import.jl")
+    end
 
-@safetestset "SBML semantic test-suite" begin
-    include("semantic_sbml_tests.jl")
-end
+    @safetestset "SBML large models" begin
+        include("large_models.jl")
+    end
 
-@safetestset "SBML stochastic test-suite" begin
-    include("stochastic_sbml_tests.jl")
+    @safetestset "SBML semantic test-suite" begin
+        include("semantic_sbml_tests.jl")
+    end
+
+    @safetestset "SBML stochastic test-suite" begin
+        include("stochastic_sbml_tests.jl")
+    end
 end
