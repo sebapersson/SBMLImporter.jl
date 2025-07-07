@@ -1,6 +1,6 @@
 name = "SBMLImporter"
 uuid = "210efffb-c3c8-456d-a807-6f55560b12fe"
-version = "3.0.2"
+version = "3.0.3"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
