@@ -17,6 +17,16 @@ SBMLImporter is a Julia package for importing dynamic [Systems Biology Markup La
 
 Additional information on features and tutorials can be found in the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
 
+## Installation
+
+SBMLImporter is a registered Julia package and can be installed with the Julia package manager using:
+
+```julia
+julia> import Pkg; Pkg.add("SBMLImporter")
+```
+
+SBMLImporter is compatible with Julia 1.10 and above. For additional installation details, see the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
+
 ## Other SBML related Julia packages
 
 There are currently three other SBML related packages in Julia:
