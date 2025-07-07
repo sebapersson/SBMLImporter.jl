@@ -19,7 +19,7 @@ Additional information on features and tutorials can be found in the [documentat
 
 ## Installation
 
-SBMLImporter is an officially registered Julia package and can be installed with:
+SBMLImporter is a registered Julia package and can be installed with the Julia package manager using:
 
 ```julia
 julia> import Pkg; Pkg.add("SBMLImporter")
