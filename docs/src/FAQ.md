@@ -1,7 +1,5 @@
 # [FAQs](@id FAQ)
 
-Certainly! Here's the revised **Markdown version** of the FAQ **without subheadings**, keeping it clean and linear while still clear and professional:
-
 ## [Why do I encounter installation problems?](@id install_fail)
 
 SBMLImporter.jl is regularly tested on, and should be installable on Linux, macOS and Windows. If you encounter installation issues on these systems, we recommend checking the following two common causes:
@@ -26,9 +24,9 @@ If you need to install SBMLImporter into an existing environment and encounter i
 Pkg.update()
 ```
 
-This is because SBMLImporter depends on numerous packages from the actively developed Julia [SciML ecosystem](https://sciml.ai/). New releases of these dependencies sometimes introduce breaking changes that are not always caught by test suites (e.g., see [this issue](https://github.com/SciML/Catalyst.jl/issues/1075)). In other words, SBMLImporter is not compatible with all versions of packages like Catalyst.jl, which can cause issues if an incompatible version is already installed in the environment.
+This is because SBMLImporter depends on numerous packages from the actively developing Julia [SciML ecosystem](https://sciml.ai/). New releases of these dependencies sometimes introduce breaking changes that are not always caught by test suites (e.g., see [this issue](https://github.com/SciML/Catalyst.jl/issues/1075)). In other words, SBMLImporter is not compatible with all versions of packages like Catalyst.jl, which can cause issues if an incompatible version is already installed in the environment.
 
-Lastly, if you have tried everything above (e.g., you are using a recent Julia version and have updated your packages) and still experience installation issues, it is likely a bug in SBMLImporter. In this case, please open an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).
+Lastly, if you have tried everything above and still experience installation issues, it is likely a bug in SBMLImporter. In this case, please open an issue on [GitHub](https://github.com/sebapersson/SBMLImporter.jl).
 
 ## Why do I get the error `Any[...] are either missing from the variable map or missing from the system's states/parameters list`?
 
