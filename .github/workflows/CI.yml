@@ -11,9 +11,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
-# ---------------------------------------------------------
-# 1.  Full test-suite – Linux only
-# ---------------------------------------------------------
+  # Full time consuming test-suite, only Linux
   test_full:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
@@ -43,9 +41,7 @@ jobs:
       - uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-# ---------------------------------------------------------
-# 2.  Core tests – multi-OS
-# ---------------------------------------------------------
+  # Core tests on multiple operating systems
   test_core:
     name: Core tests – ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -86,3 +82,38 @@ jobs:
             using SBMLImporter
             DocMeta.setdocmeta!(SBMLImporter, :DocTestSetup, :(using SBMLImporter); recursive=true)
             doctest(SBMLImporter)'
+  update_testsuite_csv:
+    name: Update SBML testsuite support
+    needs: [test_full, test_core, docs]
+    if: github.ref == 'refs/heads/main'      
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write    # lets the default GITHUB_TOKEN push to the repo
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.11'
+      - run: julia -e 'using Pkg; Pkg.add.(["CSV", "DataFrames"])'
+      - name: Generate testsuite CSV file
+        run: julia test/export_testsuite_support.jl
+      - name: Commit updated CSV
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # stage exactly the file(s) your script writes
+          git add sbml_testsuite_support
+
+          # commit only when there is a real diff
+          if ! git diff --cached --quiet; then
+              git commit -m "ci: auto-update generated testsuite CSV"
+              git push origin HEAD:main
+          else
+              echo "CSV unchanged – nothing to commit"
+          fi
