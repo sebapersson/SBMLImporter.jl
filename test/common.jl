@@ -30,3 +30,21 @@ function get_model_str(test_case)
 
     return model_str, model_SBML
 end
+
+function get_test_tags(test_case)
+    base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/semantic/$test_case/$test_case"
+    test_file_url = base_url * "-model.m"
+    test_file_str = String(take!(Downloads.download(test_file_url, IOBuffer())))
+    return extract_tags(test_file_str)
+end
+
+function extract_tags(txt::AbstractString)
+    pat = r"^\s*(componentTags|testTags)\s*:\s*(.*)$"m
+    tags = Dict{Symbol, Vector{String}}()
+    for m in eachmatch(pat, txt)
+        key   = m.captures[1]
+        value = strip.(split(m.captures[2], ','))
+        tags[Symbol(key)] = value
+    end
+    return tags
+end

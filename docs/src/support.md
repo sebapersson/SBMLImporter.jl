@@ -1,29 +1,57 @@
 # [Supported SBML Features](@id support)
 
-SBMLImporter supports many SBML features for models of level 2 or higher. Currently, excluding FBA models it successfully passes around 1300 out of 1785 test cases. The failed test cases cover features currently not supported. Key features supported include:
+SBMLImporter.jl supports a wide range of SBML features for models of level 2 or higher. This page provides an overview of the currently supported features, as well as the coverage of the SBML semantic and stochastic [test suites](https://github.com/sbmlteam/sbml-test-suite).
 
-- Events.
-- Rate rules.
-- Assignment rules.
-- Algebraic rules.
-- Dynamic compartment size.
-- Species and model conversion factors.
+## Overview
 
-Species can be specified in either concentrations or amounts. The unit is determined as follows:
+In general, the following SBML features are supported:
 
-- If `initialConcentration` is set for a species, its unit will be set to concentration.
-- If `initialAmount` is set for a species, it will be treated as being in amount.
-- If neither is set, and the `substanceUnits` of the species is "substance," it is treated as being in amounts.
+* Events
+* Rate rules
+* Assignment rules
+* Algebraic rules
+* Dynamic compartment sizes
+* Species and model conversion factors
 
-Currently SBMLImporter does not support the following features:
+Species can be defined in terms of concentration or amount, with units determined as follows:
 
-* Delay (creating a delay-differential-equations).
-* Events with delay.
-* Events with priority.
-* Hierarchical models.
-* Fast reactions.
-* Parameter or species names corresponding to Julia constants (`pi`, `Inf`, `NaN`, `true`, `false`).
-* Certain uncommon math expressions, such as `lt` with three arguments, `implies` etc...
+* If `initialConcentration` is specified, the species is treated as a concentration.
+* If `initialAmount` is specified, it is treated as an amount.
+* If neither is set, and the species’ `substanceUnits` is `substance`, it defaults to amount.
+
+The following SBML features are not currently supported:
+
+* Delays (i.e., delay differential equations)
+* Events with delay
+* Events with priority
+* Hierarchical (composite) models
+* Fast reactions
+* Parameter or species names that conflict with Julia constants (`pi`, `Inf`, `NaN`, `true`, `false`)
+* Certain uncommon MathML expressions (e.g., `lt` with three arguments, `implies`, etc.)
+
+## Semantic Test Suite Coverage
+
+The [SBML semantic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/semantic) evaluates the correctness of deterministic ODE model simulations. SBMLImporter.jl currently passes 1266 out of 1821 test cases. A complete list of passed tests, and their corresponding `testTags` and `componentTags` can be found in [this](https://github.com/sebapersson/SBMLImporter.jl) CSV-file, which is automatically updated every time a new release of the package is made.
+
+Overall, at least one test case passes for each of the following SBML `testTags`:
+
+`Amount`, `NonUnityStoichiometry`, `BoundaryCondition`, `NonUnityCompartment`, `ConstantSpecies`, `LocalParameters`, `InitialValueReassigned`, `NonConstantParameter`, `0D-Compartment`, `NonConstantCompartment`, `MultiCompartment`, `ReversibleReaction`, `HasOnlySubstanceUnits`, `AssignedConstantStoichiometry`, `DefaultValue`, `Concentration`, `EventT0Firing`, `UncommonMathML`, `AssignedVariableStoichiometry`, `ConversionFactors`, `SpeciesReferenceInMath`, `VolumeConcentrationRates`, `NoMathML`, `L3v2MathML`, `BoolNumericSwap`.
+
+And for each of the following SBML `componentTags`:
+
+`Compartment`, `Species`, `Reaction`, `Parameter`, `FunctionDefinition`, `EventNoDelay`, `InitialAssignment`, `AssignmentRule`, `RateRule`, `AlgebraicRule`, `StoichiometryMath`, `CSymbolTime`, `CSymbolAvogadro`, `CSymbolRateOf`.
+
+## Stochastic Test Suite Coverage
+
+The [SBML stochastic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/stochastic) primarily evaluates the correctness of stochastic model simulations using an exact algorithm. SBMLImporter.jl currently passes 37 out of 100 test cases. The low pass rate is because cases 40–100 involve the SBML Distribution extension, which is currently not supported. As with the semantic test suite, a complete list of passed test cases along with their associated `testTags` and `componentTags` is available in [this CSV file](https://github.com/sebapersson/SBMLImporter.jl).
+
+Overall, at least one test case passes for each of the following `testTags`:
+
+`Amount`, `NonUnityStoichiometry`, `BoundaryCondition`, `NonUnityCompartment`, `ConstantSpecies`, `LocalParameters`, `InitialValueReassigned`.
+
+And for each of the following SBML `componentTags`:
+
+`Compartment`, `Species`, `Reaction`, `Parameter`, `FunctionDefinition`, `EventNoDelay`, `InitialAssignment`, `AssignmentRule`, `RateRule`, `AlgebraicRule`.
 
 ## Support for additional features
 

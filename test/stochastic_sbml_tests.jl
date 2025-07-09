@@ -1,6 +1,7 @@
 using Catalyst, CSV, DataFrames, Downloads, JumpProcesses, SBML, SBMLImporter, Test
 
 include(joinpath(@__DIR__, "common.jl"))
+include(joinpath(@__DIR__, "testsuite_support.jl"))
 
 function read_settings(settings_url::String)
     settings = String(take!(Downloads.download(settings_url, IOBuffer())))
@@ -98,17 +99,12 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
     end
 end
 
+cases_not_passing = reduce(vcat, values(get_stochastic_not_pass()))
 @testset "Stochastic tests" begin
     for i in 1:39
-
-        # 19 has assignment rule
-        # 33 has continous callback
-        if i in [19, 33]
-            continue
-        end
-
         @info "Test case $i"
         test_case = repeat("0", 5 - length(string(i))) * string(i)
+        test_case in cases_not_passing && continue
 
         # i = 5 nast test case were many simulations must be run to get a
         # good mean estimate (as amounts are large)
