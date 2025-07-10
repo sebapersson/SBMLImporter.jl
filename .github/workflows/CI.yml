@@ -111,3 +111,4 @@ jobs:
           body: "This PR was created automatically by the CI workflow."
           add-paths: sbml_testsuite_support.csv  
           delete-branch: true                    
+
