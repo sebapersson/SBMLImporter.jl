@@ -108,7 +108,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # stage exactly the file(s) your script writes
-          git add sbml_testsuite_support
+          git add sbml_testsuite_support.csv
 
           # commit only when there is a real diff
           if ! git diff --cached --quiet; then
