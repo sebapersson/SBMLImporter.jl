@@ -102,18 +102,13 @@ jobs:
       - run: julia -e 'using Pkg; Pkg.add.(["CSV", "DataFrames"])'
       - name: Generate testsuite CSV file
         run: julia test/export_testsuite_support.jl
-      - name: Commit updated CSV
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Create PR with updated CSV
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/update-testsuite-csv        
+          title: "ci: auto-update testsuite CSV"
+          commit-message: "ci: auto-update testsuite CSV"
+          body: "This PR was created automatically by the CI workflow."
+          add-paths: sbml_testsuite_support.csv  
+          delete-branch: true                    
 
-          # stage exactly the file(s) your script writes
-          git add sbml_testsuite_support.csv
-
-          # commit only when there is a real diff
-          if ! git diff --cached --quiet; then
-              git commit -m "ci: auto-update generated testsuite CSV"
-              git push origin HEAD:main
-          else
-              echo "CSV unchanged – nothing to commit"
-          fi
