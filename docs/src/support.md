@@ -31,7 +31,7 @@ The following SBML features are not currently supported:
 
 ## Semantic Test Suite Coverage
 
-The [SBML semantic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/semantic) evaluates the correctness of deterministic ODE model simulations. SBMLImporter.jl currently passes 1266 out of 1821 test cases. A complete list of passed tests, and their corresponding `testTags` and `componentTags` can be found in [this](https://github.com/sebapersson/SBMLImporter.jl) CSV-file, which is automatically updated every time a new release of the package is made.
+The [SBML semantic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/semantic) evaluates the correctness of deterministic ODE model simulations. SBMLImporter.jl currently passes 1266 out of 1821 test cases. A complete list of passed tests, and their corresponding `testTags` and `componentTags` can be found in [this](https://github.com/sebapersson/SBMLImporter.jl/blob/main/sbml_testsuite_support.csv) CSV-file, which is automatically updated every time a new release of the package is made.
 
 Overall, at least one test case passes for each of the following SBML `testTags`:
 
@@ -43,7 +43,7 @@ And for each of the following SBML `componentTags`:
 
 ## Stochastic Test Suite Coverage
 
-The [SBML stochastic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/stochastic) primarily evaluates the correctness of stochastic model simulations using an exact algorithm. SBMLImporter.jl currently passes 37 out of 100 test cases. The low pass rate is because cases 40–100 involve the SBML Distribution extension, which is currently not supported. As with the semantic test suite, a complete list of passed test cases along with their associated `testTags` and `componentTags` is available in [this CSV file](https://github.com/sebapersson/SBMLImporter.jl).
+The [SBML stochastic test suite](https://github.com/sbmlteam/sbml-test-suite/tree/release/cases/stochastic) primarily evaluates the correctness of stochastic model simulations using an exact algorithm. SBMLImporter.jl currently passes 37 out of 100 test cases. The low pass rate is because cases 40–100 involve the SBML Distribution extension, which is currently not supported. As with the semantic test suite, a complete list of passed test cases along with their associated `testTags` and `componentTags` is available in [this](https://github.com/sebapersson/SBMLImporter.jl/blob/main/sbml_testsuite_support.csv) CSV file.
 
 Overall, at least one test case passes for each of the following `testTags`:
 
