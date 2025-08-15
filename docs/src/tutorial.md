@@ -55,7 +55,7 @@ default(left_margin=12.5Plots.Measures.mm, bottom_margin=12.5Plots.Measures.mm, 
 plot(sol; xlabel = "Time [s]", ylabel = "Protein amount")
 ```
 
-For more information on jump simulations, see [JumpProcesses.jl's documentation](https://github.com/SciML/JumpProcesses.jl). A guide to choosing simulation algorithm can be found [here](https://docs.sciml.ai/JumpProcesses/dev/jump_types/#Jump-Aggregators-for-Exact-Simulation).
+For more information on jump simulations, see [JumpProcesses.jl's documentation](https://github.com/SciML/JumpProcesses.jl). A guide to choosing a simulation algorithm can be found [here](https://docs.sciml.ai/JumpProcesses/dev/jump_types/#Jump-Aggregators-for-Exact-Simulation).
 
 ## SDE simulations
 
@@ -109,7 +109,7 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 plot(sol; xlabel = "Time [s]", ylabel = "Protein amount")
 ```
 
-For more information on ODE simulations, see [OrdinaryDiffEq.jl's documentation](https://github.com/SciML/OrdinaryDiffEq.jl). A guide to choosing ODE solver can be found [here](https://sebapersson.github.io/PEtab.jl/stable/default_options/).
+For more information on ODE simulations, see [OrdinaryDiffEq.jl's documentation](https://github.com/SciML/OrdinaryDiffEq.jl). A guide to choosing an ODE solver can be found [here](https://sebapersson.github.io/PEtab.jl/stable/default_options/).
 
 !!! tip "Importing large models"
     For large models with more than 1000 species, constructing the Jacobian for the `ODEProblem` can be time-consuming. Therefore, if model load time is a problem, setting `jac = false` can help.
