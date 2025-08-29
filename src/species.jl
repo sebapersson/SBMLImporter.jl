@@ -1,5 +1,4 @@
-function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
-                        massaction::Bool)::Nothing
+function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model, massaction::Bool)::Nothing
     for (specie_id, specie) in libsbml_model.species
         if specie_id in FORBIDDEN_IDS
             throw(SBMLSupport("Specie name $(specie_id) is not allowed."))
@@ -21,11 +20,10 @@ function parse_species!(model_SBML::ModelSBML, libsbml_model::SBML.Model,
         else
             formula = ""
         end
-        model_SBML.species[specie_id] = SpecieSBML(specie_id, boundary_condition, constant,
-                                                   initial_value, formula, compartment,
-                                                   conversion_factor, unit,
-                                                   only_substance_units, false, false,
-                                                   false, false, false, false)
+        model_SBML.species[specie_id] = SpecieSBML(
+            specie_id, boundary_condition, constant, initial_value,
+            formula, compartment, conversion_factor, unit,
+            only_substance_units, false, false, false, false, false, false)
     end
     return nothing
 end
@@ -91,12 +89,10 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         conc_initial_value = _apply(/, specie.initial_value, compartment.name)
         dcdt = _apply(/, specie.formula, compartment.name)
         push!(model_SBML.rate_rule_variables, conc_id)
-        model_SBML.species[conc_id] = SpecieSBML(conc_id, false, false, conc_initial_value,
-                                                 dcdt, compartment.name,
-                                                 specie.conversion_factor, :Concentration,
-                                                 false, false, true, false,
-                                                 specie.has_reaction_ids, specie.has_rateOf,
-                                                 specie.has_specieref)
+        model_SBML.species[conc_id] = SpecieSBML(
+            conc_id, false, false, conc_initial_value, dcdt, compartment.name,
+            specie.conversion_factor, :Concentration, false, false, true, false,
+            specie.has_reaction_ids, specie.has_rateOf, specie.has_specieref)
 
         V, dVdt = compartment.name, compartment.formula
         specie.formula = _template_amount_dynamic_c(dcdt, V, specie_id, dVdt)
@@ -137,10 +133,10 @@ function adjust_for_dynamic_compartment!(model_SBML::ModelSBML)::Nothing
         n_id = "__" * specie_id * "__amount__"
         n_initial_amount = _apply(*, specie.initial_value, V)
         dndt = _get_amount_formula(specie, V)
-        model_SBML.species[n_id] = SpecieSBML(n_id, false, false, n_initial_amount, dndt, V,
-                                              specie.conversion_factor, :Amount, false,
-                                              false, false, false, specie.has_reaction_ids,
-                                              specie.has_rateOf, specie.has_specieref)
+        model_SBML.species[n_id] = SpecieSBML(
+            n_id, false, false, n_initial_amount, dndt, V,
+            specie.conversion_factor, :Amount, false, false, false, false,
+            specie.has_reaction_ids, specie.has_rateOf, specie.has_specieref)
 
         # To enforce that dcdt is given by the ODE specie is promoted to rate-rule. Further
         # to obtain correct dn/dt formula, replace specie with n_id in reactions
@@ -174,7 +170,7 @@ function _get_amount_formula(specie::SpecieSBML, V::String)::String
 end
 
 function add_conversion_factor_ode!(model_SBML::ModelSBML,
-                                    libsbml_model::SBML.Model)::Nothing
+        libsbml_model::SBML.Model)::Nothing
     # Conversion factor only apply to species changed via recations, not rules or
     # boundary conditions per SBML standard
     for (specie_id, specie) in model_SBML.species

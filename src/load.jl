@@ -72,14 +72,13 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
 function load_SBML(path::AbstractString; massaction::Bool = false, complete::Bool = true,
-                   ifelse_to_callback::Bool = true, write_to_file::Bool = false,
-                   inline_assignment_rules::Bool = false,
-                   inline_kineticlaw_parameters::Bool = true,
-                   model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
+        ifelse_to_callback::Bool = true, write_to_file::Bool = false,
+        inline_assignment_rules::Bool = false, inline_kineticlaw_parameters::Bool = true,
+        model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
     model_SBML = parse_SBML(path, massaction; ifelse_to_callback = ifelse_to_callback,
-                            model_as_string = model_as_string,
-                            inline_assignment_rules = inline_assignment_rules,
-                            inline_kineticlaw_parameters = inline_kineticlaw_parameters)
+        model_as_string = model_as_string,
+        inline_assignment_rules = inline_assignment_rules,
+        inline_kineticlaw_parameters = inline_kineticlaw_parameters)
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML)
 

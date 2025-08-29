@@ -7,8 +7,8 @@ to create a ReactionSystem.
 For testing path can be the model as a string if model_as_string=true.
 """
 function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = true,
-                    model_as_string = true, inline_assignment_rules::Bool = true,
-                    inline_kineticlaw_parameters::Bool = true)::ModelSBML
+        model_as_string = true, inline_assignment_rules::Bool = true,
+        inline_kineticlaw_parameters::Bool = true)::ModelSBML
     model_str = _get_model_as_str(path, model_as_string)
     check_support(path)
 
@@ -18,19 +18,19 @@ function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = t
         libsbml_model = readSBMLFromString(model_str)
     else
         libsbml_model = readSBMLFromString(model_str,
-                                           doc -> begin
-                                               SBML.set_level_and_version(3, 2)(doc)
-                                               SBML.convert_promotelocals_expandfuns(doc)
-                                           end)
+            doc -> begin
+                SBML.set_level_and_version(3, 2)(doc)
+                SBML.convert_promotelocals_expandfuns(doc)
+            end)
     end
 
     return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules,
-                       inline_kineticlaw_parameters, massaction)
+        inline_kineticlaw_parameters, massaction)
 end
 
-function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
-                     inline_assignment_rules::Bool, inline_kineticlaw_parameters::Bool,
-                     massaction::Bool)::ModelSBML
+function _parse_SBML(
+        libsbml_model::SBML.Model, ifelse_to_callback::Bool, inline_assignment_rules::Bool,
+        inline_kineticlaw_parameters::Bool, massaction::Bool)::ModelSBML
     model_SBML = ModelSBML(libsbml_model)
 
     parse_species!(model_SBML, libsbml_model, massaction)
@@ -63,12 +63,13 @@ function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
 
     add_conversion_factor_ode!(model_SBML, libsbml_model)
 
-    # Ensure that event participating parameters and compartments are not simplfied away
+    # Ensure that event participating parameters and compartments are not simplified away
     # with structurally_simplify
     force_include_event_variables!(model_SBML)
 
-    # SBML allows inconstant compartment size, this must be adjusted if a specie is given in concentration
-    # Must be after conversion factor, as the latter must be correctly handled in the transformation
+    # SBML allows inconstant compartment size, this must be adjusted if a specie is given
+    # in concentration. Must be after conversion factor, as the latter must be correctly
+    # handled in the transformation
     adjust_for_dynamic_compartment!(model_SBML)
 
     # Per level3 rateOf can appear in any formula, and should be replaced with corresponding
@@ -78,8 +79,8 @@ function _parse_SBML(libsbml_model::SBML.Model, ifelse_to_callback::Bool,
     # Specie reference ids can appear in formula, and need to be replaced
     replace_ident!(model_SBML, libsbml_model, :specieref)
 
-    # Inlining assignment rule variables makes the model less readable, however, if not done for
-    # larger models Catalyst might crash due to a stack-overflow error
+    # Inlining assignment rule variables makes the model less readable, however, if not
+    # done for larger models Catalyst might crash due to a stack-overflow error
     if inline_assignment_rules == true
         inline_assignment_rules!(model_SBML)
     end
