@@ -38,7 +38,7 @@ function _add_inequality_functions!(model_SBML::ModelSBML)::Nothing
 end
 
 function insert_functions(formula::T, _functions::Dict,
-                          fns_reaplce::Vector{String})::T where {T <: AbstractString}
+        fns_reaplce::Vector{String})::T where {T <: AbstractString}
     isempty(fns_reaplce) && return formula
 
     nfunctions_replaced::Int64 = 0

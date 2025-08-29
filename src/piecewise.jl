@@ -9,14 +9,13 @@ function time_dependent_ifelse_to_bool!(model_SBML::ModelSBML)::Nothing
     ifelse_parameter_names = String[]
     for (_, variable) in variables
         !occursin("ifelse", variable.formula) && continue
-        variable.formula = _time_dependent_ifelse_to_bool(variable.formula, model_SBML,
-                                                          ifelse_parameter_names)
+        variable.formula = _time_dependent_ifelse_to_bool(variable.formula, model_SBML, ifelse_parameter_names)
     end
     return nothing
 end
 
 function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML,
-                                        ifelse_parameter_names::Vector{String})::String
+        ifelse_parameter_names::Vector{String})::String
     if !occursin("ifelse", formula)
         return formula
     end
@@ -47,32 +46,29 @@ function _time_dependent_ifelse_to_bool(formula::String, model_SBML::ModelSBML,
         time_in_lhs = _has_time(lhs_condition)
         time_in_lhs == false && time_in_rhs == false && continue
         @assert time_in_rhs!=time_in_lhs "Error with time in both condition sides"
-        side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition,
-                                                       operator, time_in_rhs)
+        side_activated = _get_side_activated_with_time(lhs_condition, rhs_condition, operator, time_in_rhs)
 
         bool_name = _get_name_bool_piecewise(ifelse_parameter_names)
         formula_bool = _template_bool_picewise(bool_name, arg1, arg2, side_activated)
         formula = replace(formula, ifelse_call => formula_bool; count = 1)
 
         model_SBML.ifelse_bool_expressions[ifelse_call] = formula_bool
-        model_SBML.parameters[bool_name] = ParameterSBML(bool_name, true, "0.0", "", false,
-                                                         false, false, false, false, false)
-        model_SBML.events[bool_name] = _ifelse_to_event(bool_name, condition,
-                                                        side_activated)
+        model_SBML.parameters[bool_name] = ParameterSBML(
+            bool_name, true, "0.0", "", false, false, false, false, false, false)
+        model_SBML.events[bool_name] = _ifelse_to_event(bool_name, condition, side_activated)
 
         ifelse_with_time = true
         break
     end
 
     if ifelse_with_time == true
-        formula = _time_dependent_ifelse_to_bool(formula, model_SBML,
-                                                 ifelse_parameter_names)
+        formula = _time_dependent_ifelse_to_bool(formula, model_SBML, ifelse_parameter_names)
     end
     return formula
 end
 
 function _get_side_activated_with_time(lhs_condition::String, rhs_condition::String,
-                                       operator::String, time_in_rhs::Bool)::String
+        operator::String, time_in_rhs::Bool)::String
     sign_time = time_in_rhs ? _get_sign_time(rhs_condition) : _get_sign_time(lhs_condition)
     # Example : if we have -t > -1 then sign_time = -1, and when time increases from
     # t0=0 we have with time a transition from true -> false, which means that in the
@@ -115,7 +111,7 @@ function _get_name_bool_piecewise(ifelse_parameter_names::Vector{String})::Strin
 end
 
 function _template_bool_picewise(bool_name::String, ifelse_arg1::String,
-                                 ifelse_arg2::String, side_activated::String)::String
+        ifelse_arg2::String, side_activated::String)::String
     activated = side_activated == "right" ? ifelse_arg1 : ifelse_arg2
     deactivated = side_activated == "right" ? ifelse_arg2 : ifelse_arg1
     formula = "((1 - 1" * bool_name * ") * (" * deactivated * ") + " *
@@ -127,7 +123,8 @@ function _get_sign_time(formula::String)::Int64
     formula = replace(formula, " " => "")
     formula = _trim_paranthesis(formula)
     _formula = _find_term_with_t(formula)
-    @assert !isempty(_formula) "In $formula for condition in piecewise cannot identify which term time appears in."
+    @assert !isempty(_formula) "In $formula for condition in piecewise cannot identify \
+        which term time appears in."
 
     _formula = replace(_formula, "(" => "", ")" => "")
     if _formula == "t"
@@ -144,7 +141,9 @@ function _get_sign_time(formula::String)::Int64
     # but infering in this situation is hard! - so throw an error as the user should
     # be able to write condition in a more easy manner (avoid several sign changing minus signs)
     !occursin('-', _formula) && return 1
-    str_write = "For piecewise with time in condition we cannot infer direction for $formula, that is if the condition value increases or decreases with time. This happens if the formula contains a minus sign in the term where t appears."
+    str_write = "For piecewise with time in condition we cannot infer direction for \
+        $formula, that is if the condition value increases or decreases with time. This \
+        happens if the formula contains a minus sign in the term where t appears."
     throw(SBMLSupport(str_write))
 end
 
@@ -177,7 +176,7 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
     # When triggered we change the bool variable from 0 to 1. If side_activated = "right"
     # we activate the event when the ifelse condition goes from true to false. Reverse for
     # side_activated = "left". Thus, for side_activated = "right" we need to invert the
-    # condition, as otherwise we mess up callback initialisation where the bool variable
+    # condition, as otherwise we mess up callback initialization where the bool variable
     # is set to 1 if the condition is true. It is also important to work with strict
     # inequality here to handle any edge-cases where the trigger time is t = 0
     if side_activated == "left"
@@ -194,6 +193,6 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
         end
     end
     event = EventSBML(id, condition, assignments, false, false, false, false, false, false,
-                      false, true)
+        false, true)
     return event
 end

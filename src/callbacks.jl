@@ -1,7 +1,6 @@
 function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
-                          p_PEtab::Union{Vector{String}, Nothing} = nothing,
-                          float_tspan::Bool = true,
-                          _specie_ids::Union{Nothing, Vector{String}} = nothing)::CallbackSet
+        p_PEtab::Union{Vector{String}, Nothing} = nothing, float_tspan::Bool = true,
+        _specie_ids::Union{Nothing, Vector{String}} = nothing)::CallbackSet
     model_name = replace(model_name, "-" => "_")
     # If parameters(system) is empty Any[] is returned with string.(...)
     if system isa SciMLBase.ODEProblem
@@ -27,8 +26,8 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
         condition_f = _get_callback_condition(event, specie_ids, parameter_ids, p_PEtab)
         affect_f! = _get_callback_affect(event, specie_ids, parameter_ids, p_PEtab)
         (init_f!,
-         has_init_f) = _get_callback_init(event, specie_ids, parameter_ids, tstops,
-                                          first_callback, p_PEtab)
+            has_init_f) = _get_callback_init(
+            event, specie_ids, parameter_ids, tstops, first_callback, p_PEtab)
         event_direction = _get_event_direction(event, discrete_callback)
 
         if has_init_f == false
@@ -37,19 +36,21 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
             _init_f! = init_f!
         end
         if discrete_callback == true
-            callbacks[k] = DiscreteCallback(condition_f, affect_f!, initialize = _init_f!,
-                                            save_positions = (false, false))
+            callbacks[k] = DiscreteCallback(
+                condition_f, affect_f!, initialize = _init_f!, save_positions = (
+                    false, false))
         elseif discrete_callback == false && event_direction == :left
-            callbacks[k] = ContinuousCallback(condition_f, nothing, affect_f!,
-                                              initialize = _init_f!,
-                                              save_positions = (false, false))
+            callbacks[k] = ContinuousCallback(
+                condition_f, nothing, affect_f!, initialize = _init_f!,
+                save_positions = (false, false))
         elseif discrete_callback == false && event_direction == :right
-            callbacks[k] = ContinuousCallback(condition_f, affect_f!, nothing,
-                                              initialize = _init_f!,
-                                              save_positions = (false, false))
+            callbacks[k] = ContinuousCallback(
+                condition_f, affect_f!, nothing, initialize = _init_f!,
+                save_positions = (false, false))
         elseif discrete_callback == false && event_direction == :none
-            callbacks[k] = ContinuousCallback(condition_f, affect_f!, initialize = _init_f!,
-                                              save_positions = (false, false))
+            callbacks[k] = ContinuousCallback(
+                condition_f, affect_f!, initialize = _init_f!,
+                save_positions = (false, false))
         end
         k += 1
         first_callback = false
@@ -57,9 +58,9 @@ function create_callbacks(system, model_SBML::ModelSBML, model_name::String;
     return CallbackSet(callbacks...)
 end
 
-function _get_callback_condition(event::EventSBML, specie_ids::Vector{String},
-                                 parameter_ids::Vector{String},
-                                 p_PEtab::Union{Vector{String}, Nothing})::Function
+function _get_callback_condition(
+        event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String},
+        p_PEtab::Union{Vector{String}, Nothing})::Function
     condition = event.trigger
     discrete_callback = !(_condition_has_species(condition, specie_ids))
 
@@ -90,27 +91,26 @@ function _get_callback_condition(event::EventSBML, specie_ids::Vector{String},
     return condition_f
 end
 
-function _get_callback_affect(event::EventSBML, specie_ids::Vector{String},
-                              parameter_ids::Vector{String},
-                              p_PEtab::Union{Vector{String}, Nothing})::Function
+function _get_callback_affect(
+        event::EventSBML, specie_ids::Vector{String}, parameter_ids::Vector{String},
+        p_PEtab::Union{Vector{String}, Nothing})::Function
     affect_call = _template_affect(event, specie_ids, parameter_ids, p_PEtab)
     return @RuntimeGeneratedFunction(Meta.parse(affect_call))
 end
 
 function _get_callback_init(event::EventSBML, specie_ids::Vector{String},
-                            parameter_ids::Vector{String}, tstops::String,
-                            first_callback::Bool,
-                            p_PEtab::Union{Vector{String}, Nothing})::Tuple{Function, Bool}
+        parameter_ids::Vector{String}, tstops::String, first_callback::Bool,
+        p_PEtab::Union{Vector{String}, Nothing})::Tuple{Function, Bool}
     discrete_callback = !(_condition_has_species(event.trigger, specie_ids))
     condition = event.trigger
     condition = _ids_to_cb_syntax(condition, specie_ids, :specie; integrator = false)
     condition = _ids_to_cb_syntax(condition, parameter_ids, :parameter; p_PEtab = p_PEtab)
 
-    affect_body = _template_affect(event, specie_ids, parameter_ids, p_PEtab;
-                                   only_body = true)
+    affect_body = _template_affect(
+        event, specie_ids, parameter_ids, p_PEtab; only_body = true)
 
-    init_call = _template_init(event, condition, affect_body, tstops, first_callback,
-                               discrete_callback)
+    init_call = _template_init(
+        event, condition, affect_body, tstops, first_callback, discrete_callback)
     init_f! = @RuntimeGeneratedFunction(Meta.parse(init_call))
     has_init = event.trigger_initial_value == false || first_callback
     return init_f!, has_init
@@ -135,9 +135,9 @@ function _get_event_direction(event::EventSBML, discrete_callback::Bool)::Symbol
     return event_direction
 end
 
-function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
-                     parameter_ids::Vector{String}, float_tspan::Bool,
-                     p_PEtab::Union{Vector{String}, Nothing})::String
+function _get_tstops(
+        model_SBML::ModelSBML, specie_ids::Vector{String}, parameter_ids::Vector{String},
+        float_tspan::Bool, p_PEtab::Union{Vector{String}, Nothing})::String
     tstops = String[]
     for event in values(model_SBML.events)
         if _condition_has_species(event.trigger, specie_ids)
@@ -154,9 +154,8 @@ function _get_tstops(model_SBML::ModelSBML, specie_ids::Vector{String},
         condition_symbolic = eval(Meta.parse(condition))
         local tstop
         try
-            tstop = string.(Symbolics.symbolic_linear_solve(condition_symbolic,
-                                                            variables_symbolic[1],
-                                                            simplify = true))
+            tstop = string.(Symbolics.symbolic_linear_solve(
+                condition_symbolic, variables_symbolic[1], simplify = true))
         catch
             throw(SBMLSupport("Not possible to solve for time event $(event.name) is activated"))
         end
@@ -178,10 +177,9 @@ function _condition_has_species(condition::String, specie_ids::Vector{String})::
     return false
 end
 
-# TODO: When work also use interface for species in assignment
-function _ids_to_cb_syntax(formula::String, ids::Vector{String}, id_type::Symbol;
-                           integrator::Bool = true, utmp::Bool = false,
-                           p_PEtab::Union{Vector{String}, Nothing} = nothing)::String
+function _ids_to_cb_syntax(
+        formula::String, ids::Vector{String}, id_type::Symbol; integrator::Bool = true,
+        utmp::Bool = false, p_PEtab::Union{Vector{String}, Nothing} = nothing)::String
     @assert id_type in [:specie, :parameter] "Invalid id type $id_type when parsing to callback syntax"
     if id_type == :parameter
         @assert integrator==true "Parameter not given via integrator in callback"

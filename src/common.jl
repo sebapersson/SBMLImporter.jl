@@ -4,7 +4,7 @@ function _isequal(x1::T, x2::T)::Bool where {T <: VariableSBML}
 end
 
 function _replace_variable(formula::AbstractString, to_replace::String,
-                           replace_with::String)::String
+        replace_with::String)::String
     if !occursin(to_replace, formula)
         return formula
     end
@@ -12,9 +12,9 @@ function _replace_variable(formula::AbstractString, to_replace::String,
     return replace(formula, to_replace_r => replace_with)
 end
 
-function _process_formula(math_expression::MathSBML, model_SBML::ModelSBML;
-                          rate_rule::Bool = false, assignment_rule::Bool = false,
-                          algebraic_rule::Bool = false, variable = "")::String
+function _process_formula(
+        math_expression::MathSBML, model_SBML::ModelSBML; rate_rule::Bool = false,
+        assignment_rule::Bool = false, algebraic_rule::Bool = false, variable = "")::String
     @unpack formula, user_fns = math_expression
     formula = insert_functions(formula, model_SBML.functions, user_fns)
     formula = _replace_variable(formula, "time", "t")
@@ -161,7 +161,7 @@ function _parse_variable(x::Union{Nothing, String, Real}; default::String = ""):
 end
 
 function _get_times_appear(id::String, formula::AbstractString;
-                           isfunction::Bool = true)::Integer
+        isfunction::Bool = true)::Integer
     pattern = isfunction ? Regex("\\b" * id * "\\(") : Regex("\\b" * id)
     return count(pattern, formula)
 end
@@ -186,7 +186,7 @@ function _is_event_assigned(variable::Union{Nothing, String}, model_SBML::ModelS
 end
 
 function _get_specieref(variable::String,
-                        libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
+        libsbml_model::SBML.Model)::Union{Nothing, SBML.SpeciesReference}
     for reactions in values(libsbml_model.reactions)
         for reactant in reactions.reactants
             reactant.id == variable && return reactant
@@ -212,7 +212,7 @@ function _get_model_variable(variable::String, model_SBML::ModelSBML)
 end
 
 function _add_ident_info!(variable::VariableSBML, math_expression::MathSBML,
-                          model_SBML::ModelSBML)::Nothing
+        model_SBML::ModelSBML)::Nothing
     @unpack has_reaction_ids, has_rateOf, has_specieref = variable
     reaction_ids = math_expression.has_reaction_ids
     rateOf = math_expression.has_rateOf
@@ -253,8 +253,7 @@ function _adjust_assignment_rule_variables(formula::String, model_SBML::ModelSBM
     return formula
 end
 
-function _find_indices_outside_paranthesis(x::Char, formula::AbstractString;
-                                           start_depth = 0)::Vector{Integer}
+function _find_indices_outside_paranthesis(x::Char, formula::AbstractString; start_depth = 0)::Vector{Integer}
     out = Int64[]
     paranthesis_depth = start_depth
     for (i, char) in pairs(formula)
@@ -271,8 +270,7 @@ function _find_indices_outside_paranthesis(x::Char, formula::AbstractString;
     return out
 end
 
-function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart = 1,
-                            iend = 0)::Vector{String}
+function _split_by_indicies(str::String, indices::Vector{<:Integer}; istart = 1, iend = 0)::Vector{String}
     isempty(str[istart:(end - iend)]) && return String[]
     length(indices) == 0 && return [str[istart:(end - iend)]]
 
@@ -316,8 +314,8 @@ end
 
 function get_rule_variables!(model_SBML::ModelSBML)::Nothing
     rule_variables = Iterators.flatten((model_SBML.rate_rule_variables,
-                                        model_SBML.assignment_rule_variables,
-                                        model_SBML.algebraic_rule_variables))
+        model_SBML.assignment_rule_variables,
+        model_SBML.algebraic_rule_variables))
     rule_variables = unique(rule_variables)
     filter!(x -> !haskey(model_SBML.generated_ids, x), rule_variables)
     for var in rule_variables

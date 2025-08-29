@@ -1,6 +1,5 @@
 function _get_odeproblem(model_SBML_prob::ModelSBMLProb,
-                         model_SBML::ModelSBML)::Tuple{SciMLBase.ODEProblem, Function,
-                                                       CallbackSet}
+        model_SBML::ModelSBML)::Tuple{SciMLBase.ODEProblem, Function, CallbackSet}
     _fode = _template_odeproblem(model_SBML_prob, model_SBML)
     fode = @RuntimeGeneratedFunction(Meta.parse(_fode))
 
@@ -18,7 +17,7 @@ function _get_odeproblem(model_SBML_prob::ModelSBMLProb,
     # about parameter and specie ordering in the ODEProblem. This information is not
     # needed if the model is parsed into a System
     cb = create_callbacks(oprob, model_SBML, model_SBML.name; p_PEtab = model_SBML_prob.ps,
-                          float_tspan = true, _specie_ids = model_SBML_prob.umodel)
+        float_tspan = true, _specie_ids = model_SBML_prob.umodel)
     return oprob, fu0, cb
 end
 

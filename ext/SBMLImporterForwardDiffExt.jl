@@ -1,7 +1,7 @@
 module SBMLImporterForwardDiffExt
 
-using ForwardDiff
-using SBMLImporter
+import ForwardDiff
+import SBMLImporter
 
 """
     dual_to_float(x::ForwardDiff.Dual)::AbstractFloat

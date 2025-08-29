@@ -12,6 +12,6 @@ function _parse_parameter(parameter_id::String, parameter::SBML.Parameter)::Para
     formula = _parse_variable(parameter.value; default = "0.0")
     constant = _parse_bool(parameter.constant)
     initial_value = ""
-    return ParameterSBML(parameter_id, constant, formula, initial_value, false, false,
-                         false, false, false, false)
+    return ParameterSBML(parameter_id, constant, formula, initial_value,
+        false, false, false, false, false, false)
 end

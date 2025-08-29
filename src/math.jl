@@ -51,12 +51,11 @@ function parse_math(math_sbml::SBMLMathVariables, libsbml_model::SBML.Model)::Ma
     end
     return math_expression
 end
-function parse_math(math_sbml::Nothing, libsbml_model::SBML.Model)::MathSBML
+function parse_math(::Nothing, ::SBML.Model)::MathSBML
     return MathSBML("", String[], String[], String[], false, false)
 end
 
-function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
-                     libsbml_model::SBML.Model)::String
+function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML, libsbml_model::SBML.Model)::String
     fn = _parse_fn(math_sbml, libsbml_model.function_definitions)
     push!(math_expression.fns, fn)
 
@@ -91,8 +90,8 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML,
     return fn * "(" * prod(args .* ", ")[1:(end - 2)] * ")"
 end
 _parse_math(math::SBML.MathVal, ::MathSBML, ::SBML.Model)::String = string(math.val)
-_parse_math(math::SBML.MathTime, ::MathSBML, ::SBML.Model)::String = "t"
-_parse_math(math::SBML.MathAvogadro, ::MathSBML, ::SBML.Model)::String = "6.02214179e23"
+_parse_math(::SBML.MathTime, ::MathSBML, ::SBML.Model)::String = "t"
+_parse_math(::SBML.MathAvogadro, ::MathSBML, ::SBML.Model)::String = "6.02214179e23"
 function _parse_math(math::SBML.MathIdent, math_expression::MathSBML, ::SBML.Model)::String
     id = string(math.id)
     push!(math_expression.math_idents, id)
