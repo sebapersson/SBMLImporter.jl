@@ -37,4 +37,17 @@ There are currently three other SBML related packages in Julia:
 
 ## Citation
 
-We will soon publish a paper you can cite if you found SBMLImporter helpful in your work.
+If you use SBMLImporter in work that is published, please cite the paper below:
+
+```bibtex
+@article{PEtabBioinformatics2025,
+  title={PEtab.jl: advancing the efficiency and utility of dynamic modelling},
+  author={Persson, Sebastian and Fr{\"o}hlich, Fabian and Grein, Stephan and Loman, Torkel and Ognissanti, Damiano and Hasselgren, Viktor and Hasenauer, Jan and Cvijovic, Marija},
+  journal={Bioinformatics},
+  volume={41},
+  number={9},
+  pages={btaf497},
+  year={2025},
+  publisher={Oxford University Press}
+}
+```
