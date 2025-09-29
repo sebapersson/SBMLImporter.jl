@@ -40,7 +40,7 @@ If you have any problems using SBMLImporter, here are some helpful tips:
 
 ## Citation
 
-If you use the SBMLImporter package in work that results in a publication, please cite the paper below:
+If you use SBMLImporter in work that is published, please cite the paper below:
 
 ```bibtex
 @article{PEtabBioinformatics2025,
