@@ -1,7 +1,7 @@
 function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::ModelSBML)
     name = model_SBML.name
     # The ReactionSystem must be built via eval, as creating a function that returns
-    # the rn fails for large models
+    # the rn fails for large models. Somehow, not defining t via eval as here fails.
     eval(Meta.parse("t = Catalyst.default_t()"))
     eval(Meta.parse("Differential = Catalyst.default_time_deriv()"))
     # A model must have either variables or species, which dictates the sps call to
@@ -40,7 +40,8 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
         isnothing(_r) && continue
         push!(reactions_rn, _r)
     end
-    rn = Catalyst.ReactionSystem(reactions_rn, t, sps_arg, ps; name = Symbol(name),
+    rn = Catalyst.ReactionSystem(
+        reactions_rn, Catalyst.default_t(), sps_arg, ps; name = Symbol(name),
         combinatoric_ratelaws = model_SBML_sys.all_integer_S)
     specie_map = eval(Meta.parse(model_SBML_sys.specie_map))
     parameter_map = eval(Meta.parse(model_SBML_sys.parameter_map))
