@@ -117,7 +117,8 @@ end
 
 function _template_init(event::EventSBML, condition::String, affect_body::String,
         tstops::String, first_callback::Bool, discrete_callback::Bool)::String
-    init = "function init_" * event.name * "(c,u,t,integrator)\n"
+    init = "function init_" * event.name *
+           "(c, u, t, integrator, check_trigger_init::Bool)\n"
     # For DiscreteCallback's we might need to support tstops, these can be computed in the
     # init
     if first_callback == true
@@ -136,7 +137,7 @@ function _template_init(event::EventSBML, condition::String, affect_body::String
     end
 
     init *= "\n\tcond = " * condition * "\n"
-    init *= "\tif cond == true\n"
+    init *= "\tif check_trigger_init[1] == true && cond == true\n"
     init *= "\t" * affect_body * "\n\tend"
     init *= "\nend"
     return init

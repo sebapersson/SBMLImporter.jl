@@ -111,7 +111,10 @@ function _get_callback_init(event::EventSBML, specie_ids::Vector{String},
 
     init_call = _template_init(
         event, condition, affect_body, tstops, first_callback, discrete_callback)
-    init_f! = @RuntimeGeneratedFunction(Meta.parse(init_call))
+    _init_f! = @RuntimeGeneratedFunction(Meta.parse(init_call))
+    init_f! = let _check_trigger_init = [true]
+        (c, u, t, integrator) -> _init_f!(c, u, t, integrator, _check_trigger_init)
+    end
     has_init = event.trigger_initial_value == false || first_callback
     return init_f!, has_init
 end
