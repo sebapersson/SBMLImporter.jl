@@ -11,15 +11,254 @@ tspan = (0.0, 10.0)
 dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
 jprob = JumpProblem(prn.rn, dprob, Direct())</code></pre><p>The <code>JumpProblem</code> can be simulated with any solver from the <a href="https://github.com/SciML/JumpProcesses.jl">JumpProcesses.jl</a> package, such as the <code>SSAStepper</code>:</p><pre><code class="language-julia hljs">using Plots
 sol = solve(jprob, SSAStepper(), callback=cb)
-plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="8cb4ab63.svg" alt="Example block output"/><p>For more information on jump simulations, see <a href="https://github.com/SciML/JumpProcesses.jl">JumpProcesses.jl&#39;s documentation</a>. A guide to choosing a simulation algorithm can be found <a href="https://docs.sciml.ai/JumpProcesses/dev/jump_types/#Jump-Aggregators-for-Exact-Simulation">here</a>.</p><h2 id="SDE-simulations"><a class="docs-heading-anchor" href="#SDE-simulations">SDE simulations</a><a id="SDE-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#SDE-simulations" title="Permalink"></a></h2><p>To perform chemical Langevin SDE simulations, convert the reaction-system <code>prn.rn</code> into a <code>SDEProblem</code>.</p><pre><code class="language-julia hljs">using StochasticDiffEq
+plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="7041c6da.svg" alt="Example block output"/><p>For more information on jump simulations, see <a href="https://github.com/SciML/JumpProcesses.jl">JumpProcesses.jl&#39;s documentation</a>. A guide to choosing a simulation algorithm can be found <a href="https://docs.sciml.ai/JumpProcesses/dev/jump_types/#Jump-Aggregators-for-Exact-Simulation">here</a>.</p><h2 id="SDE-simulations"><a class="docs-heading-anchor" href="#SDE-simulations">SDE simulations</a><a id="SDE-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#SDE-simulations" title="Permalink"></a></h2><p>To perform chemical Langevin SDE simulations, convert the reaction-system <code>prn.rn</code> into a <code>SDEProblem</code>.</p><pre><code class="language-julia hljs">using StochasticDiffEq
 tspan = (0.0, 10.0)
-sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)</code></pre><p>The <code>SDEProblem</code> can be simulated with any solver from the <a href="https://github.com/SciML/StochasticDiffEq.jl">StochasticDiffEq.jl</a> package, such as the <code>LambaEM</code> solver:</p><pre><code class="language-julia hljs">sol = solve(sprob, LambaEM(), callback=cb)
-plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="a41769a2.svg" alt="Example block output"/><p>For more information on SDE simulations, see <a href="https://github.com/SciML/StochasticDiffEq.jl">StochasticDiffEq.jl&#39;s documentation</a>.</p><h2 id="ODE-simulations"><a class="docs-heading-anchor" href="#ODE-simulations">ODE simulations</a><a id="ODE-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#ODE-simulations" title="Permalink"></a></h2><p>To perform ODE simulations, first convert the reaction system (<code>prn.rn</code>) into an <code>ODESystem</code>.</p><pre><code class="language-julia hljs">using ModelingToolkit
+sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2535.4 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1817.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+    763.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+   2821.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   2927.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    574.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+   2098.1 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+    826.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given StochasticDiffEq was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolve with build ID ffffffff-ffff-ffff-174b-2770ddeebc58 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolve [8913a72c-1f9b-4ce2-8d82-65094dcecaec] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   2250.6 ms<span class="sgr33">  ? </span>StochasticDiffEq
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolve with build ID ffffffff-ffff-ffff-174b-2770ddeebc58 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolve [8913a72c-1f9b-4ce2-8d82-65094dcecaec] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2459.3 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1843.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+   2883.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2886.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+    773.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+   2153.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+    567.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqNonlinearSolve was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolve with build ID ffffffff-ffff-ffff-174b-2770ddeebc58 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolve [8913a72c-1f9b-4ce2-8d82-65094dcecaec] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+    832.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module NonlinearSolve with build ID ffffffff-ffff-ffff-174b-2770ddeebc58 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean NonlinearSolve [8913a72c-1f9b-4ce2-8d82-65094dcecaec] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2459.0 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqDifferentiation was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1832.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+   2125.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2448.2 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1858.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqDifferentiationSparseArraysExt was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+    265.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span></code></pre><p>The <code>SDEProblem</code> can be simulated with any solver from the <a href="https://github.com/SciML/StochasticDiffEq.jl">StochasticDiffEq.jl</a> package, such as the <code>LambaEM</code> solver:</p><pre><code class="language-julia hljs">sol = solve(sprob, LambaEM(), callback=cb)
+plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="6a1eb22c.svg" alt="Example block output"/><p>For more information on SDE simulations, see <a href="https://github.com/SciML/StochasticDiffEq.jl">StochasticDiffEq.jl&#39;s documentation</a>.</p><h2 id="ODE-simulations"><a class="docs-heading-anchor" href="#ODE-simulations">ODE simulations</a><a id="ODE-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#ODE-simulations" title="Permalink"></a></h2><p>To perform ODE simulations, first convert the reaction system (<code>prn.rn</code>) into an <code>ODESystem</code>.</p><pre><code class="language-julia hljs">using ModelingToolkit
 sys = structural_simplify(convert(ODESystem, prn.rn))</code></pre><p>Here we call <code>structural_simplify</code> to inline any potential assignment rules into the model equations. Given an <code>ODESystem</code>, a good sanity check is to inspect the generated ODEs:</p><pre><code class="language-julia hljs">equations(sys)</code></pre><p class="math-container">\[ \begin{align}
 \frac{\mathrm{d} X\left( t \right)}{\mathrm{d}t} &amp;= A C - C X\left( t \right) - B C X\left( t \right) + \left( X\left( t \right) \right)^{2} C Y\left( t \right) \\
 \frac{\mathrm{d} Y\left( t \right)}{\mathrm{d}t} &amp;= B C X\left( t \right) - \left( X\left( t \right) \right)^{2} C Y\left( t \right)
 \end{align}
  \]</p><p>Once we have an <code>ODESystem</code>, we can build an <code>ODEProblem</code>:</p><pre><code class="language-julia hljs">using OrdinaryDiffEq
 tspan = (0.0, 10.0)
-oprob = ODEProblem(sys, prn.u0, tspan, prn.p, jac=true)</code></pre><p>Setting <code>jac=true</code> means that the ODE Jacobian is computed symbolically, which often improves simulation performance. The <code>ODEProblem</code> can be simulated with any solver from the <a href="https://github.com/SciML/OrdinaryDiffEq.jl">OrdinaryDiffEq.jl</a> package, such as the <code>Rodas5P</code> solver:</p><pre><code class="language-julia hljs">sol = solve(oprob, Rodas5P(), callback=cb)
-plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="1d11d2fc.svg" alt="Example block output"/><p>For more information on ODE simulations, see <a href="https://github.com/SciML/OrdinaryDiffEq.jl">OrdinaryDiffEq.jl&#39;s documentation</a>. A guide to choosing an ODE solver can be found <a href="https://sebapersson.github.io/PEtab.jl/stable/default_options/">here</a>.</p><div class="admonition is-success" id="Importing-large-models-7f55ecaa15150d0a"><header class="admonition-header">Importing large models<a class="admonition-anchor" href="#Importing-large-models-7f55ecaa15150d0a" title="Permalink"></a></header><div class="admonition-body"><p>For large models with more than 1000 species, constructing the Jacobian for the <code>ODEProblem</code> can be time-consuming. Therefore, if model load time is a problem, setting <code>jac = false</code> can help.</p></div></div><h2 id="Changing-Parameter-Values-and/or-Initial-Values"><a class="docs-heading-anchor" href="#Changing-Parameter-Values-and/or-Initial-Values">Changing Parameter Values and/or Initial Values</a><a id="Changing-Parameter-Values-and/or-Initial-Values-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-Parameter-Values-and/or-Initial-Values" title="Permalink"></a></h2><p>One of the most common modeling operations is to modify model parameter values and/or initial values. Because <code>SBMLImporter</code> imports models as a Catalyst <code>ReactionSystem</code> that supports the <a href="https://github.com/SciML/SymbolicIndexingInterface.jl">SymbolicIndexingInterface</a>, these modifications are straightforward to perform at the <code>ODEProblem</code>, <code>SDEProblem</code>, or <code>JumpProblem</code> level.</p><p>Parameter values can be modified using <code>prob.ps[:param_id]</code>. For example, for the Brusselator imported as an <code>ODEProblem</code> above, the value of parameter <code>A</code> can be changed with:</p><pre><code class="language-julia hljs">oprob.ps[:A] = 2.0</code></pre><p>Initial values can be modified with <code>prob[:specie_id]</code>. For example, to change the initial value of the species <code>X</code> to <code>2.0</code>, do:</p><pre><code class="language-julia hljs">oprob[:X] = 2.0</code></pre><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><p>For additional modeling tasks that can be carried out with a Catalyst <code>ReactionSystem</code> (e.g., bifurcation analysis, parameter estimation, etc.), see the Catalyst <a href="https://github.com/SciML/Catalyst.jl">documentation</a>. If you encounter any problems with importing an SBML model, first consult the <a href="../FAQ/#FAQ">FAQ</a>. Additional details on importer options can be found in the <a href="../API/#API">API</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../API/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 11 December 2025 22:32">Thursday 11 December 2025</span>. Using Julia version 1.10.10.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+oprob = ODEProblem(sys, prn.u0, tspan, prn.p, jac=true)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2546.2 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1917.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    244.6 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   3099.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   3177.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   1124.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    821.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+   2940.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqExponentialRK</span>
+   3231.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqExtrapolation</span>
+   3279.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqRosenbrock</span>
+    950.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+   1889.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqStabilizedIRK</span>
+   2000.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqIMEXMultistep</span>
+   2065.1 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqSDIRK</span>
+   2244.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqPDIRK</span>
+   2969.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqFIRK</span>
+   1829.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqBDF</span>
+   2866.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDefault</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEq was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1081.0 ms<span class="sgr33">  ? </span>OrdinaryDiffEq
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2551.1 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1944.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    262.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqExtrapolation was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1917.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqExtrapolation</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2562.3 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1915.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    245.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   2638.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2673.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+    773.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    564.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    846.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqStabilizedIRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1037.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqStabilizedIRK</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2483.2 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1920.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    247.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   2647.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2663.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+    824.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    575.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    837.6 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqSDIRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1002.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqSDIRK</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2563.9 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1935.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    252.1 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   2702.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2702.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+    779.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    556.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    830.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+   1000.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqSDIRK</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqBDF was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqSDIRK with build ID ffffffff-ffff-ffff-c130-353e4a0b51b8 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqSDIRK [2d112036-d095-4a1e-ab9a-08536f3ecdbf] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1048.4 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqBDF</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqSDIRK with build ID ffffffff-ffff-ffff-c130-353e4a0b51b8 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqSDIRK [2d112036-d095-4a1e-ab9a-08536f3ecdbf] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2512.4 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1880.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    260.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqRosenbrock was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1898.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqRosenbrock</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2557.7 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1827.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   2548.2 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2657.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    257.3 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+    819.5 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    607.7 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    888.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+   1973.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqRosenbrock</span>
+   1014.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqSDIRK</span>
+   1037.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqBDF</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqDefault was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqRosenbrock with build ID ffffffff-ffff-ffff-c99d-9d3b59a5d0a0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqRosenbrock [43230ef6-c299-4910-a778-202eb28ce4ce] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1083.6 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDefault</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqRosenbrock with build ID ffffffff-ffff-ffff-c99d-9d3b59a5d0a0 is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqRosenbrock [43230ef6-c299-4910-a778-202eb28ce4ce] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2549.2 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1845.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   2529.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2642.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    244.7 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+    808.3 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    580.0 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    831.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqFIRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1873.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqFIRK</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module LinearSolveSparseArraysExt with build ID ffffffff-ffff-ffff-ce81-ff2eeeceb35a is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean LinearSolveSparseArraysExt [acf9803d-64eb-5f69-b965-a71e3e6e1ed4] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2425.7 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1856.9 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    241.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   2626.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+   2629.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+    809.9 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    574.1 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    873.6 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqPDIRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1237.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqPDIRK</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2542.0 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1932.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    249.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+   2675.8 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton</span>
+   2690.6 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveFirstOrder</span>
+    770.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolveQuasiNewton → NonlinearSolveQuasiNewtonForwardDiffExt</span>
+    565.4 ms<span class="sgr33">  ? </span><span class="sgr90">NonlinearSolve</span>
+    876.0 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqNonlinearSolve</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqIMEXMultistep was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1045.1 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqIMEXMultistep</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+<span class="sgr32"><span class="sgr1">Precompiling</span></span> packages...
+   2549.0 ms<span class="sgr33">  ? </span><span class="sgr90">LinearSolve → LinearSolveSparseArraysExt</span>
+   1884.2 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation</span>
+    274.8 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqDifferentiation → OrdinaryDiffEqDifferentiationSparseArraysExt</span>
+<span class="sgr36"><span class="sgr1">Info</span></span> Given OrdinaryDiffEqExponentialRK was explicitly requested, output will be shown live 
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span>
+   1652.5 ms<span class="sgr33">  ? </span><span class="sgr90">OrdinaryDiffEqExponentialRK</span>
+<span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Module OrdinaryDiffEqDifferentiation with build ID ffffffff-ffff-ffff-8c8b-d967360a0e6c is missing from the cache.
+<span class="sgr33"><span class="sgr1">│ </span></span>This may mean OrdinaryDiffEqDifferentiation [4302a76b-040a-498a-8c04-15b101fed76b] does not support precompilation but is imported by a module that does.
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ Base loading.jl:2638</span></code></pre><p>Setting <code>jac=true</code> means that the ODE Jacobian is computed symbolically, which often improves simulation performance. The <code>ODEProblem</code> can be simulated with any solver from the <a href="https://github.com/SciML/OrdinaryDiffEq.jl">OrdinaryDiffEq.jl</a> package, such as the <code>Rodas5P</code> solver:</p><pre><code class="language-julia hljs">sol = solve(oprob, Rodas5P(), callback=cb)
+plot(sol; xlabel = &quot;Time [s]&quot;, ylabel = &quot;Protein amount&quot;)</code></pre><img src="7903e382.svg" alt="Example block output"/><p>For more information on ODE simulations, see <a href="https://github.com/SciML/OrdinaryDiffEq.jl">OrdinaryDiffEq.jl&#39;s documentation</a>. A guide to choosing an ODE solver can be found <a href="https://sebapersson.github.io/PEtab.jl/stable/default_options/">here</a>.</p><div class="admonition is-success" id="Importing-large-models-7f55ecaa15150d0a"><header class="admonition-header">Importing large models<a class="admonition-anchor" href="#Importing-large-models-7f55ecaa15150d0a" title="Permalink"></a></header><div class="admonition-body"><p>For large models with more than 1000 species, constructing the Jacobian for the <code>ODEProblem</code> can be time-consuming. Therefore, if model load time is a problem, setting <code>jac = false</code> can help.</p></div></div><h2 id="Changing-Parameter-Values-and/or-Initial-Values"><a class="docs-heading-anchor" href="#Changing-Parameter-Values-and/or-Initial-Values">Changing Parameter Values and/or Initial Values</a><a id="Changing-Parameter-Values-and/or-Initial-Values-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-Parameter-Values-and/or-Initial-Values" title="Permalink"></a></h2><p>One of the most common modeling operations is to modify model parameter values and/or initial values. Because <code>SBMLImporter</code> imports models as a Catalyst <code>ReactionSystem</code> that supports the <a href="https://github.com/SciML/SymbolicIndexingInterface.jl">SymbolicIndexingInterface</a>, these modifications are straightforward to perform at the <code>ODEProblem</code>, <code>SDEProblem</code>, or <code>JumpProblem</code> level.</p><p>Parameter values can be modified using <code>prob.ps[:param_id]</code>. For example, for the Brusselator imported as an <code>ODEProblem</code> above, the value of parameter <code>A</code> can be changed with:</p><pre><code class="language-julia hljs">oprob.ps[:A] = 2.0</code></pre><p>Initial values can be modified with <code>prob[:specie_id]</code>. For example, to change the initial value of the species <code>X</code> to <code>2.0</code>, do:</p><pre><code class="language-julia hljs">oprob[:X] = 2.0</code></pre><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><p>For additional modeling tasks that can be carried out with a Catalyst <code>ReactionSystem</code> (e.g., bifurcation analysis, parameter estimation, etc.), see the Catalyst <a href="https://github.com/SciML/Catalyst.jl">documentation</a>. If you encounter any problems with importing an SBML model, first consult the <a href="../FAQ/#FAQ">FAQ</a>. Additional details on importer options can be found in the <a href="../API/#API">API</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../API/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 11 December 2025 22:42">Thursday 11 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
