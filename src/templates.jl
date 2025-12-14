@@ -115,7 +115,9 @@ function _template_affect(
     return affect_f
 end
 
-function _template_init(event::EventSBML, condition::String, affect_body::String, tstops::String, first_callback::Bool, discrete_callback::Bool, is_ifelse::Bool)::String
+function _template_init(
+        event::EventSBML, condition::String, affect_body::String, tstops::String,
+        first_callback::Bool, discrete_callback::Bool, is_ifelse::Bool)::String
     init = "function init_" * event.name *
            "(c, u, t, integrator, check_trigger_init::Bool)\n"
     # For DiscreteCallback's we might need to support tstops, these can be computed in the

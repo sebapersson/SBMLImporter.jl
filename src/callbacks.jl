@@ -109,7 +109,8 @@ function _get_callback_init(event::EventSBML, specie_ids::Vector{String},
     affect_body = _template_affect(
         event, specie_ids, parameter_ids, p_PEtab; only_body = true)
 
-    init_call = _template_init(event, condition, affect_body, tstops, first_callback, discrete_callback, event.is_ifelse)
+    init_call = _template_init(event, condition, affect_body, tstops,
+        first_callback, discrete_callback, event.is_ifelse)
     _init_f! = @RuntimeGeneratedFunction(Meta.parse(init_call))
     init_f! = let _check_trigger_init = [true]
         (c, u, t, integrator) -> _init_f!(c, u, t, integrator, _check_trigger_init)
