@@ -1,4 +1,6 @@
-function replace_ident!(model_SBML::ModelSBML, libsbml_model::SBML.Model, ident_replace::Symbol)::Nothing
+function replace_ident!(
+        model_SBML::ModelSBML, libsbml_model::SBML.Model, ident_replace::Symbol
+    )::Nothing
     @assert ident_replace in [:rateOf, :specieref, :reactionid] "Unknown ident $ident_replace to replace"
     if ident_replace == :rateOf
         f_replace = _replace_rateOf
@@ -12,7 +14,9 @@ function replace_ident!(model_SBML::ModelSBML, libsbml_model::SBML.Model, ident_
     for (_, variable) in Iterators.flatten((species, parameters, compartments))
         _has_ident(variable, ident_replace) == false && continue
         variable.formula = f_replace(variable.formula, model_SBML, libsbml_model)
-        variable.initial_value = f_replace(variable.initial_value, model_SBML, libsbml_model)
+        variable.initial_value = f_replace(
+            variable.initial_value, model_SBML, libsbml_model
+        )
     end
     for rule in values(model_SBML.algebraic_rules)
         ident_replace in [:specieref, :reactionid] && continue
@@ -64,8 +68,9 @@ function _replace_specieref(formula::String, model_SBML::ModelSBML, libsbml_mode
         # Initial assignments might not map to any model variables, so reparsing of
         # formula is needed.
         assignment = libsbml_model.initial_assignments[specie_reference_id]
-        s0 = _parse_assignment_formula(specie_reference_id, assignment, model_SBML,
-            libsbml_model)
+        s0 = _parse_assignment_formula(
+            specie_reference_id, assignment, model_SBML, libsbml_model
+        )
         s0 = "(" * s0.formula * ")"
         formula = _replace_variable(formula, specie_reference_id, s0)
     end
@@ -130,8 +135,11 @@ function _has_ident(event::EventSBML, trigger::Bool, ident_replace::Symbol)::Boo
     elseif ident_replace == :specieref
         trigger == true && return event.has_specieref_trigger
         trigger == false && return event.has_specieref_assignments
+    end
+
+    if trigger == true
+        return event.has_reaction_ids_trigger
     else
-        trigger == true && return event.has_reaction_ids_trigger
-        trigger == false && return event.has_reaction_ids_assignments
+        return event.has_reaction_ids_assignments
     end
 end

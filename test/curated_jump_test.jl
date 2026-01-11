@@ -5,7 +5,7 @@
 using Catalyst, JumpProcesses, SBMLImporter, OrdinaryDiffEqRosenbrock, Test
 
 # Creates models.
-prn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction=true)
+prn, cb = load_SBML(joinpath(@__DIR__, "Models", "brusselator.xml"), massaction = true)
 rn_sbml = prn.rn
 u0_sbml = prn.u0
 ps_sbml = prn.p

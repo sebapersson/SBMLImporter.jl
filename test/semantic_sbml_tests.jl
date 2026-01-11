@@ -20,7 +20,7 @@ function check_test_case(test_case, solver)
     @info "Test case $test_case"
 
     base_url = "https://raw.githubusercontent.com/sbmlteam/sbml-test-suite/master/cases/" *
-               "semantic/$test_case/$test_case"
+        "semantic/$test_case/$test_case"
     sbml_urls = get_sbml_urls(base_url)
 
     _results_url = base_url * "-results.csv"
@@ -29,9 +29,11 @@ function check_test_case(test_case, solver)
 
     # As it stands I cannot "hack" a parameter value at time zero, but the model simulation values
     # are correct. Border case we pass
-    _cases = ["00995", "00996", "00997", "01284", "01510", "01527", "01596", "01663",
-              "01686", "01684", "01685", "01694", "01695", "01696", "01697", "01698",
-              "01699", "01700", "01719", "00928", "00929", "01693"]
+    _cases = [
+        "00995", "00996", "00997", "01284", "01510", "01527", "01596", "01663",
+        "01686", "01684", "01685", "01694", "01695", "01696", "01697", "01698",
+        "01699", "01700", "01719", "00928", "00929", "01693",
+    ]
     if test_case in _cases
         results = results[2:end, :]
     end
@@ -62,21 +64,27 @@ function check_test_case(test_case, solver)
 
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-        model_SBML = SBMLImporter.parse_SBML(sbml_string, false, model_as_string = true,
-                                             inline_assignment_rules=false)
+        model_SBML = SBMLImporter.parse_SBML(
+            sbml_string, false, model_as_string = true, inline_assignment_rules = false
+        )
         # If stoichiometryMath occurs we need to convert the SBML file to a level 3 file
         # to properly handle it
         if occursin("stoichiometryMath", sbml_string) == false
             libsbml_model = readSBMLFromString(sbml_string)
         else
-            libsbml_model = readSBMLFromString(sbml_string,
-                                               doc -> begin
-                                                   set_level_and_version(3, 2)(doc)
-                                                   convert_promotelocals_expandfuns(doc)
-                                               end)
+            libsbml_model = readSBMLFromString(
+                sbml_string,
+                doc -> begin
+                    set_level_and_version(3, 2)(doc)
+                    convert_promotelocals_expandfuns(doc)
+                end
+            )
         end
 
-        prn, cb = load_SBML(sbml_string, model_as_string = true, inline_assignment_rules = false, ifelse_to_callback=ifelse_to_callback)
+        prn, cb = load_SBML(
+            sbml_string, model_as_string = true, inline_assignment_rules = false,
+            ifelse_to_callback = ifelse_to_callback
+        )
         if isempty(model_SBML.algebraic_rules)
             osys = structural_simplify(convert(ODESystem, prn.rn))
         else
@@ -84,8 +92,9 @@ function check_test_case(test_case, solver)
             osys = structural_simplify(_sys)
         end
         oprob = ODEProblem(osys, prn.u0, (0.0, tmax), prn.p, jac = true)
-        sol = solve(oprob, solver, abstol = 1e-12, reltol = 1e-12, saveat = tsave,
-                    callback = cb)
+        sol = solve(
+            oprob, solver, abstol = 1.0e-12, reltol = 1.0e-12, saveat = tsave, callback = cb
+        )
         model_parameters = string.(parameters(sol.prob.f.sys))
 
         for _component_test in components_test
@@ -134,6 +143,7 @@ function check_test_case(test_case, solver)
             @test all(absdiff .< abstol_test .+ reltol_test .* abs.(expected_res))
         end
     end
+    return nothing
 end
 
 # Get test cases currently not passing

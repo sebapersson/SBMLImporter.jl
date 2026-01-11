@@ -6,15 +6,24 @@ include(joinpath(@__DIR__, "testsuite_support.jl"))
 function read_settings(settings_url::String)
     settings = String(take!(Downloads.download(settings_url, IOBuffer())))
     settings_lines = split(settings, '\n')
-    species_test = Symbol.(replace.(split(split(settings_lines[4], ":")[2], ','),
-                                    " " => ""))
+    species_test = Symbol.(
+        replace.(split(split(settings_lines[4], ":")[2], ','), " " => "")
+    )
 
-    mean_range = parse.(Float64,
-                        split(replace.(split(settings_lines[10], ":")[2], r"\(|\)| " => ""),
-                              ","))
-    sd_range = parse.(Float64,
-                      split(replace.(split(settings_lines[11], ":")[2], r"\(|\)| " => ""),
-                            ","))
+    mean_range = parse.(
+        Float64,
+        split(
+            replace.(split(settings_lines[10], ":")[2], r"\(|\)| " => ""),
+            ","
+        )
+    )
+    sd_range = parse.(
+        Float64,
+        split(
+            replace.(split(settings_lines[11], ":")[2], r"\(|\)| " => ""),
+            ","
+        )
+    )
 
     return species_test, mean_range, sd_range
 end
@@ -27,8 +36,7 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
     _results_url = base_url * "-results.csv"
     _results = String(take!(Downloads.download(_results_url, IOBuffer())))
     results = CSV.read(IOBuffer(_results), DataFrame)
-    t_save = "Time" in names(results) ? Float64.(results[!, :Time]) :
-             Float64.(results[!, :time])
+    t_save = "Time" in names(results) ? Float64.(results[!, :Time]) : Float64.(results[!, :time])
     t_save = Vector{Float64}(t_save)
     tmax = maximum(t_save)
 
@@ -48,11 +56,13 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         if occursin("stoichiometryMath", sbml_string) == false
             libsbml_model = readSBMLFromString(sbml_string)
         else
-            libsbml_model = readSBMLFromString(sbml_string,
-                                               doc -> begin
-                                                   set_level_and_version(3, 2)(doc)
-                                                   convert_promotelocals_expandfuns(doc)
-                                               end)
+            libsbml_model = readSBMLFromString(
+                sbml_string,
+                doc -> begin
+                    set_level_and_version(3, 2)(doc)
+                    convert_promotelocals_expandfuns(doc)
+                end
+            )
         end
 
         # Some of the test-cases do not follow mass-action kinetics, and do not allow
@@ -62,41 +72,51 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         else
             ma = true
         end
-        prn, cb = load_SBML(sbml_string, model_as_string = true, massaction = ma,
-                                  inline_assignment_rules = false)
+        prn, cb = load_SBML(
+            sbml_string, model_as_string = true, massaction = ma, inline_assignment_rules = false
+        )
         tspan = (0.0, tmax)
         dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
         jprob = JumpProblem(prn.rn, dprob, Direct(); save_positions = (false, false))
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
-            sol = solve(eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve,
-                        saveat = t_save, callback = cb)
+            sol = solve(
+                eprob, SSAStepper(), EnsembleSerial(), trajectories = nsolve,
+                saveat = t_save, callback = cb
+            )
         else
-            sol = solve(eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve,
-                        saveat = t_save, callback = cb)
+            sol = solve(
+                eprob, FunctionMap(), EnsembleSerial(), trajectories = nsolve,
+                saveat = t_save, callback = cb
+            )
         end
 
         for to_check in species_test
             to_check_no_whitespace = replace(string(to_check), " " => "")
-            i_specie = findfirst(x -> x == to_check_no_whitespace,
-                                 replace.(string.(unknowns(jprob.prob.f.sys)), "(t)" => ""))
+            i_specie = findfirst(
+                x -> x == to_check_no_whitespace,
+                replace.(string.(unknowns(jprob.prob.f.sys)), "(t)" => "")
+            )
             sim_mean, sim_var = SciMLBase.EnsembleAnalysis.timepoint_meanvar(sol, t_save)
             sim_mean = sim_mean[i_specie, :]
             sim_sd = sqrt.(sim_var[i_specie, :])
 
             if to_check_no_whitespace * "-mean" in names(results)
                 reference_sol = results[!, to_check_no_whitespace * "-mean"]
-                @test all(reference_sol .+ mean_range[1] .< sim_mean .<
-                          reference_sol .+ mean_range[2])
+                @test all(
+                    reference_sol .+ mean_range[1] .< sim_mean .< reference_sol .+ mean_range[2]
+                )
             end
 
             if to_check_no_whitespace * "-sd" in names(results)
                 reference_sol = results[!, to_check_no_whitespace * "-sd"]
-                @test all(reference_sol .+ sd_range[1] .< sim_sd .<
-                          reference_sol .+ sd_range[2])
+                @test all(
+                    reference_sol .+ sd_range[1] .< sim_sd .< reference_sol .+ sd_range[2]
+                )
             end
         end
     end
+    return nothing
 end
 
 cases_not_passing = reduce(vcat, values(get_stochastic_not_pass()))

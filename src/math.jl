@@ -84,7 +84,7 @@ function _parse_math(math_sbml::SBML.MathApply, math_expression::MathSBML, libsb
         fn *= string(nargs)
     end
     if fn == "piecewise" && nargs in [2, 4, 5]
-        @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended." maxlog=1
+        @warn "Piecewise with $nargs (not 3) arguments is allowed but not recomended." maxlog = 1
         fn *= string(nargs)
     end
     return fn * "(" * prod(args .* ", ")[1:(end - 2)] * ")"
@@ -119,8 +119,8 @@ function _parse_fn(math_sbml::SBML.MathApply, sbml_functions::Dict)::String
         throw(SBMLSupport("$fn with three conditions is not supported"))
     end
     if fn == "SpecialFunctions.gamma"
-        @warn "Factorial in the ODE model. SBMLImporter can handle factorials, but, " *
-              "solving the ODEs with factorial is numerically hard."
+        @warn "Factorial in the ODE model. SBMLImporter can handle factorials, but, \
+            solving the ODEs with factorial is numerically hard."
     end
     # Only empty for functions with arbibrary args
     if !isempty(nallowed_args)

@@ -21,12 +21,14 @@ function get_model_str(test_case)
     sbml_urls = get_sbml_urls(base_url)
     sbml_url = sbml_urls[end]
     sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
-    model_SBML = SBMLImporter.build_SBML_model(sbml_string, model_as_string = true,
-                                               inline_assignment_rules = false)
+    model_SBML = SBMLImporter.build_SBML_model(
+        sbml_string, model_as_string = true, inline_assignment_rules = false
+    )
 
     parsed_model_SBML = SBMLImporter._reactionsystem_from_SBML(model_SBML)
-    model_str = SBMLImporter.reactionsystem_to_string(parsed_model_SBML, false, "",
-                                                      model_SBML)
+    model_str = SBMLImporter.reactionsystem_to_string(
+        parsed_model_SBML, false, "", model_SBML
+    )
 
     return model_str, model_SBML
 end
@@ -42,7 +44,7 @@ function extract_tags(txt::AbstractString)
     pat = r"^\s*(componentTags|testTags)\s*:\s*(.*)$"m
     tags = Dict{Symbol, Vector{String}}()
     for m in eachmatch(pat, txt)
-        key   = m.captures[1]
+        key = m.captures[1]
         value = strip.(split(m.captures[2], ','))
         tags[Symbol(key)] = value
     end

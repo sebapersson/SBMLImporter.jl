@@ -37,8 +37,10 @@ function _add_inequality_functions!(model_SBML::ModelSBML)::Nothing
     return nothing
 end
 
-function insert_functions(formula::T, _functions::Dict,
-        fns_reaplce::Vector{String})::T where {T <: AbstractString}
+function insert_functions(
+        formula::T, _functions::Dict,
+        fns_reaplce::Vector{String}
+    )::T where {T <: AbstractString}
     isempty(fns_reaplce) && return formula
 
     nfunctions_replaced::Int64 = 0
@@ -86,7 +88,7 @@ end
 function _get_expression_insert(function_call::String, _function::FunctionSBML)::String
     args_insert = _extract_args_insert(function_call)
     @unpack args, body = _function
-    @assert length(args)==length(args_insert) "Number of arguments to insert does not match SBML function"
+    @assert length(args) == length(args_insert) "Number of arguments to insert does not match SBML function"
     function_inserted = deepcopy(body)
     for i in eachindex(args_insert)
         function_inserted = _replace_variable(function_inserted, args[i], args_insert[i])

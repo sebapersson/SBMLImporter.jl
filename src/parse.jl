@@ -6,9 +6,11 @@ to create a ReactionSystem.
 
 For testing path can be the model as a string if model_as_string=true.
 """
-function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = true,
+function parse_SBML(
+        path::String, massaction::Bool; ifelse_to_callback::Bool = true,
         model_as_string = true, inline_assignment_rules::Bool = true,
-        inline_kineticlaw_parameters::Bool = true)::ModelSBML
+        inline_kineticlaw_parameters::Bool = true
+    )::ModelSBML
     model_str = _get_model_as_str(path, model_as_string)
     check_support(path)
 
@@ -17,20 +19,25 @@ function parse_SBML(path::String, massaction::Bool; ifelse_to_callback::Bool = t
     if occursin("stoichiometryMath", model_str) == false
         libsbml_model = readSBMLFromString(model_str)
     else
-        libsbml_model = readSBMLFromString(model_str,
+        libsbml_model = readSBMLFromString(
+            model_str,
             doc -> begin
                 SBML.set_level_and_version(3, 2)(doc)
                 SBML.convert_promotelocals_expandfuns(doc)
-            end)
+            end
+        )
     end
 
-    return _parse_SBML(libsbml_model, ifelse_to_callback, inline_assignment_rules,
-        inline_kineticlaw_parameters, massaction)
+    return _parse_SBML(
+        libsbml_model, ifelse_to_callback, inline_assignment_rules,
+        inline_kineticlaw_parameters, massaction
+    )
 end
 
 function _parse_SBML(
         libsbml_model::SBML.Model, ifelse_to_callback::Bool, inline_assignment_rules::Bool,
-        inline_kineticlaw_parameters::Bool, massaction::Bool)::ModelSBML
+        inline_kineticlaw_parameters::Bool, massaction::Bool
+    )::ModelSBML
     model_SBML = ModelSBML(libsbml_model)
 
     parse_species!(model_SBML, libsbml_model, massaction)

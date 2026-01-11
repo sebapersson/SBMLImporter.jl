@@ -17,7 +17,7 @@ oprob1 = ODEProblem(prn1.rn, prn1.u0, (0.0, 10.0), prn1.p)
 sol1 = solve(oprob1, Rodas5P())
 oprob2 = ODEProblem(prn2.rn, prn2.u0, (0.0, 10.0), prn2.p)
 sol2 = solve(oprob2, Rodas5P())
-@test sum(reduce(vcat, sol1.u .- sol2.u).^2) ≤ 1e-10
+@test sum(reduce(vcat, sol1.u .- sol2.u) .^ 2) ≤ 1.0e-10
 
 # With duplicate id parameters, wherse the parameters have the same value and therefore
 # the model can be imported
