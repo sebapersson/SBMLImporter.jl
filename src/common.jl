@@ -75,9 +75,7 @@ function _trim_paranthesis(formula::String)::String
     formula = replace(formula, " " => "")
     length(formula) == 1 && return formula
     for _ in 1:100
-        cond1 = formula[1] == '(' && formula[end] == ')'
-        cond2 = formula[2] == '(' && formula[end - 1] == ')'
-        if cond1 && cond2
+        if (formula[1] == '(' && formula[end] == ')') && (formula[2] == '(' && formula[end - 1] == ')')
             formula = formula[2:(end - 1)]
         else
             return formula
