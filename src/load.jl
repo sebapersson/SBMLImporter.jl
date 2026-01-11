@@ -71,14 +71,18 @@ oprob = ODEProblem(prn.rn, prn.u0, tspan, prn.p)
 sol = solve(oprob, Rodas5P(), callback=cb)
 ```
 """
-function load_SBML(path::AbstractString; massaction::Bool = false, complete::Bool = true,
+function load_SBML(
+        path::AbstractString; massaction::Bool = false, complete::Bool = true,
         ifelse_to_callback::Bool = true, write_to_file::Bool = false,
         inline_assignment_rules::Bool = false, inline_kineticlaw_parameters::Bool = true,
-        model_as_string::Bool = false)::Tuple{ParsedReactionNetwork, CallbackSet}
-    model_SBML = parse_SBML(path, massaction; ifelse_to_callback = ifelse_to_callback,
+        model_as_string::Bool = false
+    )::Tuple{ParsedReactionNetwork, CallbackSet}
+    model_SBML = parse_SBML(
+        path, massaction; ifelse_to_callback = ifelse_to_callback,
         model_as_string = model_as_string,
         inline_assignment_rules = inline_assignment_rules,
-        inline_kineticlaw_parameters = inline_kineticlaw_parameters)
+        inline_kineticlaw_parameters = inline_kineticlaw_parameters
+    )
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML)
 
@@ -86,8 +90,8 @@ function load_SBML(path::AbstractString; massaction::Bool = false, complete::Boo
     cbset = create_callbacks(rn, model_SBML, model_SBML.name)
 
     if write_to_file == true && model_as_string == true
-        @warn "If the model is provided as a string we do not support writing it to " *
-              "file. Hence write_to_file argument is ignored"
+        @warn "If the model is provided as a string we do not support writing it to \
+            file. Hence write_to_file argument is ignored"
     elseif write_to_file == true
         dirsave = _get_dir_save(write_to_file, model_as_string, path)
         write_reactionsystem(model_SBML_sys, dirsave, model_SBML)

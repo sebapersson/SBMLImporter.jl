@@ -106,11 +106,14 @@ struct ModelSBML
     libsbml_rule_variables::Vector{String}
     reactionids::Vector{String}
 end
-function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[],
+function ModelSBML(
+        name::String; specie_reference_ids::Vector{String} = String[],
         conversion_factor::String = "", events = Dict{String, EventSBML}(),
         libsbml_rule_variables::Vector{String} = String[],
-        reactionids::Vector{String} = String[])::ModelSBML
-    model_SBML = ModelSBML(name,
+        reactionids::Vector{String} = String[]
+    )::ModelSBML
+    model_SBML = ModelSBML(
+        name,
         Dict{String, SpecieSBML}(),
         Dict{String, ParameterSBML}(),
         Dict{String, CompartmentSBML}(),
@@ -130,7 +133,8 @@ function ModelSBML(name::String; specie_reference_ids::Vector{String} = String[]
         specie_reference_ids,
         String[],
         libsbml_rule_variables,
-        reactionids)
+        reactionids
+    )
     return model_SBML
 end
 function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
@@ -148,10 +152,12 @@ function ModelSBML(libsbml_model::SBML.Model)::ModelSBML
     else
         reactionids = collect(keys(libsbml_model.reactions))
     end
-    return ModelSBML(name, specie_reference_ids = specie_reference_ids,
+    return ModelSBML(
+        name, specie_reference_ids = specie_reference_ids,
         conversion_factor = conversion_factor,
         libsbml_rule_variables = libsbml_rule_variables,
-        reactionids = reactionids)
+        reactionids = reactionids
+    )
 end
 
 struct ModelSBMLSystem

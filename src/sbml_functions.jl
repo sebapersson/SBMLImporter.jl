@@ -3,7 +3,8 @@
 # rateOf is a SBML function. This expression is replaced later, as reactions rates
 # have to be parsed for this stage.
 # nallowed_args=Int64[] is any number of args
-const SBML_FN_INFO = Dict("*" => (fn = "*", nallowed_args = [0, 1, 2]),
+const SBML_FN_INFO = Dict(
+    "*" => (fn = "*", nallowed_args = [0, 1, 2]),
     "+" => (fn = "+", nallowed_args = [0, 1, 2]),
     "-" => (fn = "-", nallowed_args = [1, 2]),
     "/" => (fn = "/", nallowed_args = [2]),
@@ -58,24 +59,34 @@ const SBML_FN_INFO = Dict("*" => (fn = "*", nallowed_args = [0, 1, 2]),
     "min" => (fn = "min", nallowed_args = [1, 2, 3, 4, 5]),
     "max" => (fn = "max", nallowed_args = [1, 2, 3, 4, 5]),
     "rem" => (fn = "rem", nallowed_args = Int64[2]),
-    "factorial" => (fn = "SpecialFunctions.gamma",
-        nallowed_args = [1]),
+    "factorial" => (
+        fn = "SpecialFunctions.gamma",
+        nallowed_args = [1],
+    ),
     "delay" => (fn = "delay", nallowed_args = Int64[]),
-    "implies" => (fn = "implies", nallowed_args = Int64[]))
+    "implies" => (fn = "implies", nallowed_args = Int64[])
+)
 
 const _F1 = FunctionSBML(["__x__", "__cond__", "__y__"], "ifelse(__cond__, __x__, __y__)")
 const _F2 = FunctionSBML(["__x__", "__cond__"], "ifelse(__cond__, __x__, 0)")
-const _F3 = FunctionSBML(["__x__", "__cond__", "__y__", "__z__"],
-    "ifelse(__cond__, __x__, __y__)")
-const _F4 = FunctionSBML(["__x__", "__cond1__", "__y__", "__cond2__", "__z__"],
-    "ifelse(__cond1__, __x__, ifelse(__cond2__, __y__, __z__))")
+const _F3 = FunctionSBML(
+    ["__x__", "__cond__", "__y__", "__z__"],
+    "ifelse(__cond__, __x__, __y__)"
+)
+const _F4 = FunctionSBML(
+    ["__x__", "__cond1__", "__y__", "__cond2__", "__z__"],
+    "ifelse(__cond1__, __x__, ifelse(__cond2__, __y__, __z__))"
+)
 
 const _F5 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0) + ifelse(__y__, 1, 0)")
 const _G1 = FunctionSBML(["__x__", "__y__"], "ifelse(__x__, 1, 0)*ifelse(__y__, 1, 0) == 1")
 const _G2 = FunctionSBML(["__x__", "__y__"], "sign(__BSUM__(__x__, __y__)) == 1")
-const _G3 = FunctionSBML(["__x__", "__y__"],
-    "-(__BSUM__(__x__, __y__))^2 + 2*(__BSUM__(__x__, __y__)) == 1")
-const PIECEWISE_FN = Dict("gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y__"),
+const _G3 = FunctionSBML(
+    ["__x__", "__y__"],
+    "-(__BSUM__(__x__, __y__))^2 + 2*(__BSUM__(__x__, __y__)) == 1"
+)
+const PIECEWISE_FN = Dict(
+    "gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y__"),
     "lt" => FunctionSBML(["__x__", "__y__"], "__x__ < __y__"),
     "geq" => FunctionSBML(["__x__", "__y__"], "__x__ >= __y__"),
     "leq" => FunctionSBML(["__x__", "__y__"], "__x__ <= __y__"),
@@ -96,6 +107,7 @@ const PIECEWISE_FN = Dict("gt" => FunctionSBML(["__x__", "__y__"], "__x__ > __y_
     "piecewise2" => _F2,
     "piecewise4" => _F3,
     "piecewise5" => _F4,
-    "__BSUM__" => _F5)
+    "__BSUM__" => _F5
+)
 const SBML_FN_NAMES::Vector{String} = getfield.(values(SBML_FN_INFO), :fn)
 const PIECEWISE_FN_NAMES::Vector{String} = collect(keys(PIECEWISE_FN))

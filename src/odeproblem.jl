@@ -1,5 +1,6 @@
-function _get_odeproblem(model_SBML_prob::ModelSBMLProb,
-        model_SBML::ModelSBML)::Tuple{SciMLBase.ODEProblem, Function, CallbackSet}
+function _get_odeproblem(
+        model_SBML_prob::ModelSBMLProb, model_SBML::ModelSBML
+    )::Tuple{SciMLBase.ODEProblem, Function, CallbackSet}
     _fode = _template_odeproblem(model_SBML_prob, model_SBML)
     fode = @RuntimeGeneratedFunction(Meta.parse(_fode))
 
@@ -16,8 +17,10 @@ function _get_odeproblem(model_SBML_prob::ModelSBMLProb,
     # Potential model callbacks. p_PEtab and _specie_ids are needed to inform the importer
     # about parameter and specie ordering in the ODEProblem. This information is not
     # needed if the model is parsed into a System
-    cb = create_callbacks(oprob, model_SBML, model_SBML.name; p_PEtab = model_SBML_prob.ps,
-        float_tspan = true, _specie_ids = model_SBML_prob.umodel)
+    cb = create_callbacks(
+        oprob, model_SBML, model_SBML.name; p_PEtab = model_SBML_prob.ps,
+        float_tspan = true, _specie_ids = model_SBML_prob.umodel
+    )
     return oprob, fu0, cb
 end
 
@@ -25,12 +28,12 @@ function ModelSBMLProb(model_SBML)
     species, variables, specie_map = _get_system_variables(model_SBML, true)
     umodel = _get_umodel(species, variables)
     umap = _get_ps_or_umap(specie_map, :u)
-    @assert length(umap)==length(umodel) "Map and u length does not match in ODE parsing"
+    @assert length(umap) == length(umodel) "Map and u length does not match in ODE parsing"
 
     parameters, parameter_map = _get_system_parameters(model_SBML)
     ps = split(parameters[28:(end - 1)], " ") .|> string
     psmap = _get_ps_or_umap(parameter_map, :ps)
-    @assert length(ps)==length(psmap) "Map and ps length does not match in ODE parsing"
+    @assert length(ps) == length(psmap) "Map and ps length does not match in ODE parsing"
 
     # RHS ODEs (in the order of umodel)
     odes = fill("", length(umodel))

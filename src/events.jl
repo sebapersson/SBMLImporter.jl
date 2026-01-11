@@ -1,14 +1,16 @@
 function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothing
     event_index = 1
     for (event_id, event) in libsbml_model.events
-        (trigger, have_ridents1, have_rateOf1,
-            have_specieref1) = _parse_trigger(event.trigger, model_SBML, libsbml_model)
+        (trigger, have_ridents1, have_rateOf1, have_specieref1) = _parse_trigger(
+            event.trigger, model_SBML, libsbml_model
+        )
         if isempty(trigger)
             continue
         end
 
-        (assignments, have_ridents2, have_rateOf2,
-            have_specieref2) = _parse_assignments(event.event_assignments, model_SBML, libsbml_model)
+        (assignments, have_ridents2, have_rateOf2, have_specieref2) = _parse_assignments(
+            event.event_assignments, model_SBML, libsbml_model
+        )
 
         if !isnothing(event_id)
             name = event_id
@@ -19,14 +21,17 @@ function parse_events!(model_SBML::ModelSBML, libsbml_model::SBML.Model)::Nothin
         model_SBML.events[name] = EventSBML(
             name, trigger, assignments, event.trigger.initial_value,
             have_ridents1, have_ridents2, have_rateOf1,
-            have_rateOf2, have_specieref1, have_specieref2, false)
+            have_rateOf2, have_specieref1, have_specieref2, false
+        )
     end
     return nothing
 end
 
 # Rewrites triggers in events to the correct Julia syntax
-function _parse_trigger(trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::ModelSBML,
-        libsbml_model::SBML.Model)::Tuple{String, Bool, Bool, Bool}
+function _parse_trigger(
+        trigger_sbml::Union{Nothing, SBML.Trigger}, model_SBML::ModelSBML,
+        libsbml_model::SBML.Model
+    )::Tuple{String, Bool, Bool, Bool}
     math_expression = parse_math(trigger_sbml.math, libsbml_model)
     if any(in.(["if", "and", "xor"], [math_expression.fns]))
         throw(SBMLSupport("Events with gated triggers (if, and, xor) are not supported"))
@@ -55,7 +60,8 @@ end
 
 function _parse_assignments(
         event_assignments::Vector{SBML.EventAssignment}, model_SBML::ModelSBML,
-        libsbml_model::SBML.Model)::Tuple{Vector{String}, Bool, Bool, Bool}
+        libsbml_model::SBML.Model
+    )::Tuple{Vector{String}, Bool, Bool, Bool}
     formulas, assigned_to = String[], String[]
     have_specieref, have_ridents, have_rateOf = false, false, false
     for event_assignment in event_assignments
@@ -81,11 +87,12 @@ function _parse_assignments(
 
         if _is_model_variable(assign_to, model_SBML) == false
             @warn "Event creates new specie $(assign_to). Happens when $(assign_to) does " *
-                  "not correspond to any model specie, parameter, or compartment."
+                "not correspond to any model specie, parameter, or compartment."
             c = first(keys(libsbml_model.compartments))
             model_SBML.species[assign_to] = SpecieSBML(
                 assign_to, false, false, "1.0", "", c, "", :Amount,
-                false, false, false, false, false, false, false)
+                false, false, false, false, false, false, false
+            )
             _add_ident_info!(model_SBML.species[assign_to], math_expression, model_SBML)
         end
 
@@ -106,8 +113,9 @@ function _parse_assignments(
     return formulas, have_ridents, have_rateOf, have_specieref
 end
 
-function _adjust_event_compartment!!(formulas::Vector{String}, assigned_to::Vector{String},
-        model_SBML::ModelSBML)::Nothing
+function _adjust_event_compartment!!(
+        formulas::Vector{String}, assigned_to::Vector{String}, model_SBML::ModelSBML
+    )::Nothing
     if any([haskey(model_SBML.compartments, a) for a in assigned_to]) == false
         return nothing
     end
@@ -139,7 +147,7 @@ function _adjust_event_compartment!!(formulas::Vector{String}, assigned_to::Vect
 end
 
 function force_include_event_variables!(model_SBML::ModelSBML)::Nothing
-    # Parameters/comparments can be non-constant, have a constant rhs and they change value
+    # Parameters/compartments can be non-constant, have a constant rhs and they change value
     # due to event assignments. To avoid the variable being simplified away by
     # structurally_simplify the variable is set to have zero derivative
     variables = Iterators.flatten((model_SBML.parameters, model_SBML.compartments))
