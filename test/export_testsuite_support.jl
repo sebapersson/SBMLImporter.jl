@@ -14,10 +14,12 @@ function get_df_export()
         test_case = repeat("0", 5 - length(string(i))) * string(i)
         test_case in testcases_not_supported && continue
         tags = get_test_tags(test_case)
-        df_tmp = DataFrame(testCase = test_case,
-                        componentTags = prod(tags[:componentTags] .* ";")[1:end-1],
-                        testTags = prod(tags[:testTags] .* ";")[1:end-1],
-                        testSuite = "semantic")
+        df_tmp = DataFrame(
+            testCase = test_case,
+            componentTags = prod(tags[:componentTags] .* ";")[1:(end - 1)],
+            testTags = prod(tags[:testTags] .* ";")[1:(end - 1)],
+            testSuite = "semantic"
+        )
         df_export = vcat(df_export, df_tmp)
     end
 
@@ -29,10 +31,12 @@ function get_df_export()
         test_case = repeat("0", 5 - length(string(i))) * string(i)
         test_case in testcases_not_supported && continue
         tags = get_test_tags(test_case)
-        df_tmp = DataFrame(testCase = test_case,
-                        componentTags = prod(tags[:componentTags] .* ";")[1:end-1],
-                        testTags = prod(tags[:testTags] .* ";")[1:end-1],
-                        testSuite = "stochastic")
+        df_tmp = DataFrame(
+            testCase = test_case,
+            componentTags = prod(tags[:componentTags] .* ";")[1:(end - 1)],
+            testTags = prod(tags[:testTags] .* ";")[1:(end - 1)],
+            testSuite = "stochastic"
+        )
         df_export = vcat(df_export, df_tmp)
     end
     return df_export
