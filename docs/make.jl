@@ -27,10 +27,10 @@ makedocs(;
         "API" => "API.md",
         "SBML support and ecosystem" =>
             Any[
-                "Supported SBML features" => "support.md",
-                "Other SBML related Julia packages" => "differences.md",
-            ],
-        "Contributing" => "contributing.md"
+            "Supported SBML features" => "support.md",
+            "Other SBML related Julia packages" => "differences.md",
+        ],
+        "Contributing" => "contributing.md",
     ],
 )
 
