@@ -22,3 +22,6 @@ docs/site/
 # committed for packages, but should be committed for applications that require a static
 # environment.
 Manifest.toml
+
+docs/node_modules
+docs/package-lock.json

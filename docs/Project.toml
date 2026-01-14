@@ -1,6 +1,7 @@
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"

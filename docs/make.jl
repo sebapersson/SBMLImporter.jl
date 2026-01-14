@@ -1,5 +1,6 @@
 using SBMLImporter
 using Documenter
+using DocumenterVitepress
 
 DocMeta.setdocmeta!(SBMLImporter, :DocTestSetup, :(using SBMLImporter); recursive = true)
 
@@ -12,22 +13,31 @@ format = Documenter.HTML(;
 
 makedocs(;
     modules = [SBMLImporter],
-    repo = "https://github.com/sebapersson/SBMLImporter.jl/blob/{commit}{path}#{line}",
+    sitename = "SBMLImporter.jl",
+    repo = Remotes.GitHub("sebapersson", "SBMLImporter.jl"),
+    authors = "Sebastian Persson, and contributors",
     checkdocs = :exports,
     warnonly = false,
-    format = format,
-    sitename = "SBMLImporter.jl",
+    format = DocumenterVitepress.MarkdownVitepress(
+        repo = "https://github.com/sebapersson/SBMLImporter.jl",
+    ),
     pages = [
         "Home" => "index.md",
         "Tutorial" => "tutorial.md",
         "API" => "API.md",
-        "Supported SBML features" => "support.md",
-        "Other SBML related Julia packages" => "differences.md",
-        "FAQs" => "FAQ.md",
+        "SBML support and ecosystem" =>
+            Any[
+            "Supported SBML features" => "support.md",
+            "Other SBML related Julia packages" => "differences.md",
+        ],
+        "Contributing" => "contributing.md",
     ],
 )
 
-deploydocs(;
+DocumenterVitepress.deploydocs(
     repo = "github.com/sebapersson/SBMLImporter.jl.git",
+    target = "build", # this is where Vitepress stores its output
     devbranch = "main",
+    branch = "gh-pages",
+    push_preview = true,
 )

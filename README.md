@@ -8,14 +8,25 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 
-SBMLImporter is a Julia package for importing dynamic [Systems Biology Markup Language (SBML)](https://sbml.org/) models into either a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations, or an `ODEProblem` for deterministic simulations. Some major highlights of SBMLImporter are:
+[Getting Started](https://sebapersson.github.io/SBMLImporter.jl/stable/tutorial/) |
+[Documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/) |
+[Contributing](https://sebapersson.github.io/SBMLImporter.jl/stable/contributing/)
 
-* It imports models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or an `ODEProblem`.
-* It supports a majority of SBML features, such as dynamic compartments, events, rules, piecewise (ifelse) expressions, and units.
-* It is thoroughly tested against both the SBML test suite and a large collection of published models.
-* It integrates with [PEtab.jl](https://github.com/sebapersson/PEtab.jl) for fitting SBML models to data.
+SBMLImporter is a Julia package for importing dynamic
+[Systems Biology Markup Language(SBML)](https://sbml.org/) models into either a
+`JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations,
+or an `ODEProblem` for deterministic simulations. Major features are:
 
-Additional information on features and tutorials can be found in the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
+- Imports an SBML models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl)
+  `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or
+  an `ODEProblem`.
+- Support for a majority of SBML features, such as dynamic compartments, events, rules,
+  piecewise (`ifelse`) expressions, and units.
+- Thoroughly tested against both the
+  [SBML test suite](https://github.com/sbmlteam/sbml-test-suite) and a large collection of
+  published models.
+- Integrates with [PEtab.jl](https://github.com/sebapersson/PEtab.jl) for parameter
+  estimating SBML models.
 
 ## Installation
 
