@@ -30,7 +30,7 @@ makedocs(;
             "Supported SBML features" => "support.md",
             "Other SBML related Julia packages" => "differences.md",
         ],
-        "Contributing" => "contributing.md",
+        "Contributing" => "CONTRIBUTING.md",
     ],
 )
 
