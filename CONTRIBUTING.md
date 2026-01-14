@@ -1,4 +1,4 @@
-# [Contributing to SBMLImporter.jl](@id contribute)
+# Contributing to SBMLImporter.jl
 
 First, thanks for taking the time to contribute to SBMLImporter.jl! Contributions of all
 kinds helps make the package better for everyone.
