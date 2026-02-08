@@ -16,7 +16,7 @@ c = getcompartment(sbml_species[1])
 """
 function getcompartment(s)::Union{Nothing, String}
     @assert !(s isa AbstractVector) "Input s = $s must be a Catalyst specie (not a Vector)"
-    md = ModelingToolkit.metadata(s)
+    md = ModelingToolkitBase.metadata(s)
     !haskey(md, CompartmentSBML) && return nothing
-    return ModelingToolkit.getmetadata(s, CompartmentSBML)
+    return ModelingToolkitBase.getmetadata(s, CompartmentSBML)
 end

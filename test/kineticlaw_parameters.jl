@@ -1,4 +1,4 @@
-using SBMLImporter, Catalyst, OrdinaryDiffEqRosenbrock, Test
+using Catalyst, OrdinaryDiffEqRosenbrock, SBMLImporter, Test
 
 #=
     Test that if kinetic law parameters are inlined correctly if the user selects that
@@ -19,15 +19,15 @@ oprob2 = ODEProblem(prn2.rn, prn2.u0, (0.0, 10.0), prn2.p)
 sol2 = solve(oprob2, Rodas5P())
 @test sum(reduce(vcat, sol1.u .- sol2.u) .^ 2) ≤ 1.0e-10
 
-# With duplicate id parameters, wherse the parameters have the same value and therefore
+# With duplicate id parameters, where the parameters have the same value and therefore
 # the model can be imported
 path_SBML = joinpath(@__DIR__, "Models", "brusselator.xml")
 prn, cb = load_SBML(path_SBML; inline_kineticlaw_parameters = false)
 @test string.(parameters(prn.rn)) == ["B", "A", "k1", "C"]
 @test string(prn.p[3]) == "k1 => 1.0"
 
-# With duplicate id parameters, wherse the parameters have the same value and therefore
-# the model can be imported
+# With duplicate id parameters, where the parameters have the same value and therefore
+# the model cannot be imported
 path_SBML = joinpath(@__DIR__, "Models", "brusselator_kinetic_parameters_fail.xml")
 @test_throws SBMLImporter.SBMLSupport begin
     prn, cb = load_SBML(path_SBML; inline_kineticlaw_parameters = false)

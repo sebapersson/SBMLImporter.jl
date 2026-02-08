@@ -14,7 +14,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
     for (i, s) in pairs(sps)
         sps[i] = _set_compartment(s, model_SBML)
     end
-    if model_SBML_sys.variables != "\tvs = ModelingToolkit.@variables "
+    if model_SBML_sys.variables != "\tvs = ModelingToolkitBase.@variables "
         vs = eval(Meta.parse(model_SBML_sys.variables))
     else
         vs = Any[]
@@ -34,7 +34,7 @@ function _get_reaction_system(model_SBML_sys::ModelSBMLSystem, model_SBML::Model
     end
 
     reactions = _reaction_str_to_vec(model_SBML_sys)
-    reactions_rn = Vector{Union{ModelingToolkit.Equation, Catalyst.Reaction}}(undef, 0)
+    reactions_rn = Vector{Union{ModelingToolkitBase.Equation, Catalyst.Reaction}}(undef, 0)
     for reaction in reactions
         _r = eval(Meta.parse(reaction))
         isnothing(_r) && continue
@@ -58,7 +58,7 @@ function write_reactionsystem(
     pathsave = joinpath(dirsave, model_SBML.name * ".jl")
 
     sps = model_SBML_sys.has_species ? model_SBML_sys.species : "Any[]"
-    if model_SBML_sys.variables != "\tvs = ModelingToolkit.@variables "
+    if model_SBML_sys.variables != "\tvs = ModelingToolkitBase.@variables "
         vs = model_SBML_sys.variables
     else
         vs = "Any[]"
@@ -138,9 +138,9 @@ function _get_system_variables(
         model_SBML::ModelSBML, inline_assignment_rules::Bool
     )::Tuple{String, String, String}
     # Species in reactions are treated as Catalyst.@species, meanwhile, dynamic variables
-    # not changed by reactions (rule variables) are ModelingToolkit variables. Note,
+    # not changed by reactions (rule variables) are ModelingToolkitBase variables. Note,
     # both mtk_variables and catalyst_species initial values are set via the specie_map
-    mtk_variables = "\tvs = ModelingToolkit.@variables "
+    mtk_variables = "\tvs = ModelingToolkitBase.@variables "
     catalyst_species = "\tsps = Catalyst.@species "
     specie_map = "\tspecie_map = [\n"
     for (specie_id, specie) in model_SBML.species
@@ -376,7 +376,7 @@ function _get_dir_save(
     return dir_save
 end
 
-function ModelingToolkit.setmetadata(::Symbolics.Num, ::CompartmentSBML, val)
+function ModelingToolkitBase.setmetadata(::Symbolics.Num, ::CompartmentSBML, val)
     return val
 end
 

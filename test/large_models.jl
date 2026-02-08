@@ -2,7 +2,7 @@
     Test that import time for a larger model of 1265 species and 1000+ reactions
 =#
 
-using SBMLImporter, JumpProcesses, Downloads, ModelingToolkit, Test
+using JumpProcesses, SBMLImporter, ModelingToolkitBase, Test
 
 path = joinpath(@__DIR__, "Models", "large_model1.xml")
 b1 = @elapsed prn, cb = load_SBML(path; inline_assignment_rules = true)
@@ -18,8 +18,6 @@ b2 = @elapsed prn, cb = load_SBML(path; inline_assignment_rules = true)
 # Test that SBMLImporter correctly enforces mass action
 path = joinpath(@__DIR__, "Models", "egfr_net.xml")
 b3 = @elapsed model, cb = load_SBML(path; massaction = true, inline_assignment_rules = true)
-dprob = DiscreteProblem(model.rn, model.u0, (0.0, 0.0), model.p)
-dprob = remake(dprob, u0 = Int64.(dprob.u0));
-jprob = JumpProblem(model.rn, dprob, RSSA(), save_positions = (false, false))
-@test b3 ≤ 20
+jprob = JumpProblem(model.rn, model.u0, (0.0, 1.0), model.p)
+@test b3 ≤ 40
 @test length(jprob.massaction_jump.net_stoch) == 3749

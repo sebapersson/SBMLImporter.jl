@@ -1,5 +1,24 @@
-using Catalyst, CSV, DataFrames, Downloads, OrdinaryDiffEqBDF, OrdinaryDiffEqRosenbrock,
-    SBML, SBMLImporter, Test
+using Catalyst, CSV, DataFrames, Downloads, ModelingToolkitBase, OrdinaryDiffEqBDF,
+    OrdinaryDiffEqRosenbrock, SBML, SBMLImporter, Test
+
+#=
+    NOTE ON LICENSING
+
+    ModelingToolkit v11 is expected to be (or may already be) AGPL-licensed, while
+    ModelingToolkitBase remains MIT-licensed (see link below).
+
+    SBMLImporter uses ModelingToolkit **only** in the test suite, to verify that an
+    imported `ODESystem` can be converted into a form that is simulatable when a user
+    chooses to work with AGPL-licensed ModelingToolkit functionality. This only applies
+    to a small subset of SBML tests with algebraic rules.
+
+    SBMLImporter does not ship ModelingToolkit functionality at runtime; the package
+    itself depends only on ModelingToolkitBase.
+
+    See discussion on ModelingToolkit getting APGL-license:
+    https://discourse.julialang.org/t/modelingtoolkit-v11-library-split-and-licensing-community-feedback-requested/134396
+=#
+import ModelingToolkit
 
 include(joinpath(@__DIR__, "common.jl"))
 include(joinpath(@__DIR__, "testsuite_support.jl"))
@@ -86,12 +105,12 @@ function check_test_case(test_case, solver)
             ifelse_to_callback = ifelse_to_callback
         )
         if isempty(model_SBML.algebraic_rules)
-            osys = structural_simplify(convert(ODESystem, prn.rn))
+            osys = ModelingToolkitBase.mtkcompile(ode_model(prn.rn))
         else
-            _sys = dae_index_lowering(convert(ODESystem, prn.rn))
-            osys = structural_simplify(_sys)
+            _sys = ModelingToolkit.dae_index_lowering(ode_model(prn.rn))
+            osys = ModelingToolkitBase.mtkcompile(_sys)
         end
-        oprob = ODEProblem(osys, prn.u0, (0.0, tmax), prn.p, jac = true)
+        oprob = ODEProblem(osys, merge(Dict(prn.u0), Dict(prn.p)), (0.0, tmax), jac = true)
         sol = solve(
             oprob, solver, abstol = 1.0e-12, reltol = 1.0e-12, saveat = tsave, callback = cb
         )
@@ -151,7 +170,7 @@ cases_not_passing = get_semantic_not_pass()
 keys_cases_catch = filter(x -> x != :not_captured, keys(cases_not_passing))
 cases_not_passing_catch = reduce(vcat, [cases_not_passing[k] for k in keys_cases_catch])
 solver = Rodas4P()
-@testset "Catalyst" begin
+@testset "Semantic test-suite" begin
     for i in 1:1821
         test_case = repeat("0", 5 - length(string(i))) * string(i)
 

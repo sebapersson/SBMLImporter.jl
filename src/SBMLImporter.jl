@@ -1,17 +1,17 @@
 module SBMLImporter
 
-using Catalyst: Catalyst, Symbolics, setmetadata, parameters, unknowns, @unpack
+using Catalyst: Catalyst, setmetadata, parameters, unknowns, @unpack
 using ComponentArrays: ComponentArray
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
 using JumpProcesses: reset_aggregated_jumps!
 using PrecompileTools: @setup_workload
-import ModelingToolkit
-using ReactionNetworkImporters: ParsedReactionNetwork
+import ModelingToolkitBase
 using RuntimeGeneratedFunctions: RuntimeGeneratedFunctions, @RuntimeGeneratedFunction
 using SBML: SBML, readSBMLFromString
 import SciMLBase
 using Setfield: @set
 import SpecialFunctions
+import Symbolics
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
@@ -56,6 +56,6 @@ include("util.jl")
     prn, cb = load_SBML(path)
 end
 
-export load_SBML, getcompartment
+export load_SBML, getcompartment, ParsedReactionNetwork
 
 end

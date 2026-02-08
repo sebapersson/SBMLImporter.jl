@@ -41,7 +41,6 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
     tmax = maximum(t_save)
 
     sbml_urls = get_sbml_urls(base_url)
-    sbml_url = sbml_urls[end]
 
     # To reduce runtime for the most demanding test-case
     if test_case == "00005"
@@ -68,16 +67,18 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         # Some of the test-cases do not follow mass-action kinetics, and do not allow
         # for effcient jump simulations
         if test_case in ["00011"]
-            ma = false
+            mass_action = false
         else
-            ma = true
+            mass_action = true
         end
         prn, cb = load_SBML(
-            sbml_string, model_as_string = true, massaction = ma, inline_assignment_rules = false
+            sbml_string, model_as_string = true, massaction = mass_action,
+            inline_assignment_rules = false
         )
         tspan = (0.0, tmax)
-        dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
-        jprob = JumpProblem(prn.rn, dprob, Direct(); save_positions = (false, false))
+        jprob = JumpProblem(
+            prn.rn, prn.u0, tspan, prn.p; save_positions = (false, false)
+        )
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"
             sol = solve(
