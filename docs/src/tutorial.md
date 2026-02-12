@@ -36,11 +36,11 @@ efficient jump (SSA-type) simulation.
 
 `load_SBML` returns two outputs: a `ParsedReactionSystem` (`prn`) and a `CallbackSet`
 (`cb`). The `CallbackSet` holds any SBML events, as well as any `piecewise` functions
-parsed into events. The `ParsedReactionSystem` includes a [Catalyst](https://github.com
-SciML/Catalyst.jl) `ReactionSystem` (`prn.rn`), a map for the initial values of each
-species (`prn.u0`), and a map for setting the model parameter values (`prn.p`). Many
-modeling tasks can be performed with a Catalyst `ReactionSystem`. For example,
-model reactions can be inspected with:
+parsed into events. The `ParsedReactionSystem` includes a
+[Catalyst](https://github.comSciML/Catalyst.jl) `ReactionSystem` (`prn.rn`), a map for the
+initial values of each species (`prn.u0`), and a map for setting the model parameter values
+(`prn.p`). Many modeling tasks can be performed with a Catalyst `ReactionSystem`. For
+example, model reactions can be inspected with:
 
 ```@example 1
 using Catalyst
@@ -57,16 +57,14 @@ The `massaction` keyword only affects jump simulations. For `SDEProblem` and
 
 ## Jump simulations
 
-Jump simulations (e.g. Gillespie/SSA) are run by constructing a `JumpProblem`. This
-requires an intermediate `DiscreteProblem`:
+Jump simulations (e.g. Gillespie/SSA) are run by constructing a `JumpProblem`:
 
 ```@example 1
 using JumpProcesses
 using Random # hide
 Random.seed!(1) # hide
 tspan = (0.0, 10.0)
-dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
-jprob = JumpProblem(prn.rn, dprob, Direct())
+jprob = JumpProblem(prn.rn, prn.u0, tspan, prn.p)
 nothing # hide
 ```
 
@@ -113,12 +111,12 @@ Deterministic simulations can be obtained by converting the reaction system into
 `ODESystem`:
 
 ```@example 1
-using ModelingToolkit
-sys = structural_simplify(convert(ODESystem, prn.rn))
+using ModelingToolkitBase
+sys = mtkcompile(ode_model(prn.rn))
 nothing # hide
 ```
 
-Calling `structural_simplify` inlines assignment rules into the final equations. As a
+Calling `mtkcompile` inlines assignment rules into the final equations. As a
 sanity check, the generated ODEs can be inspected:
 
 ```@example 1
@@ -130,7 +128,7 @@ An `ODEProblem` can then be constructed:
 ```@example 1
 using OrdinaryDiffEq
 tspan = (0.0, 10.0)
-oprob = ODEProblem(sys, prn.u0, tspan, prn.p, jac=true)
+oprob = ODEProblem(sys, merge(Dict(prn.u0), Dict(prn.p)), tspan, jac=true)
 nothing # hide
 ```
 
@@ -165,7 +163,8 @@ oprob.ps[:A] = 2.0
 nothing # hide
 ```
 
-Initial conditions can be modified by indexing the problem. For example, the initial value of `X` can be set with:
+Initial conditions can be modified by indexing the problem. For example, the initial value
+of `X` can be set with:
 
 ```@example 1
 oprob[:X] = 2.0
