@@ -71,13 +71,14 @@ function test_stochastic_testcase(test_case::String; nsolve::Integer = 20000)
         else
             mass_action = true
         end
-        prn, cb = load_SBML(
+        rn, cb = load_SBML(
             sbml_string, model_as_string = true, massaction = mass_action,
             inline_assignment_rules = false
         )
+        u0, ps = get_u0_map(rn), get_parameter_map(rn)
         tspan = (0.0, tmax)
         jprob = JumpProblem(
-            prn.rn, prn.u0, tspan, prn.p; save_positions = (false, false)
+            rn, u0, tspan, ps; save_positions = (false, false)
         )
         eprob = EnsembleProblem(jprob)
         if test_case != "00033"

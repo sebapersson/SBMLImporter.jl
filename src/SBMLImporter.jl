@@ -1,6 +1,7 @@
 module SBMLImporter
 
-using Catalyst: Catalyst, setmetadata, parameters, unknowns, @unpack
+using Catalyst: Catalyst, setmetadata, parameters, unknowns, @unpack, get_u0_map,
+    get_parameter_map
 using ComponentArrays: ComponentArray
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
 using JumpProcesses: reset_aggregated_jumps!
@@ -50,12 +51,12 @@ include("util.jl")
     dirmodels = joinpath(@__DIR__, "..", "test", "Models")
     # Model without events
     path = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
-    prn, cb = load_SBML(path)
+    rn, cb = load_SBML(path)
     # Model with events
     path = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
-    prn, cb = load_SBML(path)
+    rn, cb = load_SBML(path)
 end
 
-export load_SBML, getcompartment, ParsedReactionNetwork
+export load_SBML, getcompartment, get_u0_map, get_parameter_map
 
 end

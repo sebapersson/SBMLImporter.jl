@@ -4,9 +4,10 @@ path_model = joinpath(@__DIR__, "Models", "SBML", "Boehm_JProteomeRes2014.jl")
 isfile(path_model) && rm(path_model)
 
 path = joinpath(@__DIR__, "Models", "model_Boehm_JProteomeRes2014.xml")
-prn, cb = load_SBML(path; write_to_file = true)
-sys_ref = mtkcompile(ode_model(prn.rn))
-oprob_ref = ODEProblem(sys_ref, merge(Dict(prn.u0), Dict(prn.p)), (0.0, 5.0), jac = true)
+rn, cb = load_SBML(path; write_to_file = true)
+u0, ps = get_u0_map(rn), get_parameter_map(rn)
+sys_ref = mtkcompile(ode_model(rn))
+oprob_ref = ODEProblem(sys_ref, merge(Dict(u0), Dict(ps)), (0.0, 5.0), jac = true)
 sol_ref = solve(oprob_ref, Rodas4P(), saveat = 1:5)
 
 include(path_model)

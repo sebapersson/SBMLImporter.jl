@@ -100,7 +100,7 @@ unknowns(prn)
 
 this is likely because the parameter is not set as constant in the SBML file, e.g.:
 
-```SBML
+```xml
 <parameter id="c" value="1.0" constant="false"/>
 ```
 
@@ -109,7 +109,7 @@ a variable since it can change over time (explicitly depend on time), as Julia
 `ReactionSystem` parameters are assumed to time invariant. If the parameter should indeed
 be constant (e.g. at most be changed by an event), change the parameter in the model file:
 
-```SBML
+```xml
 <parameter id="c" value="1.0" constant="true"/>
 ```
 

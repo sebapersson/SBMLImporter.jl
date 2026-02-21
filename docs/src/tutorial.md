@@ -26,7 +26,7 @@ SBML models are imported with `load_SBML`:
 ```@example 1
 using SBMLImporter
 path_sbml = joinpath(@__DIR__, "..", "..", "test", "Models", "brusselator.xml") # hide
-prn, cb = load_SBML(path_sbml; massaction=true)
+rn, cb = load_SBML(path_sbml; massaction=true)
 nothing # hide
 ```
 
@@ -34,18 +34,24 @@ The keyword `massaction=true` indicates that reactions follow chemical
 [mass-action kinetics](https://en.wikipedia.org/wiki/Law_of_mass_action). This enables
 efficient jump (SSA-type) simulation.
 
-`load_SBML` returns two outputs: a `ParsedReactionSystem` (`prn`) and a `CallbackSet`
-(`cb`). The `CallbackSet` holds any SBML events, as well as any `piecewise` functions
-parsed into events. The `ParsedReactionSystem` includes a
-[Catalyst](https://github.comSciML/Catalyst.jl) `ReactionSystem` (`prn.rn`), a map for the
-initial values of each species (`prn.u0`), and a map for setting the model parameter values
-(`prn.p`). Many modeling tasks can be performed with a Catalyst `ReactionSystem`. For
-example, model reactions can be inspected with:
+`load_SBML` returns two outputs: a Catalyst `ReactionSystem` (`rn`) and a `CallbackSet`
+(`cb`). The `CallbackSet` contains SBML events and callbacks generated from any SBML
+`piecewise` expressions. The `ReactionSystem` contains a map of species initial values
+(`u0`) and a map of parameter values (`ps`), which can be accessed as:
+
+```@example 1
+u0 = get_u0_map(rn)
+ps = get_parameter_map(rn)
+nothing # hide
+```
+
+Many modeling tasks can be performed with a Catalyst `ReactionSystem`. For example,
+reactions can be inspected with:
 
 ```@example 1
 using Catalyst
-reactions(prn.rn)
-prn.rn # hide
+reactions(rn)
+rn # hide
 ```
 
 ::: info
@@ -64,7 +70,7 @@ using JumpProcesses
 using Random # hide
 Random.seed!(1) # hide
 tspan = (0.0, 10.0)
-jprob = JumpProblem(prn.rn, prn.u0, tspan, prn.p)
+jprob = JumpProblem(rn, u0, tspan, ps)
 nothing # hide
 ```
 
@@ -90,7 +96,7 @@ Chemical Langevin simulations are run by constructing an `SDEProblem` from the r
 ```@example 1
 using StochasticDiffEq
 tspan = (0.0, 10.0)
-sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)
+sprob = SDEProblem(rn, u0, tspan, ps)
 nothing # hide
 ```
 
@@ -112,7 +118,7 @@ Deterministic simulations can be obtained by converting the reaction system into
 
 ```@example 1
 using ModelingToolkitBase
-sys = mtkcompile(ode_model(prn.rn))
+sys = mtkcompile(ode_model(rn))
 nothing # hide
 ```
 
@@ -128,7 +134,7 @@ An `ODEProblem` can then be constructed:
 ```@example 1
 using OrdinaryDiffEq
 tspan = (0.0, 10.0)
-oprob = ODEProblem(sys, merge(Dict(prn.u0), Dict(prn.p)), tspan, jac=true)
+oprob = ODEProblem(sys, merge(Dict(u0), Dict(ps)), tspan, jac=true)
 nothing # hide
 ```
 

@@ -9,8 +9,8 @@ If `s` does not have a compartment, or is not a specie, `nothing` is returned.
 ```julia
 # Get compartment for first model specie
 using SBMLImporter, Catalyst
-prn, cb = load_SBML(path_SBML)
-sbml_species = species(prn.rn)
+rn, cb = load_SBML(path_SBML)
+sbml_species = species(rn)
 c = getcompartment(sbml_species[1])
 ```
 """

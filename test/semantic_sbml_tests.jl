@@ -100,17 +100,19 @@ function check_test_case(test_case, solver)
             )
         end
 
-        prn, cb = load_SBML(
+        rn, cb = load_SBML(
             sbml_string, model_as_string = true, inline_assignment_rules = false,
             ifelse_to_callback = ifelse_to_callback
         )
+        u0 = get_u0_map(rn)
+        ps = get_parameter_map(rn)
         if isempty(model_SBML.algebraic_rules)
-            osys = ModelingToolkitBase.mtkcompile(ode_model(prn.rn))
+            osys = ModelingToolkitBase.mtkcompile(ode_model(rn))
         else
-            _sys = ModelingToolkit.dae_index_lowering(ode_model(prn.rn))
+            _sys = ModelingToolkit.dae_index_lowering(ode_model(rn))
             osys = ModelingToolkitBase.mtkcompile(_sys)
         end
-        oprob = ODEProblem(osys, merge(Dict(prn.u0), Dict(prn.p)), (0.0, tmax), jac = true)
+        oprob = ODEProblem(osys, merge(Dict(u0), Dict(ps)), (0.0, tmax), jac = true)
         sol = solve(
             oprob, solver, abstol = 1.0e-12, reltol = 1.0e-12, saveat = tsave, callback = cb
         )

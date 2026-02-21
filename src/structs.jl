@@ -191,22 +191,3 @@ struct ModelSBMLProb
     psmap::Vector{Pair{String, String}}
     odes::Vector{String}
 end
-
-"""
-    ParsedReactionNetwork
-
-To be removed later, this is just for testing.
-"""
-struct ParsedReactionNetwork
-    rn::Catalyst.ReactionSystem
-    u0::Any
-    p::Any
-    varstonames::Any
-    groupstosyms::Any
-end
-function ParsedReactionNetwork(
-        rn::Catalyst.ReactionSystem; u0 = nothing, p = nothing,
-        varstonames = nothing, groupstosyms = nothing
-    )
-    return ParsedReactionNetwork(rn, u0, p, varstonames, groupstosyms)
-end
