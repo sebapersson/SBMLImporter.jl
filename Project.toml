@@ -26,7 +26,7 @@ SBMLImporterForwardDiffExt = ["ForwardDiff"]
 [compat]
 Aqua = "0.8"
 CSV = "0.10"
-Catalyst = "15.0.11"
+Catalyst = "16"
 ComponentArrays = "0.15.17"
 DataFrames = "1.6"
 DiffEqBase = "6"
