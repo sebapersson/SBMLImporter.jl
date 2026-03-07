@@ -1,6 +1,8 @@
 using Catalyst, CSV, DataFrames, Downloads, ModelingToolkitBase, OrdinaryDiffEqBDF,
     OrdinaryDiffEqRosenbrock, SBML, SBMLImporter, Test
 
+# 01260, 01504, 01669
+
 #=
     NOTE ON LICENSING
 
@@ -114,7 +116,8 @@ function check_test_case(test_case, solver)
         end
         oprob = ODEProblem(osys, merge(Dict(u0), Dict(ps)), (0.0, tmax), jac = true)
         sol = solve(
-            oprob, solver, abstol = 1.0e-12, reltol = 1.0e-12, saveat = tsave, callback = cb
+            oprob, solver, abstol = 1.0e-12, reltol = 1.0e-12, saveat = tsave,
+            callback = cb,
         )
         model_parameters = string.(parameters(sol.prob.f.sys))
 
@@ -193,7 +196,7 @@ solver = Rodas4P()
         end
 
         # Simulations fail with Rodas4P, so FBDF is used
-        if test_case in ["00028", "00173", "00269"]
+        if test_case in ["00028", "00173", "00269", "01260", "01504", "01669"]
             check_test_case(test_case, FBDF())
             continue
         end
