@@ -193,7 +193,10 @@ solver = Rodas4P()
         end
 
         # Simulations fail with Rodas4P, so FBDF is used
-        if test_case in ["00028", "00173", "00269", "01260", "01504", "01669", "01670", "01671"]
+        fbdf_tests = [
+            "00028", "00173", "00269", "01260", "01504", "01505", "01669", "01670", "01671"
+        ]
+        if test_case in fbdf_tests
             check_test_case(test_case, FBDF())
             continue
         end
