@@ -1,8 +1,6 @@
 using Catalyst, CSV, DataFrames, Downloads, ModelingToolkitBase, OrdinaryDiffEqBDF,
     OrdinaryDiffEqRosenbrock, SBML, SBMLImporter, Test
 
-# 01260, 01504, 01669
-
 #=
     NOTE ON LICENSING
 
@@ -81,7 +79,6 @@ function check_test_case(test_case, solver)
     # Read settings file
     settings_url = base_url * "-settings.txt"
     species_test_amount, species_test_conc, abstol_test, reltol_test = read_settings(settings_url)
-    sbml_url = sbml_urls[end]
 
     for sbml_url in sbml_urls
         sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
