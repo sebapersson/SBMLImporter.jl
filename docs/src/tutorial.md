@@ -14,9 +14,8 @@ using any other [SBML exporting tools](https://sbml.org/software/). Additionally
 collection of published SBML models are hosted on
 [BioModels](https://www.ebi.ac.uk/biomodels/).
 
-This tutorial will use the
-[Brusselator model](https://en.wikipedia.org/wiki/Brusselator), whose SBML file can be
-downloaded from this
+This tutorial will use the [Brusselator model](https://en.wikipedia.org/wiki/Brusselator),
+whose SBML file can be downloaded from this
 [link](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml).
 
 ## Importing a model
@@ -56,8 +55,8 @@ rn # hide
 
 ::: info
 
-The `massaction` keyword only affects jump simulations. For `SDEProblem` and
-`ODEProblem` workflows, it can be ignored.
+The `massaction` keyword only affects jump simulations. For `SDEProblem` and `ODEProblem`
+workflows, it can be ignored.
 
 :::
 
@@ -91,7 +90,8 @@ choosing a jump simulation algorithm can be found
 
 ## SDE simulations
 
-Chemical Langevin simulations are run by constructing an `SDEProblem` from the reaction system:
+Chemical Langevin simulations are run by constructing an `SDEProblem` from the reaction
+system:
 
 ```@example 1
 using StochasticDiffEq
@@ -122,8 +122,8 @@ sys = mtkcompile(ode_model(rn))
 nothing # hide
 ```
 
-Calling `mtkcompile` inlines assignment rules into the final equations. As a
-sanity check, the generated ODEs can be inspected:
+Calling `mtkcompile` inlines assignment rules into the final equations. As a sanity check,
+the generated ODEs can be inspected:
 
 ```@example 1
 equations(sys)
@@ -147,20 +147,22 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 plot(sol; xlabel="Time [s]", ylabel="Species amount")
 ```
 
-For more information, see the
-[OrdinaryDiffEq.jl documentation](https://github.com/SciML OrdinaryDiffEq.jl). An ODE
-solver selection guide is available
+For more information, see the [OrdinaryDiffEq.jl documentation](https://github.com/SciML
+OrdinaryDiffEq.jl). An ODE solver selection guide is available
 [here](https://sebapersson.github.io/PEtab.jl/stable/default_options/).
 
-!!! tip "Importing large models"
-    For large models (>1000 species), symbolic Jacobian construction can be time-consuming.
-    If import time dominates, setting `jac=false` can help.
+::: tip Importing large models
+
+For large models (>1000 species), symbolic Jacobian construction can be time-consuming. If
+import time dominates, setting `jac=false` can help.
+
+:::
 
 ## Indexing parameters, species, and solutions
 
 Problems imported by `load_SBML` (`ODEProblem`, `SDEProblem`, or `JumpProblem`) support
-[SymbolicIndexingInterface](https://github.com/SciML/SymbolicIndexingInterface.jl),
-enabling model variables to be read and updated by SBML IDs.
+[SymbolicIndexingInterface](https://github.com/SciML/SymbolicIndexingInterface.jl), enabling
+model variables to be read and updated by SBML IDs.
 
 Parameter values can be modified via `prob.ps`. For example, parameter `A` can be set with:
 
