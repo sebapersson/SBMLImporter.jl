@@ -104,7 +104,7 @@ jobs:
       - name: Generate testsuite CSV file
         run: julia test/export_testsuite_support.jl
       - name: Create PR with updated CSV
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ci/update-testsuite-csv        
