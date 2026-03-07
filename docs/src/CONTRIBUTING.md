@@ -19,9 +19,8 @@ If you find a bug, please open an issue on
 
 - A clear, descriptive title
 - Steps to reproduce the problem, ideally with a minimal working example (MRE). For more
-  about MREs, see
-  [Wikipedia](https://en.wikipedia.org/wiki/Minimal_reproducible_example) and
-  [Stack Overflow](https://stackoverflow.com/help/minimal-reproducible-example).
+  about MREs, see [Wikipedia](https://en.wikipedia.org/wiki/Minimal_reproducible_example)
+  and [Stack Overflow](https://stackoverflow.com/help/minimal-reproducible-example).
 - What you expected to happen
 - What actually happened
 - Relevant error messages, logs, or screenshots (if applicable)
@@ -59,7 +58,9 @@ Before submitting a PR:
     ] test
    ```
 
-5. Format code with [Runic.jl](https://github.com/fredrikekre/Runic.jl).
+5. Format code with [Runic.jl](https://github.com/fredrikekre/Runic.jl). Runic does not
+   enforce a line-length limit, so please keep both code and documentation to 92 characters
+   per line where practical.
 6. Submit a pull request and reference the related issue (if applicable).
 
 ### Pull request checklist

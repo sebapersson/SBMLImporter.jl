@@ -163,7 +163,7 @@ function _get_tstops(
         end
 
         # In this case we can solve for the event time via Symbolics
-        variables = "ModelingToolkit.@variables t, "
+        variables = "Symbolics.@variables t, "
         variables *= prod(parameter_ids .* ", ")[1:(end - 2)] * " "
         variables *= prod(specie_ids .* ", ")[1:(end - 2)] * " "
         variables_symbolic = eval(Meta.parse(variables))
@@ -174,11 +174,12 @@ function _get_tstops(
         try
             tstop = string.(
                 Symbolics.symbolic_linear_solve(
-                    condition_symbolic, variables_symbolic[1], simplify = true
+                    condition_symbolic, only(Symbolics.@variables t)
                 )
             )
         catch
-            throw(SBMLSupport("Not possible to solve for time event $(event.name) is activated"))
+            throw(SBMLSupport("Not possible to solve for time event $(event.name) \
+                is activated"))
         end
 
         # In events species and parameters are given via integrator.u and integrator.p
@@ -211,7 +212,7 @@ function _ids_to_cb_syntax(
     # and the parameter order in p_PEtab must be used for correct mappings
     for id in ids
         if id_type == :specie
-            index = "ModelingToolkit.getu(integrator, :$id).idx"
+            index = "ModelingToolkitBase.getu(integrator, :$id).idx"
             replace_with = utmp ? "utmp[$index]" : "u[$index]"
         elseif id_type == :parameter && isnothing(p_PEtab)
             replace_with = "ps[:" * id * "]"

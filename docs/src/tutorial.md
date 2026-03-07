@@ -14,9 +14,8 @@ using any other [SBML exporting tools](https://sbml.org/software/). Additionally
 collection of published SBML models are hosted on
 [BioModels](https://www.ebi.ac.uk/biomodels/).
 
-This tutorial will use the
-[Brusselator model](https://en.wikipedia.org/wiki/Brusselator), whose SBML file can be
-downloaded from this
+This tutorial will use the [Brusselator model](https://en.wikipedia.org/wiki/Brusselator),
+whose SBML file can be downloaded from this
 [link](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml).
 
 ## Importing a model
@@ -26,7 +25,7 @@ SBML models are imported with `load_SBML`:
 ```@example 1
 using SBMLImporter
 path_sbml = joinpath(@__DIR__, "..", "..", "test", "Models", "brusselator.xml") # hide
-prn, cb = load_SBML(path_sbml; massaction=true)
+rn, cb = load_SBML(path_sbml; massaction=true)
 nothing # hide
 ```
 
@@ -34,39 +33,43 @@ The keyword `massaction=true` indicates that reactions follow chemical
 [mass-action kinetics](https://en.wikipedia.org/wiki/Law_of_mass_action). This enables
 efficient jump (SSA-type) simulation.
 
-`load_SBML` returns two outputs: a `ParsedReactionSystem` (`prn`) and a `CallbackSet`
-(`cb`). The `CallbackSet` holds any SBML events, as well as any `piecewise` functions
-parsed into events. The `ParsedReactionSystem` includes a [Catalyst](https://github.com
-SciML/Catalyst.jl) `ReactionSystem` (`prn.rn`), a map for the initial values of each
-species (`prn.u0`), and a map for setting the model parameter values (`prn.p`). Many
-modeling tasks can be performed with a Catalyst `ReactionSystem`. For example,
-model reactions can be inspected with:
+`load_SBML` returns two outputs: a Catalyst `ReactionSystem` (`rn`) and a `CallbackSet`
+(`cb`). The `CallbackSet` contains SBML events and callbacks generated from any SBML
+`piecewise` expressions. The `ReactionSystem` contains a map of species initial values
+(`u0`) and a map of parameter values (`ps`), which can be accessed as:
+
+```@example 1
+u0 = get_u0_map(rn)
+ps = get_parameter_map(rn)
+nothing # hide
+```
+
+Many modeling tasks can be performed with a Catalyst `ReactionSystem`. For example,
+reactions can be inspected with:
 
 ```@example 1
 using Catalyst
-reactions(prn.rn)
-prn.rn # hide
+reactions(rn)
+rn # hide
 ```
 
 ::: info
 
-The `massaction` keyword only affects jump simulations. For `SDEProblem` and
-`ODEProblem` workflows, it can be ignored.
+The `massaction` keyword only affects jump simulations. For `SDEProblem` and `ODEProblem`
+workflows, it can be ignored.
 
 :::
 
 ## Jump simulations
 
-Jump simulations (e.g. Gillespie/SSA) are run by constructing a `JumpProblem`. This
-requires an intermediate `DiscreteProblem`:
+Jump simulations (e.g. Gillespie/SSA) are run by constructing a `JumpProblem`:
 
 ```@example 1
 using JumpProcesses
 using Random # hide
 Random.seed!(1) # hide
 tspan = (0.0, 10.0)
-dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
-jprob = JumpProblem(prn.rn, dprob, Direct())
+jprob = JumpProblem(rn, u0, tspan, ps)
 nothing # hide
 ```
 
@@ -87,12 +90,13 @@ choosing a jump simulation algorithm can be found
 
 ## SDE simulations
 
-Chemical Langevin simulations are run by constructing an `SDEProblem` from the reaction system:
+Chemical Langevin simulations are run by constructing an `SDEProblem` from the reaction
+system:
 
 ```@example 1
 using StochasticDiffEq
 tspan = (0.0, 10.0)
-sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)
+sprob = SDEProblem(rn, u0, tspan, ps)
 nothing # hide
 ```
 
@@ -113,13 +117,13 @@ Deterministic simulations can be obtained by converting the reaction system into
 `ODESystem`:
 
 ```@example 1
-using ModelingToolkit
-sys = structural_simplify(convert(ODESystem, prn.rn))
+using ModelingToolkitBase
+sys = mtkcompile(ode_model(rn))
 nothing # hide
 ```
 
-Calling `structural_simplify` inlines assignment rules into the final equations. As a
-sanity check, the generated ODEs can be inspected:
+Calling `mtkcompile` inlines assignment rules into the final equations. As a sanity check,
+the generated ODEs can be inspected:
 
 ```@example 1
 equations(sys)
@@ -130,7 +134,7 @@ An `ODEProblem` can then be constructed:
 ```@example 1
 using OrdinaryDiffEq
 tspan = (0.0, 10.0)
-oprob = ODEProblem(sys, prn.u0, tspan, prn.p, jac=true)
+oprob = ODEProblem(sys, merge(Dict(u0), Dict(ps)), tspan, jac=true)
 nothing # hide
 ```
 
@@ -143,20 +147,22 @@ sol = solve(oprob, Rodas5P(), callback=cb)
 plot(sol; xlabel="Time [s]", ylabel="Species amount")
 ```
 
-For more information, see the
-[OrdinaryDiffEq.jl documentation](https://github.com/SciML OrdinaryDiffEq.jl). An ODE
-solver selection guide is available
+For more information, see the [OrdinaryDiffEq.jl documentation](https://github.com/SciML
+OrdinaryDiffEq.jl). An ODE solver selection guide is available
 [here](https://sebapersson.github.io/PEtab.jl/stable/default_options/).
 
-!!! tip "Importing large models"
-    For large models (>1000 species), symbolic Jacobian construction can be time-consuming.
-    If import time dominates, setting `jac=false` can help.
+::: tip Importing large models
+
+For large models (>1000 species), symbolic Jacobian construction can be time-consuming. If
+import time dominates, setting `jac=false` can help.
+
+:::
 
 ## Indexing parameters, species, and solutions
 
 Problems imported by `load_SBML` (`ODEProblem`, `SDEProblem`, or `JumpProblem`) support
-[SymbolicIndexingInterface](https://github.com/SciML/SymbolicIndexingInterface.jl),
-enabling model variables to be read and updated by SBML IDs.
+[SymbolicIndexingInterface](https://github.com/SciML/SymbolicIndexingInterface.jl), enabling
+model variables to be read and updated by SBML IDs.
 
 Parameter values can be modified via `prob.ps`. For example, parameter `A` can be set with:
 
@@ -165,7 +171,8 @@ oprob.ps[:A] = 2.0
 nothing # hide
 ```
 
-Initial conditions can be modified by indexing the problem. For example, the initial value of `X` can be set with:
+Initial conditions can be modified by indexing the problem. For example, the initial value
+of `X` can be set with:
 
 ```@example 1
 oprob[:X] = 2.0

@@ -50,7 +50,7 @@ function ModelSBMLProb(model_SBML)
 end
 
 function _get_umodel(species::String, variables::String)::Vector{String}
-    umodel = split(species[26:(end - 1)] * variables[33:(end - 1)], " ") .|> string
+    umodel = split(species[26:(end - 1)] * variables[37:(end - 1)], " ") .|> string
     return replace.(umodel, "(t)" => "")
 end
 

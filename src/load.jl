@@ -1,9 +1,9 @@
 """
     load_SBML(path; massaction=false, kwargs...)
 
-Import an [SBML](https://sbml.org/) model into a `ParsedReactionNetwork` that can be
-simulated as a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin
-simulations, or an `ODEProblem` for deterministic simulations.
+Import an [SBML](https://sbml.org/) model into a `ReactionNetwork` that can be simulated as
+a `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations,
+or an `ODEProblem` for deterministic simulations.
 
 The keyword `massaction` should be set to `true` if the model reactions follow chemical
 [mass action](https://en.wikipedia.org/wiki/Law_of_mass_action) kinetics. This is because
@@ -36,47 +36,21 @@ check if a model follows mass action kinetics, see the FAQ in the documentation.
 - `write_to_file=false`: Write the parsed SBML model to a Julia file in the same
     directory as the SBML file.
 - `model_as_string::Bool=false`: Whether the model (`path`) is provided as a string.
-
 ## Returns
-- `prn`: A `ParsedReactionNetwork` that can be converted into a `JumpProblem`, a
-    `SDEProblem`, or an `ODEProblem`. Important fields are:
-  - `prn.rn`: A [Catalyst.jl](https://github.com/SciML/Catalyst.jl) `ReactionNetwork`.
-  - `prn.u0`: A value map for setting initial values for model species.
-  - `prn.p`: A value map for setting model parameter values.
-- `cbset`: A `CallbackSet` with SBML events and SBML piecewise functions.
-
-## Examples
-```julia
-# Import and simulate model as a JumpProblem
-using SBMLImporter, JumpProcesses
-prn, cb = load_SBML(path; massaction=true)
-tspan = (0.0, 10.0)
-dprob = DiscreteProblem(prn.rn, prn.u0, tspan, prn.p)
-jprob = JumpProblem(prn.rn, dprob, Direct())
-sol = solve(jprob, SSAStepper(), callback=cb)
-```
-```julia
-# Import and simulate model as a SDE
-using SBMLImporter, StochasticDiffEq
-prn, cb = load_SBML(path)
-tspan = (0.0, 10.0)
-sprob = SDEProblem(prn.rn, prn.u0, tspan, prn.p)
-sol = solve(sprob, LambaEM(), callback=cb)
-```
-```julia
-# Import and simulate model as an ODE
-using SBMLImporter, OrdinaryDiffEq
-prn, cb = load_SBML(path)
-oprob = ODEProblem(prn.rn, prn.u0, tspan, prn.p)
-sol = solve(oprob, Rodas5P(), callback=cb)
-```
+- `rn`: A Catalyst reaction network/system that can be converted to a `JumpProblem`,
+  `SDEProblem`, or `ODEProblem`. Initial values and parameter values can be accessed via
+  Catalyst maps:
+  - `get_u0_map(rn)` returns a map from species to initial values.
+  - `get_parameter_map(rn)` returns a map from parameters to values.
+- `cbset`: A `CallbackSet` containing SBML events and callbacks generated from SBML
+  piecewise expressions (when `ifelse_to_callback=true`).
 """
 function load_SBML(
         path::AbstractString; massaction::Bool = false, complete::Bool = true,
         ifelse_to_callback::Bool = true, write_to_file::Bool = false,
         inline_assignment_rules::Bool = false, inline_kineticlaw_parameters::Bool = true,
         model_as_string::Bool = false
-    )::Tuple{ParsedReactionNetwork, CallbackSet}
+    )::Tuple{Catalyst.ReactionSystem, CallbackSet}
     model_SBML = parse_SBML(
         path, massaction; ifelse_to_callback = ifelse_to_callback,
         model_as_string = model_as_string,
@@ -85,6 +59,8 @@ function load_SBML(
     )
     model_SBML_sys = _to_system_syntax(model_SBML, inline_assignment_rules, massaction)
     rn, specie_map, parameter_map = _get_reaction_system(model_SBML_sys, model_SBML)
+    rn = Catalyst.set_u0_map(rn, specie_map)
+    rn = Catalyst.set_parameter_map(rn, parameter_map)
 
     # Build callback functions
     cbset = create_callbacks(rn, model_SBML, model_SBML.name)
@@ -100,6 +76,5 @@ function load_SBML(
     if complete == true
         rn = Catalyst.complete(rn)
     end
-    prn = ParsedReactionNetwork(rn, specie_map, parameter_map, nothing, nothing)
-    return prn, cbset
+    return rn, cbset
 end

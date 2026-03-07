@@ -54,23 +54,27 @@ This error probably occurs because the model has an SBML
 Assignment rules describe the assignment of an equation to a variable:
 
 ```julia
-var = assignment # var ~ assignment in ModelingToolkit syntax
+var = assignment # var ~ assignment in ModelingToolkitBase syntax
 ```
 
 To be able to simulate the model assignment rules must be inlined into the model equations.
-This can be done with the `structural_simplify` function from ModelingToolkit.jl. For
+This can be done with the `mtkcompile` function from ModelingToolkitBase.jl. For
 example, for an ODE model do:
 
 ```julia
-using SBMLImporter, ModelingToolkit
+using SBMLImporter, ModelingToolkitBase
 prn, cb = load_SBML(path)
-sys = structural_simplify(convert(ODESystem, prn.rn))
-oprob = ODEProblem(sys, prn.u0, tspan, prn.p)
+sys = mtkcompile(ode_model(prn.p))
+oprob = ODEProblem(sys, merge(Dict(prn.u0), Dict(prn.p)), tspan)
 ```
 
 ## How can I check if my model follows mass action kinetics?
 
-For efficient jump simulations (Gillespie type), the model should ideally follow chemical mass action kinetics. To inform the importer about mass action kinetics simply set the keyword argument `massaction=true` in `load_SBML`. Now, if you are unsure whether the model follows mass action kinetics, simply provide `massaction=true`. If the model does not adhere to mass action kinetics, a warning is thrown:
+For efficient jump simulations (Gillespie type), the model should ideally follow chemical
+mass action kinetics. To inform the importer about mass action kinetics simply set the
+keyword argument `massaction=true` in `load_SBML`. Now, if you are unsure whether the model
+follows mass action kinetics, simply provide `massaction=true`. If the model does not
+adhere to mass action kinetics, a warning is thrown:
 
 ```
 Warning: That the system is massaction was provided, however, the reaction r is not massaction. It is parsed as non massaction reaction, which can negatively impact simulation times
@@ -96,7 +100,7 @@ unknowns(prn)
 
 this is likely because the parameter is not set as constant in the SBML file, e.g.:
 
-```SBML
+```xml
 <parameter id="c" value="1.0" constant="false"/>
 ```
 
@@ -105,7 +109,7 @@ a variable since it can change over time (explicitly depend on time), as Julia
 `ReactionSystem` parameters are assumed to time invariant. If the parameter should indeed
 be constant (e.g. at most be changed by an event), change the parameter in the model file:
 
-```SBML
+```xml
 <parameter id="c" value="1.0" constant="true"/>
 ```
 
