@@ -1,5 +1,4 @@
-title: "PEtab.jl"
-abstract: "Julia package for creating parameter estimation problems to fit ordinary differential equation (ODE) and scientific machine learning (SciML) models to time-series data."
+title: "SBMLImporter.jl"
 type: software
 authors:
   - family-names: "Persson"
