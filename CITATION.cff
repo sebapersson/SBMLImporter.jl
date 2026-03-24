@@ -28,10 +28,7 @@ repository-code: "https://github.com/sebapersson/PEtab.jl"
 url: "https://sebapersson.github.io/PEtab.jl/stable/"
 keywords:
   - "Julia"
-  - "parameter estimation"
-  - "ODE"
-  - "SciML"
-  - "PEtab"
+  - "SBML"
 preferred-citation:
   type: article
   title: "PEtab.jl: advancing the efficiency and utility of dynamic modelling"
