@@ -21,11 +21,9 @@ end
 
 # Published model with lots of edge cases. The model has a log in it making it not possible
 # to solve it, but we can test number of final unknowns
-sbml_url = "https://www.ebi.ac.uk/biomodels/model/download/BIOMD0000000627.3?filename=BIOMD0000000627_url.xml"
-sbml_string = String(take!(Downloads.download(sbml_url, IOBuffer())))
+path_sbml = joinpath(@__DIR__, "Models", "BIOMD0000000627_url.xml")
 rn, cb = load_SBML(
-    sbml_string; inline_assignment_rules = true, ifelse_to_callback = true,
-    model_as_string = true
+    path_sbml; inline_assignment_rules = true, ifelse_to_callback = true,
 )
 u0, ps = get_u0_map(rn), get_parameter_map(rn)
 oprob = ODEProblem(rn, u0, (0.0, 10.0), ps)
