@@ -3,7 +3,55 @@
 This tutorial demonstrates how to import an SBML model with SBMLImporter and simulate it as
 a `JumpProblem` (Gillespie/SSA), `SDEProblem` (chemical Langevin), or `ODEProblem`
 (deterministic ODEs). It also describes how to modify parameters and initial conditions, as
-we as how to index solution trajectories by SBML IDs.
+well as how to index solution trajectories by SBML IDs.
+
+## Copy-pastable tutorial
+
+A detailed tutorial is given below. If you want to jump straight to the code, here is an
+example import the Brusselator model (available
+[from this link](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)):
+
+```@example 2
+import Random # hide
+using Catalyst, SBMLImporter
+
+path_sbml = "path_to_model.xml"
+path_sbml = joinpath(@__DIR__, "..", "..", "test", "Models", "brusselator.xml") # hide
+
+# Simulation time span
+tspan = (0.0, 10.0)
+
+# Re-import model for SDE and ODE simulations. The massaction
+# keyword should not be provided for these workflows.
+rn, cb = load_SBML(path_sbml; massaction=true)
+u0 = get_u0_map(rn)
+ps = get_parameter_map(rn)
+
+# Jump simulation (Gillespie/SSA)
+Random.seed!(1) # hide
+using JumpProcesses
+jprob = JumpProblem(rn, u0, tspan, ps)
+jsol = solve(jprob, SSAStepper(); callback=cb)
+
+# Re-import model for SDE and ODE simulations. massaction
+# keyword should not be provided for these models
+rn, cb = load_SBML(path_sbml)
+u0 = get_u0_map(rn)
+ps = get_parameter_map(rn)
+
+# SDE simulation (chemical Langevin)
+Random.seed!(9) # hide
+using StochasticDiffEq
+sprob = SDEProblem(rn, u0, tspan, ps)
+ssol = solve(sprob, EM(); callback=cb, dt=1e-3)
+
+# ODE simulation (deterministic)
+using ModelingToolkitBase, OrdinaryDiffEq
+sys = mtkcompile(ode_model(rn))
+oprob = ODEProblem(sys, merge(Dict(u0), Dict(ps)), tspan; jac=true)
+osol = solve(oprob, Rodas5P(); callback=cb)
+nothing # hide
+```
 
 ## Input: a valid SBML file
 
@@ -11,7 +59,7 @@ SBMLImporter only requires one input: a valid SBML file. SBML files can be creat
 various sources, such as the graphical interface of [COPASI](https://copasi.org/), by
 converting rule-based [BioNetGen](https://github.com/RuleWorld/bionetgen) models, or by
 using any other [SBML exporting tools](https://sbml.org/software/). Additionally, a large
-collection of published SBML models are hosted on
+collection of published SBML models is hosted on
 [BioModels](https://www.ebi.ac.uk/biomodels/).
 
 This tutorial will use the [Brusselator model](https://en.wikipedia.org/wiki/Brusselator),
@@ -149,7 +197,7 @@ plot(sol; xlabel="Time [s]", ylabel="Species amount")
 
 For more information, see the [OrdinaryDiffEq.jl documentation](https://github.com/SciML
 OrdinaryDiffEq.jl). An ODE solver selection guide is available
-[here](https://sebapersson.github.io/PEtab.jl/stable/default_options/).
+[here](https://sebapersson.github.io/PEtab.jl/stable/configuration/default_options).
 
 ::: tip Importing large models
 

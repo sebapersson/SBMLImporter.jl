@@ -1,5 +1,6 @@
 # SBMLImporter.jl
-*Julia Importer for SBML models*
+
+_Julia Importer for SBML models_
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://sebapersson.github.io/SBMLImporter.jl/dev/)
@@ -15,7 +16,9 @@
 SBMLImporter is a Julia package for importing dynamic
 [Systems Biology Markup Language(SBML)](https://sbml.org/) models into either a
 `JumpProblem` for Gillespie simulations, a `SDEProblem` for chemical Langevin simulations,
-or an `ODEProblem` for deterministic simulations. Major features are:
+or an `ODEProblem` for deterministic simulations.
+
+Major features are:
 
 - Imports an SBML models into a [Catalyst.jl](https://github.com/SciML/Catalyst.jl)
   `ReactionSystem`. This allows for easy conversion to a `JumpProblem`, a `SDEProblem`, or
@@ -30,21 +33,32 @@ or an `ODEProblem` for deterministic simulations. Major features are:
 
 ## Installation
 
-SBMLImporter is a registered Julia package and can be installed with the Julia package manager using:
+SBMLImporter is a registered Julia package and can be installed with the Julia package
+manager using:
 
 ```julia
 julia> import Pkg; Pkg.add("SBMLImporter")
 ```
 
-SBMLImporter is compatible with Julia 1.10 and above. For additional installation details, see the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
+SBMLImporter is compatible with Julia 1.10 and above. For additional installation details,
+see the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/).
 
 ## Other SBML related Julia packages
 
 There are currently three other SBML related packages in Julia:
 
-1. [SBML.jl](https://github.com/LCSB-BioCore/SBML.jl) wraps a subset of the [libSBML](https://sbml.org/software/libsbml/) functionality and is used by SBMLImporter and other SBML related packages for parsing SBML models.
-2. [COBREXA.jl](https://github.com/COBREXA/COBREXA.jl) is designed for constraint-based metabolic modeling. Constraint-based models, which are often referred to as flux-balance analysis (FBA) models, are not supported by SBMLImporter.
-3. [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl) is the most similar package to SBMLImporter as it imports an SBML model into a `ReactionSystem`. Still, we recommend to use SBMLImporter as it supports more SBML features, has more efficient event handling, and supports efficient `JumpProblem` (Gillespie) simulations. An extensive list of differences can be found in the [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/differences/).
+1. [SBML.jl](https://github.com/LCSB-BioCore/SBML.jl) wraps a subset of the
+   [libSBML](https://sbml.org/software/libsbml/) functionality and is used by SBMLImporter
+   and other SBML related packages for parsing SBML models.
+2. [COBREXA.jl](https://github.com/COBREXA/COBREXA.jl) is designed for constraint-based
+   metabolic modeling. Constraint-based models, which are often referred to as flux-balance
+   analysis (FBA) models, are not supported by SBMLImporter.
+3. [SBMLToolkit.jl](https://github.com/SciML/SBMLToolkit.jl) is the most similar package to
+   SBMLImporter as it imports an SBML model into a `ReactionSystem`. Still, we recommend to
+   use SBMLImporter as it supports more SBML features, has more efficient event handling,
+   and supports efficient `JumpProblem` (Gillespie) simulations. An extensive list of
+   differences can be found in the
+   [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/differences/).
 
 ## Citation
 
