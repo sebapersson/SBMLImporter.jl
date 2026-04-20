@@ -8,7 +8,7 @@ well as how to index solution trajectories by SBML IDs.
 ## Copy-pastable tutorial
 
 A detailed tutorial is given below. If you want to jump straight to the code, here is an
-example import the Brusselator model (available
+example importing the Brusselator model (available
 [from this link](https://github.com/sebapersson/SBMLImporter.jl/blob/main/test/Models/brusselator.xml)):
 
 ```@example 2

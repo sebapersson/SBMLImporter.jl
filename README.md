@@ -9,7 +9,7 @@ _Julia Importer for SBML models_
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-black)](https://github.com/fredrikekre/Runic.jl)
 
-[Getting Started](https://sebapersson.github.io/SBMLImporter.jl/stable/tutorial) |
+[Tutorial](https://sebapersson.github.io/SBMLImporter.jl/stable/tutorial) |
 [Documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/) |
 [Contributing](https://sebapersson.github.io/SBMLImporter.jl/stable/CONTRIBUTING)
 
