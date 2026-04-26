@@ -58,7 +58,7 @@ There are currently three other SBML related packages in Julia:
    use SBMLImporter as it supports more SBML features, has more efficient event handling,
    and supports efficient `JumpProblem` (Gillespie) simulations. An extensive list of
    differences can be found in the
-   [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/differences/).
+   [documentation](https://sebapersson.github.io/SBMLImporter.jl/stable/differences).
 
 ## Citation
 
