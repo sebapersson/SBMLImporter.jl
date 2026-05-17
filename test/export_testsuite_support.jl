@@ -1,4 +1,4 @@
-using CSV, DataFrames, Downloads
+using CSV, DataFrames, Downloads, Test
 
 include(joinpath(@__DIR__, "common.jl"))
 include(joinpath(@__DIR__, "testsuite_support.jl"))
