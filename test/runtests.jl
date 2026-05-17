@@ -43,6 +43,10 @@ if !core_only
         include("semantic_sbml_tests.jl")
     end
 
+    @safetestset "SBML semantic algebraic test-suite" begin
+        include("semantic_algebraic_sbml_tests.jl")
+    end
+
     @safetestset "SBML stochastic test-suite" begin
         include("stochastic_sbml_tests.jl")
     end
