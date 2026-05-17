@@ -30,7 +30,7 @@ solver = Rodas4P()
     for test_case in ALGEBRAIC_TESTS
         fbdf_tests = [
             "00028", "00173", "00269", "01260", "01504", "01505", "01506", "01669",
-            "01670", "01671", "00946"
+            "01670", "01671", "00946",
         ]
         if test_case in fbdf_tests
             check_semantic_test_case(test_case, FBDF())
