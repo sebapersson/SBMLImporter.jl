@@ -32,16 +32,21 @@ function ModelSBMLProb(model_SBML)
 
     parameters, parameter_map = _get_system_parameters(model_SBML)
     ps = split(parameters[28:(end - 1)], " ") .|> string
+    ps = filter(!isempty, ps)
     psmap = _get_ps_or_umap(parameter_map, :ps)
     @assert length(ps) == length(psmap) "Map and ps length does not match in ODE parsing"
 
     # RHS ODEs (in the order of umodel)
     odes = fill("", length(umodel))
     for (i, uid) in pairs(umodel)
-        if isempty(model_SBML.species[uid].formula)
-            formula = "0.0"
+        if haskey(model_SBML.species, uid)
+            if isempty(model_SBML.species[uid].formula)
+                formula = "0.0"
+            else
+                formula = model_SBML.species[uid].formula
+            end
         else
-            formula = model_SBML.species[uid].formula
+            formula = model_SBML.parameters[uid].formula
         end
         odes[i] = "du[$i] = " * formula * "\n"
     end
