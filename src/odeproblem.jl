@@ -51,6 +51,8 @@ end
 
 function _get_umodel(species::String, variables::String)::Vector{String}
     umodel = split(species[26:(end - 1)] * variables[37:(end - 1)], " ") .|> string
+    # Happens when @parameters or @species block is empty generating ""
+    umodel = filter(!isempty, umodel)
     return replace.(umodel, "(t)" => "")
 end
 
