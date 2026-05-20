@@ -52,18 +52,18 @@ import{c as l,S as i,j as e,m as t,g as a}from"./chunks/framework.CTs-SHzs.js";c
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  5.5166734308533</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  8.095067081821867</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  9.499430337266517</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 10.449730413343408</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 10.927931715773308</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.131387019936811</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.13632911655385</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.011995418201604</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 10.449730413343405</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 10.927931715773303</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.131387019936806</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.136329116553842</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;"> 11.011995418201597</span></span>
 <span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  ⋮</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.0223722399676864</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.1028681422396356</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.0600463095856707</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9818959085087804</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.96046659468863</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.996655473859709</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.0190286919500244</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9995696819688267</span></span>
-<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9917855255968449</span></span></code></pre></div><p>The same solution indexing applies to other SBML variables (e.g. assignment rules). If <code>inline_assignment_rules=true</code> was passed to <code>load_SBML</code>, assignment rules are inlined into the model equations during import and cannot be accessed this way.</p><h2 id="Next-steps" tabindex="-1">Next steps <a class="header-anchor" href="#Next-steps" aria-label="Permalink to &quot;Next steps {#Next-steps}&quot;">​</a></h2><p>For downstream modeling tasks supported by Catalyst <code>ReactionSystem</code>s (e.g. bifurcation analysis), see the <a href="https://github.com/SciML/Catalyst.jl" target="_blank" rel="noreferrer">Catalyst documentation</a>. For parameter estimation of SBML models, see the <a href="https://sebapersson.github.io/PEtab.jl/stable/" target="_blank" rel="noreferrer">PEtab.jl documentation</a></p><p>If importing an SBML model fails, please consult the <a href="/SBMLImporter.jl/previews/PR154/FAQ#FAQ">FAQ</a> first. Additional import options and keyword arguments are documented in the <a href="/SBMLImporter.jl/previews/PR154/API#API">API</a>.</p>`,20))])}const b=l(d,[["render",m]]);export{H as __pageData,b as default};
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.022372239967697</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.1028681422396422</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.06004630958567</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9818959085087768</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.960466594688629</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9966554738597053</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  2.0190286919500213</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9995696819688278</span></span>
+<span class="line"><span style="--shiki-light:#24292e;--shiki-dark:#e1e4e8;">  1.9917855255968444</span></span></code></pre></div><p>The same solution indexing applies to other SBML variables (e.g. assignment rules). If <code>inline_assignment_rules=true</code> was passed to <code>load_SBML</code>, assignment rules are inlined into the model equations during import and cannot be accessed this way.</p><h2 id="Next-steps" tabindex="-1">Next steps <a class="header-anchor" href="#Next-steps" aria-label="Permalink to &quot;Next steps {#Next-steps}&quot;">​</a></h2><p>For downstream modeling tasks supported by Catalyst <code>ReactionSystem</code>s (e.g. bifurcation analysis), see the <a href="https://github.com/SciML/Catalyst.jl" target="_blank" rel="noreferrer">Catalyst documentation</a>. For parameter estimation of SBML models, see the <a href="https://sebapersson.github.io/PEtab.jl/stable/" target="_blank" rel="noreferrer">PEtab.jl documentation</a></p><p>If importing an SBML model fails, please consult the <a href="/SBMLImporter.jl/previews/PR154/FAQ#FAQ">FAQ</a> first. Additional import options and keyword arguments are documented in the <a href="/SBMLImporter.jl/previews/PR154/API#API">API</a>.</p>`,20))])}const b=l(d,[["render",m]]);export{H as __pageData,b as default};
