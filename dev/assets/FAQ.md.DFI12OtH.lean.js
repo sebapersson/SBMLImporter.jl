@@ -1,1 +1,0 @@
-import{c as i,S as e,j as a,m as t}from"./chunks/framework.pOhuRdxf.js";const c=JSON.parse('{"title":"FAQs","description":"","frontmatter":{},"headers":[],"relativePath":"FAQ.md","filePath":"FAQ.md","lastUpdated":null}'),n={name:"FAQ.md"};function l(o,s,h,p,r,d){return e(),a("div",null,[...s[0]||(s[0]=[t("",53)])])}const g=i(n,[["render",l]]);export{c as __pageData,g as default};
