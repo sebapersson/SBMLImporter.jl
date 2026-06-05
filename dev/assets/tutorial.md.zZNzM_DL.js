@@ -49,21 +49,21 @@ import{_ as l,o as i,c as e,an as t,j as a}from"./chunks/framework.Tcnr1Ktt.js";
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">sol[</span><span style="--shiki-light:#7f4707;--shiki-dark:#ffd900;">:X</span><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">]</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">47-element Vector{Float64}:</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.0</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  3.787570124204133</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  5.5166734308533085</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  8.095067081821881</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  9.499430337266526</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  5.5166734308533</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  8.095067081821867</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  9.499430337266517</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 10.449730413343408</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 10.927931715773308</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.13138701993681</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.136329116553842</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.011995418201597</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.131387019936811</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.13632911655385</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;"> 11.011995418201604</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  ⋮</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.0223722399676975</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.1028681422396405</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.06004630958567</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9818959085087755</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9604665946886293</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.022372239967688</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.1028681422396374</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.060046309585671</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9818959085087806</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9604665946886335</span></span>
 <span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9966554738597062</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.0190286919500258</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9995696819688256</span></span>
-<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9917855255968426</span></span></code></pre></div><p>The same solution indexing applies to other SBML variables (e.g. assignment rules). If <code>inline_assignment_rules=true</code> was passed to <code>load_SBML</code>, assignment rules are inlined into the model equations during import and cannot be accessed this way.</p><h2 id="Next-steps" tabindex="-1">Next steps <a class="header-anchor" href="#Next-steps" aria-label="Permalink to &quot;Next steps {#Next-steps}&quot;">​</a></h2><p>For downstream modeling tasks supported by Catalyst <code>ReactionSystem</code>s (e.g. bifurcation analysis), see the <a href="https://github.com/SciML/Catalyst.jl" target="_blank" rel="noreferrer">Catalyst documentation</a>. For parameter estimation of SBML models, see the <a href="https://sebapersson.github.io/PEtab.jl/stable/" target="_blank" rel="noreferrer">PEtab.jl documentation</a></p><p>If importing an SBML model fails, please consult the <a href="/SBMLImporter.jl/dev/FAQ#FAQ">FAQ</a> first. Additional import options and keyword arguments are documented in the <a href="/SBMLImporter.jl/dev/API#API">API</a>.</p>`,20))])}const b=l(h,[["render",m]]);export{H as __pageData,b as default};
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  2.019028691950016</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.999569681968831</span></span>
+<span class="line"><span style="--shiki-light:#080808;--shiki-dark:#f8f8f2;">  1.9917855255968493</span></span></code></pre></div><p>The same solution indexing applies to other SBML variables (e.g. assignment rules). If <code>inline_assignment_rules=true</code> was passed to <code>load_SBML</code>, assignment rules are inlined into the model equations during import and cannot be accessed this way.</p><h2 id="Next-steps" tabindex="-1">Next steps <a class="header-anchor" href="#Next-steps" aria-label="Permalink to &quot;Next steps {#Next-steps}&quot;">​</a></h2><p>For downstream modeling tasks supported by Catalyst <code>ReactionSystem</code>s (e.g. bifurcation analysis), see the <a href="https://github.com/SciML/Catalyst.jl" target="_blank" rel="noreferrer">Catalyst documentation</a>. For parameter estimation of SBML models, see the <a href="https://sebapersson.github.io/PEtab.jl/stable/" target="_blank" rel="noreferrer">PEtab.jl documentation</a></p><p>If importing an SBML model fails, please consult the <a href="/SBMLImporter.jl/dev/FAQ#FAQ">FAQ</a> first. Additional import options and keyword arguments are documented in the <a href="/SBMLImporter.jl/dev/API#API">API</a>.</p>`,20))])}const b=l(h,[["render",m]]);export{H as __pageData,b as default};
