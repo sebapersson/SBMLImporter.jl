@@ -24,7 +24,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 --vp-font-family-mono: JuliaMono-Regular, monospace;
 }
 
-/* Disable contextual alternates (kind of like ligatures but different) in monospace,
+/* Disable contextual alternates (kind of like ligatures but different) in monospace, 
  which turns `/>` to an up arrow and `|>` (the Julia pipe symbol) to an up arrow as well. */
 .mono-no-substitutions {
 font-family: "JuliaMono-Regular", monospace;
@@ -41,194 +41,107 @@ font-family: "JuliaMono-Regular", monospace;
 font-feature-settings: "calt" off;
 }
 
-/* ==========================================================================
-   Colors — PyData Sphinx theme palette
-   https://github.com/pydata/pydata-sphinx-theme
-   Primary: teal | Secondary: violet | Accent: pink | Neutrals: gray
-   ========================================================================== */
+/* Colors */
 :root {
-  /* --- Teal ramp (primary / brand) --- */
-  --pydata-teal-50:  #f4fbfc;
-  --pydata-teal-100: #e9f6f8;
-  --pydata-teal-200: #d0ecf1;
-  --pydata-teal-300: #abdde6;
-  --pydata-teal-400: #3fb1c5;
-  --pydata-teal-500: #0a7d91;
-  --pydata-teal-600: #085d6c;
-  --pydata-teal-700: #064752;
-  --pydata-teal-800: #042c33;
-  --pydata-teal-900: #021b1f;
+  --julia-blue: #4063D8;
+  --julia-purple: #9558B2;
+  --julia-red: #CB3C33;
+  --julia-green: #389826;
 
-  /* --- Violet ramp (secondary) --- */
-  --pydata-violet-50:  #f4eefb;
-  --pydata-violet-100: #e0c7ff;
-  --pydata-violet-200: #d5b4fd;
-  --pydata-violet-300: #b780ff;
-  --pydata-violet-400: #9c5ffd;
-  --pydata-violet-500: #8045e5;
-  --pydata-violet-600: #6432bd;
-  --pydata-violet-700: #4b258f;
-  --pydata-violet-800: #341a61;
-  --pydata-violet-900: #1e0e39;
+  --vp-c-brand: #0087d7;
+  --vp-c-brand-1: #0890df;
+  --vp-c-brand-2: #0599ef;
+  --vp-c-brand-3: #0c9ff4;
+  --vp-c-brand-light: #0087d7;
+  --vp-c-brand-dark: #5fd7ff;
+  --vp-c-brand-dimm: #212425;
 
-  /* --- Pink ramp (accent / inline-code) --- */
-  --pydata-pink-50:  #fcf8fd;
-  --pydata-pink-100: #fcf0fa;
-  --pydata-pink-200: #f8dff5;
-  --pydata-pink-300: #f3c7ee;
-  --pydata-pink-400: #e47fd7;
-  --pydata-pink-500: #c132af;
-  --pydata-pink-600: #912583;
-  --pydata-pink-700: #6e1c64;
-  --pydata-pink-800: #46123f;
-  --pydata-pink-900: #2b0b27;
-
-  /* --- Gray ramp (neutrals) --- */
-  --pydata-gray-50:  #f9f9fa;
-  --pydata-gray-100: #f3f4f5;
-  --pydata-gray-200: #e5e7ea;
-  --pydata-gray-300: #d1d5da;
-  --pydata-gray-400: #9ca4af;
-  --pydata-gray-500: #677384;
-  --pydata-gray-600: #48566b;
-  --pydata-gray-700: #29313d;
-  --pydata-gray-800: #222832;
-  --pydata-gray-900: #14181e;
-
-  /* --- VitePress brand → PyData teal (light mode) --- */
-  --vp-c-brand:       var(--pydata-teal-500);
-  --vp-c-brand-1:     var(--pydata-teal-500);
-  --vp-c-brand-2:     var(--pydata-teal-400);
-  --vp-c-brand-3:     var(--pydata-teal-300);
-  --vp-c-brand-light: var(--pydata-teal-400);
-  --vp-c-brand-dark:  var(--pydata-teal-600);
-  --vp-c-brand-dimm:  var(--pydata-teal-800);
-
-  /* --- Background / surface (light mode) --- */
-  --vp-c-bg:      #ffffff;
-  --vp-c-bg-alt:  var(--pydata-gray-100);
-  --vp-c-bg-soft: var(--pydata-gray-100);
-
-  /* --- Text (light mode) --- */
-  --vp-c-text-1: var(--pydata-gray-800);
-  --vp-c-text-2: var(--pydata-gray-600);
-  --vp-c-text-3: var(--pydata-gray-500);
-
-  /* --- Inline code: PyData uses pink-600 in light mode --- */
-  --vp-code-color: var(--pydata-pink-600);
-
-  /* --- Misc --- */
-  --vp-light-gray: var(--pydata-gray-300);
+  /* Greens */
+  --vp-dark-green: #155f3e; /* Main accent green */
+  --vp-dark-green-dark: #2b855c;
+  --vp-dark-green-light: #42d392;
+  --vp-dark-green-lighter: #35eb9a;
+    /* Complementary Colors */
+  --vp-dark-gray: #1e1e1e;
+  --vp-dark-gray-soft: #2a2a2a;
+  --vp-dark-gray-mute: #242424;
+  --vp-light-gray: #d1d5db;
   --vp-tip-bg: rgb(254, 254, 254);
-  --vp-custom-block-tip-border: var(--pydata-teal-500);
+
+  /* Text Colors */
+  --vp-dark-text: #e5e5e5; /* Primary text color */
+  --vp-dark-subtext: #c1c1c1; /* Subtle text */
+  --vp-source-text: #e5e5e5;
+  /* custom tip */
+  --vp-custom-block-tip-border: var(--vp-c-brand-light);
   --vp-custom-block-tip-bg: var(--vp-tip-bg);
 }
 
-/* Component: Button */
+ /* Component: Button */
 :root {
-  --vp-button-brand-border:       var(--pydata-teal-300);
-  --vp-button-brand-bg:           var(--pydata-teal-500);
-  --vp-button-brand-hover-border: var(--pydata-teal-200);
-  --vp-button-brand-hover-bg:     var(--pydata-teal-400);
+  --vp-button-brand-border: var(--vp-light-gray);
+  --vp-button-brand-bg: var(--vp-c-brand-light);
+  --vp-button-brand-hover-border: var(--vp-c-bg-alt);
+  --vp-button-brand-hover-bg: var(--julia-blue);
 }
 
-/* Component: Home — light mode */
+/* Component: Home */
 :root {
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(
     120deg,
-    var(--pydata-violet-500) 30%,
-    var(--pydata-teal-400)
+    #9558B2 30%,
+    #CB3C33
   );
 
   --vp-home-hero-image-background-image: linear-gradient(
     -145deg,
-    color-mix(in srgb, var(--pydata-violet-500) 50%, transparent) 30%,
-    color-mix(in srgb, var(--pydata-teal-400) 60%, transparent) 30%,
-    color-mix(in srgb, var(--pydata-pink-500) 88%, transparent)
+    #9558b282 30%,
+    #3798269a 30%,
+    #cb3d33e3 
   );
   --vp-home-hero-image-filter: blur(40px);
 }
 
-/* Component: Home — dark mode */
+/* Hero Section */
 :root.dark {
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(
     120deg,
-    var(--pydata-violet-400) 15%,
-    var(--pydata-teal-400),
-    var(--pydata-teal-300)
-  );
+    var(--julia-purple) 15%,
+    var(--vp-dark-green-light),
+    var(--vp-dark-green)
 
+  );
   --vp-home-hero-image-background-image: linear-gradient(
     -45deg,
-    var(--pydata-teal-800) 30%,
-    var(--pydata-teal-400),
-    var(--pydata-gray-800) 30%
+    var(--vp-dark-green) 30%,
+    var(--vp-dark-green-light),
+    var(--vp-dark-gray) 30%
   );
   --vp-home-hero-image-filter: blur(56px);
 }
 
-/* Tip block — dark mode */
 :root.dark {
-  --vp-custom-block-tip-border: var(--pydata-teal-600);
-  --vp-custom-block-tip-text:   var(--pydata-gray-400);
-  --vp-custom-block-tip-bg:     var(--pydata-gray-700);
+  /* custom tip */
+  --vp-custom-block-tip-border: var(--vp-dark-green-dark);
+  --vp-custom-block-tip-text: var(--vp-dark-subtext);
+  --vp-custom-block-tip-bg: var(--vp-dark-gray-mute);
 }
 
-/* Dark mode — PyData gray-900 canvas, gray-800 surfaces, teal-400 links, pink-300 inline code */
-.dark {
-  /* Brand */
-  --vp-c-brand:   var(--pydata-teal-400);
-  --vp-c-brand-1: var(--pydata-teal-400);
-  --vp-c-brand-2: var(--pydata-teal-300);
-  --vp-c-brand-3: var(--pydata-teal-600);
-  --vp-button-brand-border: var(--pydata-teal-300);
-  --vp-button-brand-bg:     var(--pydata-teal-700);
-
-  /* Background / surface */
-  --vp-c-bg:      var(--pydata-gray-900);
-  --vp-c-bg-alt:  var(--pydata-gray-800);
-  --vp-c-bg-soft: var(--pydata-gray-700);
-
-  /* Text — PyData base-light-text (#ced6dd) as primary */
-  --vp-c-text-1: #ced6dd;
-  --vp-c-text-2: var(--pydata-gray-400);
-  --vp-c-text-3: var(--pydata-gray-500);
-
-  /* Inline code: pink-300 in dark mode */
-  --vp-code-color: var(--pydata-pink-300);
-}
-
-/* ==========================================================================
-   Code block backgrounds — input (julia) vs output (no language)
-
-   DocumenterVitepress wraps code blocks in <div class="language-julia"> for
-   input and <div class="language-"> for output/result blocks. We give them
-   distinct backgrounds so the two are visually separable, using PyData grays.
-
-   Input  (language-julia): a11y theme bg set by the transformer in config.mts
-                             (#fefefe light / #2b2b2b dark) — no override needed.
-   Output (language-):      slightly warmer surface color + a border outline.
-   ========================================================================== */
-:root {
-  --vp-c-bg-output:         var(--pydata-gray-50);   /* #f9f9fa — off-white */
-  --vp-c-bg-output-outline: var(--pydata-gray-200);  /* #e5e7ea */
-}
+/**
+ * Colors links
+ * -------------------------------------------------------------------------- */
 
 .dark {
-  --vp-c-bg-output:         var(--pydata-gray-800);  /* #222832 */
-  --vp-c-bg-output-outline: var(--pydata-gray-700);  /* #29313d */
+  --vp-c-brand: var(--vp-dark-green-light);
+  --vp-button-brand-border: var(--vp-dark-green-lighter);
+  --vp-button-brand-bg: var(--vp-dark-green);
+  --vp-c-brand-1: var(--vp-dark-green-light);
+  --vp-c-brand-2: var(--vp-dark-green-lighter);
+  --vp-c-brand-3: var(--vp-dark-green);
 }
 
-.language- {
-  background-color: var(--vp-c-bg-output) !important;
-  outline: 1px solid var(--vp-c-bg-output-outline);
-}
-
-/* ==========================================================================
-   Responsive hero image filter
-   ========================================================================== */
 @media (min-width: 640px) {
   :root {
     --vp-home-hero-image-filter: blur(56px);
@@ -240,10 +153,8 @@ font-feature-settings: "calt" off;
     --vp-home-hero-image-filter: blur(72px);
   }
 }
+/* Component: MathJax */
 
-/* ==========================================================================
-   MathJax
-   ========================================================================== */
 mjx-container > svg {
   display: block;
   margin: auto;
