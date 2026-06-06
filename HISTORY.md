@@ -1,5 +1,10 @@
 # Breaking updates and feature summaries across releases
 
+## SBMLImporter 4.1
+
+Updated compatibility bounds for `DiffEqBase`, `SciMLBase`, and the SDE/ODE solver
+libraries. SBMLImporter is now up-to-date with the broader SciML ecosystem.
+
 ## SBMLImporter 4.0
 
 SBMLImporter 4.0 is a breaking release triggered by the Catalyst.jl v16 update. Major
