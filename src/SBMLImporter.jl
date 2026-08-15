@@ -5,7 +5,7 @@ using Catalyst: Catalyst, setmetadata, parameters, unknowns, @unpack, get_u0_map
 using ComponentArrays: ComponentArray
 using DiffEqBase: CallbackSet, DiscreteCallback, ContinuousCallback
 using JumpProcesses: reset_aggregated_jumps!
-using PrecompileTools: @setup_workload
+using PrecompileTools: @setup_workload, @compile_workload
 import ModelingToolkitBase
 using RuntimeGeneratedFunctions: RuntimeGeneratedFunctions, @RuntimeGeneratedFunction
 using SBML: SBML, readSBMLFromString
@@ -50,11 +50,13 @@ include("util.jl")
 @setup_workload begin
     dirmodels = joinpath(@__DIR__, "..", "test", "Models")
     # Model without events
-    path = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
-    rn, cb = load_SBML(path)
+    path_no_events = joinpath(dirmodels, "model_Boehm_JProteomeRes2014.xml")
     # Model with events
-    path = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
-    rn, cb = load_SBML(path)
+    path_events = joinpath(dirmodels, "model_Brannmark_JBC2010.xml")
+    @compile_workload begin
+        rn, cb = load_SBML(path_no_events)
+        rn, cb = load_SBML(path_events)
+    end
 end
 
 export load_SBML, getcompartment, get_u0_map, get_parameter_map
