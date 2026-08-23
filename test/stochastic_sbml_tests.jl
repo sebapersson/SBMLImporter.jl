@@ -1,4 +1,5 @@
-using Catalyst, CSV, DataFrames, Downloads, JumpProcesses, SBML, SBMLImporter, Test
+using Catalyst, CSV, DataFrames, Downloads, JumpProcesses, SBML, SBMLImporter, SciMLBase,
+    Test
 
 include(joinpath(@__DIR__, "common.jl"))
 include(joinpath(@__DIR__, "testsuite_support.jl"))
