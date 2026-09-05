@@ -91,8 +91,10 @@ function _get_side_activated_with_time(
 end
 
 function _split_condition(formula::String)::Tuple{String, String, String}
-    gt_applys = [">", "≥", ">="]
-    lt_applys = ["<", "≤", "<="]
+    # Order matters, as, for example, >= contains >, so longer operators must be checked
+    # first for the condition to be split correctly
+    gt_applys = [">=", "≥", ">"]
+    lt_applys = ["<=", "≤", "<"]
     igt = findfirst(x -> occursin(x, formula), gt_applys)
     ilt = findfirst(x -> occursin(x, formula), lt_applys)
     @assert !all(isnothing.([igt, ilt])) "Error splitting ifelse condition"
