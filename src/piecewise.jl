@@ -124,60 +124,106 @@ function _template_bool_picewise(
 end
 
 function _get_sign_time(formula::String)::Int64
-    formula = replace(formula, " " => "")
-    formula = _trim_paranthesis(formula)
-    _formula = _find_term_with_t(formula)
-    @assert !isempty(_formula) "In $formula for condition in piecewise cannot identify \
-        which term time appears in."
-
-    if startswith(_formula, "-(") && occursin(",", _formula)
-        a = split(_formula[3:(end - 1)], ","; limit = 2)[1]
-        return _has_time(String(a)) ? 1 : -1
+    # Math expressions are stored in prefix notation (e.g. -(t, 5.0)). Meta.parse handles
+    # both prefix and infix notation, which allows the direction to be inferred from the
+    # expression tree
+    expr = try
+        Meta.parse(formula)
+    catch
+        nothing
+    end
+    if !(expr isa Expr && expr.head in [:error, :incomplete])
+        sign_time = _get_sign_time(expr)
+        !isnothing(sign_time) && return sign_time
     end
 
-    _formula = replace(_formula, "(" => "", ")" => "")
-    if _formula == "t"
-        return 1
-    elseif length(_formula) ≥ 2 && _formula[1:2] == "-t"
-        return -1
-    elseif length(_formula) ≥ 3 && _formula[1:3] == "--t"
-        return 1
-    elseif length(_formula) ≥ 3 && (_formula[1:3] == "+-t" || _formula[1:3] == "-+t")
-        return -1
-    end
-
-    # If '-' appears anywhere after the cases above we might be able to infer direction,
-    # but infering in this situation is hard! - so throw an error as the user should
-    # be able to write condition in a more easy manner (avoid several sign changing minus signs)
-    !occursin('-', _formula) && return 1
+    # If a '-' does not appear in the formula the expression must increase with time. This
+    # covers expressions the analysis above cannot handle (e.g. exp(t)). If a '-' appears
+    # we might be able to infer direction, but infering in this situation is hard! - so
+    # throw an error as the user should be able to write condition in a more easy manner
+    # (avoid several sign changing minus signs)
+    !occursin('-', formula) && return 1
     str_write = "For piecewise with time in condition we cannot infer direction for \
         $formula, that is if the condition value increases or decreases with time. This \
         happens if the formula contains a minus sign in the term where t appears."
     throw(SBMLSupport(str_write))
 end
 
-function _find_term_with_t(formula::String)::String
-    formula == "t" && return formula
-    istart, parenthesis_level, term = 1, 0, ""
-    for (i, char) in pairs(formula)
-        if i == 1 && char in ['+', '-']
-            continue
-        end
-        parenthesis_level = char == '(' ? parenthesis_level + 1 : parenthesis_level
-        parenthesis_level = char == ')' ? parenthesis_level - 1 : parenthesis_level
-        if !(parenthesis_level == 0 && (char in ['+', '-'] || i == length(formula)))
-            continue
-        end
-        if formula[i - 1] in ['+', '-'] && i != length(formula)
-            continue
-        end
-        term = formula[istart:i]
-        if _has_time(term) == true || (i == length(formula) && char == 't')
-            return term[end] in ['+', '-'] ? term[1:(end - 1)] : term
-        end
-        istart = i
+"""
+    _get_sign_time(expr)::Union{Int64, Nothing}
+
+Infer whether a Julia expression increases (`1`) or decreases (`-1`) with time.
+
+If the direction cannot be inferred `nothing` is returned.
+"""
+function _get_sign_time(expr)::Union{Int64, Nothing}
+    expr == :t && return 1
+    !(expr isa Expr && expr.head == :call) && return nothing
+    fn, args = expr.args[1], expr.args[2:end]
+    if fn == :+
+        return _get_sign_time_terms(args, fill(1, length(args)))
+    elseif fn == :- && length(args) == 1
+        sign_time = _get_sign_time(args[1])
+        return isnothing(sign_time) ? nothing : -sign_time
+    elseif fn == :- && length(args) == 2
+        return _get_sign_time_terms(args, [1, -1])
+    elseif fn == :*
+        return _get_sign_time_factors(args)
+    elseif fn == :/ && length(args) == 2
+        # With time in the denominator the direction depends on the sign of the
+        # denominator, which cannot be inferred
+        _expr_has_time(args[2]) && return nothing
+        return _get_sign_time_factors(args)
     end
-    return ""
+    return nothing
+end
+
+function _get_sign_time_terms(args, signs)::Union{Int64, Nothing}
+    sign_time = nothing
+    for (arg, sign_term) in zip(args, signs)
+        _expr_has_time(arg) == false && continue
+        _sign_time = _get_sign_time(arg)
+        isnothing(_sign_time) && return nothing
+        _sign_time *= sign_term
+        if isnothing(sign_time)
+            sign_time = _sign_time
+        elseif sign_time != _sign_time
+            # Terms with time that change in opposite directions with time
+            return nothing
+        end
+    end
+    return sign_time
+end
+
+function _get_sign_time_factors(args)::Union{Int64, Nothing}
+    itime = findall(_expr_has_time, args)
+    length(itime) != 1 && return nothing
+    sign_time = _get_sign_time(args[itime[1]])
+    isnothing(sign_time) && return nothing
+    # Direction can only be inferred if the sign of the remaining factors is known, which
+    # is the case if they are numeric values
+    for (i, arg) in pairs(args)
+        i == itime[1] && continue
+        value = _get_expr_value(arg)
+        (isnothing(value) || value == 0) && return nothing
+        sign_time *= value > 0 ? 1 : -1
+    end
+    return sign_time
+end
+
+function _get_expr_value(expr)::Union{Float64, Nothing}
+    expr isa Number && return Float64(expr)
+    if expr isa Expr && expr.head == :call && expr.args[1] == :- && length(expr.args) == 2
+        value = _get_expr_value(expr.args[2])
+        return isnothing(value) ? nothing : -value
+    end
+    return nothing
+end
+
+function _expr_has_time(expr)::Bool
+    expr == :t && return true
+    !(expr isa Expr) && return false
+    return any(_expr_has_time, expr.args)
 end
 
 function _ifelse_to_event(id::String, condition::String, side_activated)::EventSBML
