@@ -17,3 +17,30 @@ sol2 = solve(oprob2, Rodas5P(), abstol = 1.0e-3, reltol = 1.0e-8)
 for name in unknowns(sys1)
     @test all(.≈(sol1[name], sol2[name], atol = 1.0e-9))
 end
+
+sbml_switch(cond) = """
+<sbml level="3" version="2">
+  <model id="switch">
+    <listOfParameters><parameter id="x" value="0" constant="false"/></listOfParameters>
+    <listOfRules><rateRule variable="x"><math>
+      <piecewise><piece><cn>1</cn>$cond</piece><otherwise><cn>0</cn></otherwise></piecewise>
+    </math></rateRule></listOfRules>
+  </model>
+</sbml>
+"""
+TIME = "<ci>time</ci>"
+conditions = [
+    "<apply><gt/>$TIME<cn>5</cn></apply>",                                     # t > 5
+    "<apply><lt/>$TIME<cn>5</cn></apply>",                                     # t < 5
+    "<apply><lt/><cn>5</cn>$TIME</apply>",                                     # 5 < t
+    "<apply><gt/><apply><minus/>$TIME</apply><cn>-5</cn></apply>",             # -t > -5
+    "<apply><gt/><apply><minus/>$TIME<cn>5</cn></apply><cn>0</cn></apply>",    # t - 5 > 0
+    "<apply><lt/><apply><minus/>$TIME<cn>5</cn></apply><cn>0</cn></apply>",    # t - 5 < 0
+    "<apply><gt/><apply><minus/><cn>5</cn>$TIME</apply><cn>0</cn></apply>",    # 5 - t > 0
+]
+for cond in conditions
+    rn, cb = load_SBML(sbml_switch(cond); model_as_string = true)
+    prob = ODEProblem(rn, get_u0_map(rn), (0.0, 10.0), get_parameter_map(rn))
+    sol = solve(prob, Rodas5P(); callback = cb, tstops = [5.0])
+    @test sol[rn.x][end] ≈ 5.0 atol = 1.0e-4
+end

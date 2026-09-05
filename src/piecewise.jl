@@ -116,8 +116,8 @@ end
 function _template_bool_picewise(
         bool_name::String, ifelse_arg1::String, ifelse_arg2::String, side_activated::String
     )::String
-    activated = side_activated == "right" ? ifelse_arg1 : ifelse_arg2
-    deactivated = side_activated == "right" ? ifelse_arg2 : ifelse_arg1
+    activated = side_activated == "left" ? ifelse_arg1 : ifelse_arg2
+    deactivated = side_activated == "left" ? ifelse_arg2 : ifelse_arg1
     formula = "((1 - 1" * bool_name * ") * (" * deactivated * ") + " *
         bool_name * "*(" * activated * "))"
     return formula
@@ -129,6 +129,11 @@ function _get_sign_time(formula::String)::Int64
     _formula = _find_term_with_t(formula)
     @assert !isempty(_formula) "In $formula for condition in piecewise cannot identify \
         which term time appears in."
+
+    if startswith(_formula, "-(") && occursin(",", _formula)
+        a = split(_formula[3:(end - 1)], ","; limit = 2)[1]
+        return _has_time(String(a)) ? 1 : -1
+    end
 
     _formula = replace(_formula, "(" => "", ")" => "")
     if _formula == "t"
@@ -183,7 +188,7 @@ function _ifelse_to_event(id::String, condition::String, side_activated)::EventS
     # condition, as otherwise we mess up callback initialization where the bool variable
     # is set to 1 if the condition is true. It is also important to work with strict
     # inequality here to handle any edge-cases where the trigger time is t = 0
-    if side_activated == "left"
+    if side_activated == "right"
         if any(occursin.(["<", "≤", "<="], condition))
             condition = replace(condition, r"≤|<=|<" => "≥")
         else
