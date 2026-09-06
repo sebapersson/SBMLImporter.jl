@@ -93,9 +93,11 @@ for (fn, holds) in [("gt", :after), ("geq", :after), ("lt", :before), ("leq", :b
         ("t / 2 $fn 1", _apply(fn, _apply("divide", T, _cn(2)), _cn(1)), x_time_lhs),
         ("-2t $fn -4", _apply(fn, _apply("times", _cn(-2), T), _cn(-4)), x_time_rhs),
         # Time scaled by a constant in a shifted expression
-        ("2t - 4 $fn 0",
+        (
+            "2t - 4 $fn 0",
             _apply(fn, _apply("minus", _apply("times", _cn(2), T), _cn(4)), _cn(0)),
-            x_time_lhs)
+            x_time_lhs,
+        ),
     ]
     for (name, condition, x_expected) in conditions
         @testset "Piecewise with $name in condition" begin
@@ -118,8 +120,10 @@ end
         :Ect_Expr_PI4K3beta_flag => 1.0, :Ect_Expr_CERT_flag => 1.0, :PdBu_dose => 2.0,
         :PdBu_time => 30.0, :kb_NB142_70_dose => 3.0, :kb_NB142_70_time => 60.0
     )
-    kwargs = (pset = pset, tspan = (0.0, 100.0), saveat = 0.0:5.0:100.0,
-        tstops = [30.0, 60.0])
+    kwargs = (
+        pset = pset, tspan = (0.0, 100.0), saveat = 0.0:5.0:100.0,
+        tstops = [30.0, 60.0],
+    )
     sys1, sol1 = solve_sbml(path_SBML; kwargs...)
     _, sol2 = solve_sbml(path_SBML; ifelse_to_callback = false, kwargs...)
     @test sol1.retcode == ReturnCode.Success

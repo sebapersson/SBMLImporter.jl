@@ -150,7 +150,6 @@ function _get_sign_time(formula::String)::Int64
         happens if the formula contains a minus sign in the term where t appears."
     throw(SBMLSupport(str_write))
 end
-
 """
     _get_sign_time(expr)::Union{Int64, Nothing}
 
