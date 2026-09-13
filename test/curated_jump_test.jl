@@ -21,19 +21,35 @@ rn_catalyst = Catalyst.complete(rn_catalyst)
 u0_catalyst = [:X => 2.0, :Y => 10.0]
 ps_catalyst = [:B => 4.0, :A => 1.0, :C => 1.0]
 
-# Tests model properties.
 @test issetequal(species(rn_sbml), species(rn_catalyst))
 @test issetequal(parameters(rn_sbml), parameters(rn_catalyst))
-@test isequal(reactions(rn_sbml)[1], reactions(rn_catalyst)[1])
-@test isequal(reactions(rn_sbml)[2], reactions(rn_catalyst)[4])
-# @test isequal(reactions(rn_sbml)[3], reactions(rn_catalyst)[2]) # Mathematically equal
-@test isequal(reactions(rn_sbml)[4], reactions(rn_catalyst)[3])
+
+function _find_matching_reaction(rx::Reaction, rxs::Vector{<:Reaction})
+    for (i, _rx) in pairs(rxs)
+        issetequal(rx.substrates, _rx.substrates) || continue
+        issetequal(rx.products, _rx.products) || continue
+        return i
+    end
+    return nothing
+end
+
+rxs_sbml = reactions(rn_sbml)
+rxs_catalyst = reactions(rn_catalyst)
+imap = [_find_matching_reaction(rx, rxs_catalyst) for rx in rxs_sbml]
+@test all(!isnothing, imap)
+imap = Int.(imap)
+
+for (i, j) in pairs(imap)
+    # Catalyst position 2 (2 * C, 2X + Y --> 3X) is mathematically, but not syntactically,
+    # equal between rn_sbml and rn_catalyst (different symbolic form of the rate)
+    j == 2 && continue
+    @test isequal(rxs_sbml[i], rxs_catalyst[j])
+end
 
 # Makes and tests jump simulations. Note that tests need to account for reactions not
-# appearing in the same order
+# appearing in the same order (see imap above).
 jprob_sbml = JumpProblem(rn_sbml, u0_sbml, (0.0, 100.0), ps_sbml)
 jprob_catalyst = JumpProblem(rn_catalyst, u0_catalyst, (0.0, 100.0), ps_catalyst)
-imap = [1, 4, 2, 3]
 @test jprob_sbml.massaction_jump.scaled_rates == jprob_catalyst.massaction_jump.scaled_rates[imap]
 @test jprob_sbml.massaction_jump.reactant_stoch == jprob_catalyst.massaction_jump.reactant_stoch[imap]
 @test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch[imap]
