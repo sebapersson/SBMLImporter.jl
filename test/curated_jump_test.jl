@@ -46,11 +46,21 @@ for (i, j) in pairs(imap)
     @test isequal(rxs_sbml[i], rxs_catalyst[j])
 end
 
+# Mass-action rate constants used in jump simulations. JumpProcesses 10 computes them from
+# the parameters when a solver is initialized, and stores them in the jump aggregator;
+# JumpProcesses 9 stores them in the problem's MassActionJump.
+function massaction_rates(jprob)
+    aggregation = jprob.discrete_jump_aggregation
+    hasproperty(aggregation, :maj_rates) || return jprob.massaction_jump.scaled_rates
+    init(jprob, SSAStepper())
+    return aggregation.maj_rates
+end
+
 # Makes and tests jump simulations. Note that tests need to account for reactions not
 # appearing in the same order (see imap above).
 jprob_sbml = JumpProblem(rn_sbml, u0_sbml, (0.0, 100.0), ps_sbml)
 jprob_catalyst = JumpProblem(rn_catalyst, u0_catalyst, (0.0, 100.0), ps_catalyst)
-@test jprob_sbml.massaction_jump.scaled_rates == jprob_catalyst.massaction_jump.scaled_rates[imap]
+@test massaction_rates(jprob_sbml) == massaction_rates(jprob_catalyst)[imap]
 @test jprob_sbml.massaction_jump.reactant_stoch == jprob_catalyst.massaction_jump.reactant_stoch[imap]
 @test jprob_sbml.massaction_jump.net_stoch == jprob_catalyst.massaction_jump.net_stoch[imap]
 
