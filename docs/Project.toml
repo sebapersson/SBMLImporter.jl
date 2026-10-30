@@ -10,10 +10,10 @@ SBMLImporter = "210efffb-c3c8-456d-a807-6f55560b12fe"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]
-Catalyst = "16.0.0"
+Catalyst = "16.0.0, 17.0"
 Documenter = "1.17.0"
 DocumenterVitepress = "0.3.2"
-JumpProcesses = "9.23.1"
+JumpProcesses = "9.23.1, 10.0"
 ModelingToolkitBase = "1.21.0"
 OrdinaryDiffEq = "6.108.0, 7"
 Plots = "1.41.6"
