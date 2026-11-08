@@ -1,5 +1,10 @@
 # Breaking updates and feature summaries across releases
 
+## SBMLImporter 4.2
+
+Added support for Catalyst v17 and JumpProcesses v10, while keeping support for Catalyst
+v16 and JumpProcesses v9. The SBMLImporter API is unchanged.
+
 ## SBMLImporter 4.1
 
 Updated compatibility bounds for `DiffEqBase`, `SciMLBase`, and the SDE/ODE solver

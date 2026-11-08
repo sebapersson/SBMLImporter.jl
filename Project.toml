@@ -1,6 +1,6 @@
 name = "SBMLImporter"
 uuid = "210efffb-c3c8-456d-a807-6f55560b12fe"
-version = "4.1.2"
+version = "4.2.0"
 
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
@@ -26,13 +26,13 @@ SBMLImporterForwardDiffExt = ["ForwardDiff"]
 [compat]
 Aqua = "0.8"
 CSV = "0.10, 1"
-Catalyst = "16"
+Catalyst = "16, 17"
 ComponentArrays = "0.15.17"
 DataFrames = "1.6"
 DiffEqBase = "6.165.0, 7"
 Downloads = "1"
 ForwardDiff = "0.10, 1"
-JumpProcesses = "9"
+JumpProcesses = "9, 10"
 ModelingToolkit = "11.9.0"
 ModelingToolkitBase = "1.11.0"
 OrdinaryDiffEqBDF = "1, 2"
