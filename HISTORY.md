@@ -1,5 +1,13 @@
 # Breaking updates and feature summaries across releases
 
+## SBMLImporter 4.3
+
+Added the `:promote_qualified` option to `inline_kineticlaw_parameters` in `load_SBML`,
+which promotes kinetic law parameters to model parameters with reaction-qualified ids. This
+allows keeping kinetic law parameters as model parameters also when the same id is repeated
+with different values (#178). The keyword now takes a `Symbol`, and providing a `Bool` is
+deprecated.
+
 ## SBMLImporter 4.2
 
 Added support for Catalyst v17 and JumpProcesses v10, while keeping support for Catalyst

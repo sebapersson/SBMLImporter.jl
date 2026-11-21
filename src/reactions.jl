@@ -1,5 +1,5 @@
 function parse_reactions!(
-        model_SBML::ModelSBML, libsbml_model::SBML.Model, inline_kineticlaw_parameters::Bool
+        model_SBML::ModelSBML, libsbml_model::SBML.Model, inline_kineticlaw_parameters::Symbol
     )::Nothing
     for (id, reaction) in libsbml_model.reactions
         (
@@ -69,15 +69,17 @@ end
 
 function _parse_reaction_formula(
         reaction::SBML.Reaction, model_SBML::ModelSBML, libsbml_model::SBML.Model,
-        inline_kineticlaw_parameters::Bool
+        inline_kineticlaw_parameters::Symbol
     )::Tuple{String, MathSBML}
     math_expression = parse_math(reaction.kinetic_math, libsbml_model)
     formula = math_expression.formula
     # SBML kineticlaw expressions can define their own parameters. These are by default
     # inlined as they can have the same id as other model parameters. If the user
     # want to they promote these to full model parameters, it is only allowed if we do not
-    # have any duplicates (parameters with the same id but different values)
-    if inline_kineticlaw_parameters == true
+    # have any duplicates (parameters with the same id but different values). With
+    # :promote_qualified libSBML has already promoted them when reading the model, so
+    # there are no kinetic law parameters left to handle
+    if inline_kineticlaw_parameters == :inline
         for (parameter_id, parameter) in reaction.kinetic_parameters
             formula = _replace_variable(formula, parameter_id, string(parameter.value))
         end
