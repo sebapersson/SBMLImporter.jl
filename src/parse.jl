@@ -9,16 +9,15 @@ For testing path can be the model as a string if model_as_string=true.
 function parse_SBML(
         path::String, massaction::Bool; ifelse_to_callback::Bool = true,
         model_as_string = true, inline_assignment_rules::Bool = true,
-        inline_kineticlaw_parameters::Bool = true
+        inline_kineticlaw_parameters::Symbol = :inline
     )::ModelSBML
     model_str = _get_model_as_str(path, model_as_string)
     check_support(path)
 
     # stoichiometryMath only occurs in SBML level 2. If stoichiometryMath occur in the
-    # model it is converted to a level three model via SBML.jl libsbml functionality
-    if occursin("stoichiometryMath", model_str) == false
-        libsbml_model = readSBMLFromString(model_str)
-    else
+    # model it is converted to a level three model via SBML.jl libsbml functionality. This
+    # conversion also promotes kinetic law parameters to model parameters
+    if occursin("stoichiometryMath", model_str)
         libsbml_model = readSBMLFromString(
             model_str,
             doc -> begin
@@ -26,6 +25,14 @@ function parse_SBML(
                 SBML.convert_promotelocals_expandfuns(doc)
             end
         )
+    elseif inline_kineticlaw_parameters == :promote_qualified
+        # Kinetic law parameters are promoted to model parameters with the reaction id as
+        # prefix (reactionid_parameterid), which allows for repeated kinetic law ids
+        libsbml_model = readSBMLFromString(
+            model_str, SBML.libsbml_convert("promoteLocalParameters")
+        )
+    else
+        libsbml_model = readSBMLFromString(model_str)
     end
 
     return _parse_SBML(
@@ -36,7 +43,7 @@ end
 
 function _parse_SBML(
         libsbml_model::SBML.Model, ifelse_to_callback::Bool, inline_assignment_rules::Bool,
-        inline_kineticlaw_parameters::Bool, massaction::Bool
+        inline_kineticlaw_parameters::Symbol, massaction::Bool
     )::ModelSBML
     model_SBML = ModelSBML(libsbml_model)
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="repeated_local_id">
+    <listOfCompartments><compartment id="cell" size="1"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="A" compartment="cell" initialConcentration="1"/>
+      <species id="B" compartment="cell" initialConcentration="0"/>
+    </listOfSpecies>
+    <listOfReactions>
+      <reaction id="r1" reversible="false">
+        <listOfReactants><speciesReference species="A"/></listOfReactants>
+        <listOfProducts><speciesReference species="B"/></listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k1</ci><ci>A</ci></apply></math>
+          <listOfParameters><parameter id="k1" value="0.9"/></listOfParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="r2" reversible="false">
+        <listOfReactants><speciesReference species="A"/></listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k1</ci><ci>A</ci></apply></math>
+          <listOfParameters><parameter id="k1" value="3.6e-05"/></listOfParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
